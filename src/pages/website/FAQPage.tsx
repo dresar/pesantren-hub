@@ -13,14 +13,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { HelpCircle, Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { mockFAQs } from '@/lib/mock-data-extended';
 import type { FAQ } from '@/types';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 export default function FAQPage() {
-  const [data, setData] = useState<FAQ[]>(mockFAQs);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FAQ | null>(null);
   const [formData, setFormData] = useState({
@@ -29,15 +29,38 @@ export default function FAQPage() {
     kategori: '',
     is_published: true,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showConfirm } = useAppStore();
-
+  const { data: data = [], isLoading } = useQuery({
+    queryKey: ['faq'],
+    queryFn: async () => (await api.get('/admin/generic/faq')).data.data,
+  });
+  const mutation = useMutation({
+    mutationFn: async (newItem: any) => {
+      if (editingItem) {
+        return api.put(`/admin/generic/faq/${editingItem.id}`, newItem);
+      }
+      return api.post('/admin/generic/faq', newItem);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq'] });
+      toast.success(editingItem ? 'FAQ berhasil diperbarui' : 'FAQ berhasil ditambahkan');
+      setIsModalOpen(false);
+    },
+    onError: () => toast.error('Gagal menyimpan FAQ'),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/admin/generic/faq/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq'] });
+      toast.success('FAQ berhasil dihapus');
+    },
+    onError: () => toast.error('Gagal menghapus FAQ'),
+  });
   const handleAdd = () => {
     setEditingItem(null);
     setFormData({ pertanyaan: '', jawaban: '', kategori: '', is_published: true });
     setIsModalOpen(true);
   };
-
   const handleEdit = (item: FAQ) => {
     setEditingItem(item);
     setFormData({
@@ -48,43 +71,17 @@ export default function FAQPage() {
     });
     setIsModalOpen(true);
   };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    if (editingItem) {
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === editingItem.id ? { ...item, ...formData } : item
-        )
-      );
-      toast.success('FAQ berhasil diperbarui');
-    } else {
-      const newItem: FAQ = {
-        id: String(Date.now()),
-        ...formData,
-        order: data.length + 1,
-        created_at: new Date().toISOString(),
-      };
-      setData((prev) => [...prev, newItem]);
-      toast.success('FAQ berhasil ditambahkan');
-    }
-    setIsSubmitting(false);
-    setIsModalOpen(false);
+  const handleSubmit = () => {
+    mutation.mutate({ ...formData, order: editingItem?.order || data.length + 1 });
   };
-
   const handleDelete = (id: string) => {
     showConfirm({
       title: 'Hapus FAQ',
       description: 'Yakin ingin menghapus FAQ ini?',
       variant: 'destructive',
-      onConfirm: () => {
-        setData((prev) => prev.filter((item) => item.id !== id));
-        toast.success('FAQ berhasil dihapus');
-      },
+      onConfirm: () => deleteMutation.mutate(id),
     });
   };
-
   const columns: ColumnDef<FAQ>[] = [
     {
       accessorKey: 'pertanyaan',
@@ -133,7 +130,6 @@ export default function FAQPage() {
       ),
     },
   ];
-
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="FAQ" description="Kelola pertanyaan yang sering diajukan" icon={HelpCircle}>
@@ -141,15 +137,13 @@ export default function FAQPage() {
           <Plus className="mr-2 h-4 w-4" /> Tambah FAQ
         </Button>
       </PageHeader>
-
-      <DataTable columns={columns} data={data} searchPlaceholder="Cari pertanyaan..." />
-
+      <DataTable columns={columns} data={data} isLoading={isLoading} searchPlaceholder="Cari pertanyaan..." />
       <CrudModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         title={editingItem ? 'Edit FAQ' : 'Tambah FAQ'}
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={mutation.isPending}
         size="lg"
       >
         <div className="space-y-4">

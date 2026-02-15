@@ -11,65 +11,64 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Building2, Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { mockFasilitas } from '@/lib/mock-data-extended';
 import type { Fasilitas } from '@/types';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 export default function FacilitiesPage() {
-  const [data, setData] = useState<Fasilitas[]>(mockFasilitas);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Fasilitas | null>(null);
   const [formData, setFormData] = useState({ nama: '', icon: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showConfirm } = useAppStore();
-
+  const { data: data = [], isLoading } = useQuery({
+    queryKey: ['fasilitas'],
+    queryFn: async () => (await api.get('/admin/generic/fasilitas')).data.data,
+  });
+  const mutation = useMutation({
+    mutationFn: async (newItem: any) => {
+      if (editingItem) {
+        return api.put(`/admin/generic/fasilitas/${editingItem.id}`, newItem);
+      }
+      return api.post('/admin/generic/fasilitas', newItem);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fasilitas'] });
+      toast.success(editingItem ? 'Fasilitas berhasil diperbarui' : 'Fasilitas berhasil ditambahkan');
+      setIsModalOpen(false);
+    },
+    onError: () => toast.error('Gagal menyimpan fasilitas'),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/admin/generic/fasilitas/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fasilitas'] });
+      toast.success('Fasilitas berhasil dihapus');
+    },
+    onError: () => toast.error('Gagal menghapus fasilitas'),
+  });
   const handleAdd = () => {
     setEditingItem(null);
     setFormData({ nama: '', icon: '' });
     setIsModalOpen(true);
   };
-
   const handleEdit = (item: Fasilitas) => {
     setEditingItem(item);
     setFormData({ nama: item.nama, icon: item.icon });
     setIsModalOpen(true);
   };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    if (editingItem) {
-      setData((prev) =>
-        prev.map((item) => (item.id === editingItem.id ? { ...item, ...formData } : item))
-      );
-      toast.success('Fasilitas berhasil diperbarui');
-    } else {
-      const newItem: Fasilitas = {
-        id: String(Date.now()),
-        ...formData,
-        order: data.length + 1,
-        created_at: new Date().toISOString(),
-      };
-      setData((prev) => [...prev, newItem]);
-      toast.success('Fasilitas berhasil ditambahkan');
-    }
-    setIsSubmitting(false);
-    setIsModalOpen(false);
+  const handleSubmit = () => {
+    mutation.mutate({ ...formData, order: editingItem?.order || data.length + 1 });
   };
-
   const handleDelete = (id: string) => {
     showConfirm({
       title: 'Hapus Fasilitas',
       description: 'Yakin ingin menghapus fasilitas ini?',
       variant: 'destructive',
-      onConfirm: () => {
-        setData((prev) => prev.filter((item) => item.id !== id));
-        toast.success('Fasilitas berhasil dihapus');
-      },
+      onConfirm: () => deleteMutation.mutate(id),
     });
   };
-
   const columns: ColumnDef<Fasilitas>[] = [
     {
       accessorKey: 'nama',
@@ -113,7 +112,6 @@ export default function FacilitiesPage() {
       ),
     },
   ];
-
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Fasilitas" description="Kelola daftar fasilitas pesantren" icon={Building2}>
@@ -121,15 +119,13 @@ export default function FacilitiesPage() {
           <Plus className="mr-2 h-4 w-4" /> Tambah Fasilitas
         </Button>
       </PageHeader>
-
-      <DataTable columns={columns} data={data} searchPlaceholder="Cari fasilitas..." />
-
+      <DataTable columns={columns} data={data} isLoading={isLoading} searchPlaceholder="Cari fasilitas..." />
       <CrudModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         title={editingItem ? 'Edit Fasilitas' : 'Tambah Fasilitas'}
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={mutation.isPending}
       >
         <div className="space-y-4">
           <div className="space-y-2">

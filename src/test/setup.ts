@@ -1,5 +1,4 @@
 import "@testing-library/jest-dom";
-
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
@@ -12,4 +11,4 @@ Object.defineProperty(window, "matchMedia", {
     removeEventListener: () => {},
     dispatchEvent: () => {},
   }),
-});
+});

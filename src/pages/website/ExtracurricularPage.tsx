@@ -11,65 +11,64 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Award, Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { mockEkstrakurikuler } from '@/lib/mock-data-extended';
 import type { Ekstrakurikuler } from '@/types';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 export default function ExtracurricularPage() {
-  const [data, setData] = useState<Ekstrakurikuler[]>(mockEkstrakurikuler);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Ekstrakurikuler | null>(null);
   const [formData, setFormData] = useState({ nama: '', icon: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showConfirm } = useAppStore();
-
+  const { data: data = [], isLoading } = useQuery({
+    queryKey: ['ekstrakurikuler'],
+    queryFn: async () => (await api.get('/admin/generic/ekstrakurikuler')).data.data,
+  });
+  const mutation = useMutation({
+    mutationFn: async (newItem: any) => {
+      if (editingItem) {
+        return api.put(`/admin/generic/ekstrakurikuler/${editingItem.id}`, newItem);
+      }
+      return api.post('/admin/generic/ekstrakurikuler', newItem);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ekstrakurikuler'] });
+      toast.success(editingItem ? 'Ekstrakurikuler berhasil diperbarui' : 'Ekstrakurikuler berhasil ditambahkan');
+      setIsModalOpen(false);
+    },
+    onError: () => toast.error('Gagal menyimpan ekstrakurikuler'),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/admin/generic/ekstrakurikuler/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ekstrakurikuler'] });
+      toast.success('Ekstrakurikuler berhasil dihapus');
+    },
+    onError: () => toast.error('Gagal menghapus ekstrakurikuler'),
+  });
   const handleAdd = () => {
     setEditingItem(null);
     setFormData({ nama: '', icon: '' });
     setIsModalOpen(true);
   };
-
   const handleEdit = (item: Ekstrakurikuler) => {
     setEditingItem(item);
     setFormData({ nama: item.nama, icon: item.icon });
     setIsModalOpen(true);
   };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    if (editingItem) {
-      setData((prev) =>
-        prev.map((item) => (item.id === editingItem.id ? { ...item, ...formData } : item))
-      );
-      toast.success('Ekstrakurikuler berhasil diperbarui');
-    } else {
-      const newItem: Ekstrakurikuler = {
-        id: String(Date.now()),
-        ...formData,
-        order: data.length + 1,
-        created_at: new Date().toISOString(),
-      };
-      setData((prev) => [...prev, newItem]);
-      toast.success('Ekstrakurikuler berhasil ditambahkan');
-    }
-    setIsSubmitting(false);
-    setIsModalOpen(false);
+  const handleSubmit = () => {
+    mutation.mutate({ ...formData, order: editingItem?.order || data.length + 1 });
   };
-
   const handleDelete = (id: string) => {
     showConfirm({
       title: 'Hapus Ekstrakurikuler',
       description: 'Yakin ingin menghapus?',
       variant: 'destructive',
-      onConfirm: () => {
-        setData((prev) => prev.filter((item) => item.id !== id));
-        toast.success('Ekstrakurikuler berhasil dihapus');
-      },
+      onConfirm: () => deleteMutation.mutate(id),
     });
   };
-
   const columns: ColumnDef<Ekstrakurikuler>[] = [
     {
       accessorKey: 'nama',
@@ -113,7 +112,6 @@ export default function ExtracurricularPage() {
       ),
     },
   ];
-
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Ekstrakurikuler" description="Kelola kegiatan ekstrakurikuler" icon={Award}>
@@ -121,15 +119,13 @@ export default function ExtracurricularPage() {
           <Plus className="mr-2 h-4 w-4" /> Tambah Ekskul
         </Button>
       </PageHeader>
-
-      <DataTable columns={columns} data={data} searchPlaceholder="Cari ekstrakurikuler..." />
-
+      <DataTable columns={columns} data={data} isLoading={isLoading} searchPlaceholder="Cari ekstrakurikuler..." />
       <CrudModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         title={editingItem ? 'Edit Ekstrakurikuler' : 'Tambah Ekstrakurikuler'}
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={mutation.isPending}
       >
         <div className="space-y-4">
           <div className="space-y-2">

@@ -9,20 +9,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAppStore } from '@/stores/app-store';
-
 export function ConfirmDialog() {
   const { confirmDialog, hideConfirm } = useAppStore();
-
   const handleConfirm = () => {
     confirmDialog.onConfirm();
     hideConfirm();
   };
-
   const handleCancel = () => {
     confirmDialog.onCancel?.();
     hideConfirm();
   };
-
   return (
     <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && hideConfirm()}>
       <AlertDialogContent>
@@ -42,4 +38,4 @@ export function ConfirmDialog() {
       </AlertDialogContent>
     </AlertDialog>
   );
-}
+}

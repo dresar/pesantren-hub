@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ColumnDef } from '@tanstack/react-table';
 import { PageHeader, DataTable, getSelectionColumn, StatusBadge, CrudModal } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -23,18 +23,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CreditCard, Plus, MoreHorizontal, Eye, CheckCircle, XCircle, Wallet, Image, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { mockPaymentsExtended, mockBankAccountsExtended } from '@/lib/mock-data-extended';
-import { mockSantri, formatCurrency, formatDateTime } from '@/lib/mock-data';
+import { formatCurrency, formatDateTime } from '@/lib/utils';
 import type { Payment, PaymentStatus, BankAccount } from '@/types';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>(mockPaymentsExtended);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(mockBankAccountsExtended);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('payments');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -49,41 +48,114 @@ export default function PaymentsPage() {
     keterangan: '',
     is_active: true,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showConfirm } = useAppStore();
-
+  const { data: payments = [], isLoading: isLoadingPayments } = useQuery({
+    queryKey: ['payments'],
+    queryFn: async () => {
+      const res = await api.get('/admin/payments');
+      const list = res.data?.data || [];
+      return list.map((p: any) => {
+        if ('bankPengirim' in p) {
+          return {
+            id: p.id,
+            bank_pengirim: p.bankPengirim,
+            no_rekening_pengirim: p.noRekeningPengirim,
+            nama_pemilik_rekening: p.namaPemilikRekening,
+            rekening_tujuan: p.rekeningTujuan,
+            jumlah_transfer: p.jumlahTransfer,
+            bukti_transfer: p.buktiTransfer,
+            status: p.status,
+            catatan: p.catatan,
+            created_at: p.createdAt,
+            updated_at: p.updatedAt,
+            verified_at: p.verifiedAt,
+            santri_id: p.santriId,
+            verified_by_id: p.verifiedById,
+            santri: (p as any).santri,
+          };
+        }
+        return p;
+      });
+    },
+  });
+  const { data: bankAccounts = [], isLoading: isLoadingBanks } = useQuery({
+    queryKey: ['bankAccounts'],
+    queryFn: async () => {
+      const res = await api.get('/admin/generic/bankAccounts');
+      const list = res.data?.data || [];
+      return list.map((b: any) => ({
+        id: b.id,
+        nama_bank: b.namaBank,
+        nama_bank_custom: b.namaBankCustom,
+        nomor_rekening: b.nomorRekening,
+        nama_pemilik_rekening: b.namaPemilik,
+        biaya_pendaftaran: b.biayaPendaftaran,
+        is_active: b.isActive,
+        keterangan: b.keterangan,
+        order: b.order,
+        created_at: b.createdAt,
+        updated_at: b.updatedAt,
+      }));
+    },
+  });
+  const verifyPaymentMutation = useMutation({
+    mutationFn: async ({ id, status, note }: { id: string; status: PaymentStatus; note: string }) => {
+      return api.put(`/payments/${id}`, { status, catatan: note });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      toast.success('Status pembayaran diperbarui');
+      setIsVerifyModalOpen(false);
+    }
+  });
+  const bankMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const now = new Date().toISOString();
+      const payload = {
+        namaBank: data.nama_bank,
+        namaBankCustom: data.nama_bank_custom,
+        nomorRekening: data.nomor_rekening,
+        namaPemilik: data.nama_pemilik_rekening,
+        biayaPendaftaran: data.biaya_pendaftaran,
+        isActive: data.is_active,
+        keterangan: data.keterangan,
+        order: editingBank ? (editingBank.order ?? 0) : ((bankAccounts?.length || 0) + 1),
+        updatedAt: now,
+        createdAt: editingBank ? (editingBank.created_at ?? now) : now,
+      };
+      if (editingBank) {
+        return api.put(`/admin/generic/bankAccounts/${editingBank.id}`, payload);
+      }
+      return api.post('/admin/generic/bankAccounts', payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bankAccounts'] });
+      toast.success(editingBank ? 'Rekening diperbarui' : 'Rekening ditambahkan');
+      setIsBankModalOpen(false);
+    }
+  });
+  const deleteBankMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/admin/generic/bankAccounts/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bankAccounts'] });
+      toast.success('Rekening dihapus');
+    }
+  });
   const filteredPayments = useMemo(() => {
     if (statusFilter === 'all') return payments;
-    return payments.filter((p) => p.status === statusFilter);
+    return payments.filter((p: Payment) => p.status === statusFilter);
   }, [payments, statusFilter]);
-
-  const getSantriName = (santriId: string) => {
-    const santri = mockSantri.find((s) => s.id === santriId);
-    return santri?.nama_lengkap || 'Unknown';
-  };
-
   const handleVerify = (payment: Payment) => {
     setSelectedPayment(payment);
     setVerifyNote('');
     setIsVerifyModalOpen(true);
   };
-
-  const handleConfirmVerify = async (status: PaymentStatus) => {
+  const handleConfirmVerify = (status: PaymentStatus) => {
     if (!selectedPayment) return;
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    setPayments((prev) =>
-      prev.map((p) =>
-        p.id === selectedPayment.id
-          ? { ...p, status, catatan: verifyNote, verified_at: new Date().toISOString(), updated_at: new Date().toISOString() }
-          : p
-      )
-    );
-    toast.success(`Pembayaran ${status === 'verified' ? 'diverifikasi' : 'ditolak'}`);
-    setIsSubmitting(false);
-    setIsVerifyModalOpen(false);
+    verifyPaymentMutation.mutate({ id: selectedPayment.id, status, note: verifyNote });
   };
-
   const handleAddBank = () => {
     setEditingBank(null);
     setBankFormData({
@@ -97,7 +169,6 @@ export default function PaymentsPage() {
     });
     setIsBankModalOpen(true);
   };
-
   const handleEditBank = (bank: BankAccount) => {
     setEditingBank(bank);
     setBankFormData({
@@ -111,32 +182,9 @@ export default function PaymentsPage() {
     });
     setIsBankModalOpen(true);
   };
-
-  const handleSaveBank = async () => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    if (editingBank) {
-      setBankAccounts((prev) =>
-        prev.map((b) =>
-          b.id === editingBank.id ? { ...b, ...bankFormData, updated_at: new Date().toISOString() } : b
-        )
-      );
-      toast.success('Rekening berhasil diperbarui');
-    } else {
-      const newBank: BankAccount = {
-        id: String(Date.now()),
-        ...bankFormData,
-        order: bankAccounts.length + 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setBankAccounts((prev) => [...prev, newBank]);
-      toast.success('Rekening berhasil ditambahkan');
-    }
-    setIsSubmitting(false);
-    setIsBankModalOpen(false);
+  const handleSaveBank = () => {
+    bankMutation.mutate(bankFormData);
   };
-
   const paymentColumns: ColumnDef<Payment>[] = [
     getSelectionColumn<Payment>(),
     {
@@ -144,7 +192,7 @@ export default function PaymentsPage() {
       header: 'Santri',
       cell: ({ row }) => (
         <div>
-          <p className="font-medium">{getSantriName(row.original.santri_id)}</p>
+          <p className="font-medium">{(row.original as any).santri?.namaLengkap || 'Unknown'}</p>
           <p className="text-xs text-muted-foreground">ID: {row.original.santri_id}</p>
         </div>
       ),
@@ -153,7 +201,9 @@ export default function PaymentsPage() {
       accessorKey: 'jumlah_transfer',
       header: 'Jumlah',
       cell: ({ row }) => (
-        <span className="font-semibold text-primary">{formatCurrency(row.original.jumlah_transfer)}</span>
+        <span className="font-semibold text-primary">
+          {formatCurrency(row.original.jumlah_transfer ?? (row.original as any).jumlahTransfer)}
+        </span>
       ),
     },
     {
@@ -161,8 +211,10 @@ export default function PaymentsPage() {
       header: 'Bank Pengirim',
       cell: ({ row }) => (
         <div>
-          <p>{row.original.bank_pengirim}</p>
-          <p className="text-xs text-muted-foreground">{row.original.no_rekening_pengirim}</p>
+          <p>{row.original.bank_pengirim ?? (row.original as any).bankPengirim}</p>
+          <p className="text-xs text-muted-foreground">
+            {row.original.no_rekening_pengirim ?? (row.original as any).noRekeningPengirim}
+          </p>
         </div>
       ),
     },
@@ -170,7 +222,9 @@ export default function PaymentsPage() {
       accessorKey: 'created_at',
       header: 'Tanggal',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">{formatDateTime(row.original.created_at)}</span>
+        <span className="text-sm text-muted-foreground">
+          {formatDateTime(row.original.created_at ?? (row.original as any).createdAt)}
+        </span>
       ),
     },
     {
@@ -190,7 +244,7 @@ export default function PaymentsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { setSelectedPayment(payment); setIsViewModalOpen(true); }}>
+              <DropdownMenuItem onClick={() => navigate(`/admin/payments/${payment.id}`)}>
                 <Eye className="mr-2 h-4 w-4" /> Detail
               </DropdownMenuItem>
               {payment.status === 'pending' && (
@@ -206,14 +260,13 @@ export default function PaymentsPage() {
       },
     },
   ];
-
   const bankColumns: ColumnDef<BankAccount>[] = [
     {
       accessorKey: 'nama_bank',
-      header: 'Nama Bank',
+      header: 'Bank',
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
             <Wallet className="h-5 w-5 text-primary" />
           </div>
           <div>
@@ -244,28 +297,17 @@ export default function PaymentsPage() {
       header: 'Status',
       cell: ({ row }) => <StatusBadge status={row.original.is_active ? 'active' : 'inactive'} />,
     },
-    {
-      id: 'actions',
-      cell: ({ row }) => (
-        <Button variant="ghost" size="sm" onClick={() => handleEditBank(row.original)}>
-          Edit
-        </Button>
-      ),
-    },
   ];
-
   const stats = {
     total: payments.length,
-    pending: payments.filter((p) => p.status === 'pending').length,
-    verified: payments.filter((p) => p.status === 'verified').length,
-    rejected: payments.filter((p) => p.status === 'rejected').length,
+    pending: payments.filter((p: Payment) => p.status === 'pending').length,
+    verified: payments.filter((p: Payment) => p.status === 'verified').length,
+    rejected: payments.filter((p: Payment) => p.status === 'rejected').length,
   };
-
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Pembayaran" description="Kelola pembayaran dan rekening bank" icon={CreditCard} />
-
-      {/* Stats */}
+      {}
       <div className="grid gap-4 sm:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
@@ -312,17 +354,16 @@ export default function PaymentsPage() {
           </CardContent>
         </Card>
       </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="payments">Pembayaran</TabsTrigger>
           <TabsTrigger value="bank">Rekening Bank</TabsTrigger>
         </TabsList>
-
         <TabsContent value="payments" className="mt-6">
           <DataTable
             columns={paymentColumns}
             data={filteredPayments}
+            isLoading={isLoadingPayments}
             searchPlaceholder="Cari pembayaran..."
             filterComponent={
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -339,80 +380,34 @@ export default function PaymentsPage() {
             }
           />
         </TabsContent>
-
         <TabsContent value="bank" className="mt-6">
           <div className="flex justify-end mb-4">
             <Button onClick={handleAddBank}>
               <Plus className="mr-2 h-4 w-4" /> Tambah Rekening
             </Button>
           </div>
-          <DataTable columns={bankColumns} data={bankAccounts} searchPlaceholder="Cari rekening..." />
+          <DataTable
+            columns={bankColumns}
+            data={bankAccounts}
+            isLoading={isLoadingBanks}
+            searchPlaceholder="Cari rekening..."
+            onBulkDelete={(ids) =>
+              showConfirm({
+                title: 'Hapus Rekening (Bulk)',
+                description: `Menghapus ${ids.length} rekening terpilih. Lanjutkan?`,
+                variant: 'destructive',
+                onConfirm: async () => {
+                  await Promise.all(ids.map((id) => api.delete(`/admin/generic/bankAccounts/${id}`)));
+                  queryClient.invalidateQueries({ queryKey: ['bankAccounts'] });
+                  toast.success(`Berhasil menghapus ${ids.length} rekening`);
+                },
+              })
+            }
+          />
         </TabsContent>
       </Tabs>
-
-      {/* Payment Detail Modal */}
-      <CrudModal
-        open={isViewModalOpen}
-        onOpenChange={setIsViewModalOpen}
-        title="Detail Pembayaran"
-        hideFooter
-        size="lg"
-      >
-        {selectedPayment && (
-          <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Santri</p>
-                  <p className="font-medium">{getSantriName(selectedPayment.santri_id)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Jumlah Transfer</p>
-                  <p className="text-xl font-bold text-primary">{formatCurrency(selectedPayment.jumlah_transfer)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  <StatusBadge status={selectedPayment.status} />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Bank Pengirim</p>
-                  <p className="font-medium">{selectedPayment.bank_pengirim}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">No. Rekening</p>
-                  <code>{selectedPayment.no_rekening_pengirim}</code>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Atas Nama</p>
-                  <p>{selectedPayment.nama_pemilik_rekening}</p>
-                </div>
-              </div>
-            </div>
-            {selectedPayment.bukti_transfer ? (
-              <div className="border rounded-lg p-4 bg-muted/50">
-                <p className="text-sm text-muted-foreground mb-2">Bukti Transfer</p>
-                <div className="flex items-center justify-center h-40 bg-muted rounded">
-                  <Image className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </div>
-            ) : (
-              <div className="border rounded-lg p-4 bg-muted/50 text-center text-muted-foreground">
-                Bukti transfer belum diupload
-              </div>
-            )}
-            {selectedPayment.catatan && (
-              <div>
-                <p className="text-sm text-muted-foreground">Catatan</p>
-                <p>{selectedPayment.catatan}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </CrudModal>
-
-      {/* Verify Modal */}
+      {}
+      {}
       <CrudModal
         open={isVerifyModalOpen}
         onOpenChange={setIsVerifyModalOpen}
@@ -435,24 +430,23 @@ export default function PaymentsPage() {
             <Button
               variant="destructive"
               onClick={() => handleConfirmVerify('rejected')}
-              disabled={isSubmitting}
+              disabled={verifyPaymentMutation.isPending}
             >
               <XCircle className="mr-2 h-4 w-4" /> Tolak
             </Button>
-            <Button onClick={() => handleConfirmVerify('verified')} disabled={isSubmitting}>
+            <Button onClick={() => handleConfirmVerify('verified')} disabled={verifyPaymentMutation.isPending}>
               <CheckCircle className="mr-2 h-4 w-4" /> Verifikasi
             </Button>
           </div>
         </div>
       </CrudModal>
-
-      {/* Bank Account Modal */}
+      {}
       <CrudModal
         open={isBankModalOpen}
         onOpenChange={setIsBankModalOpen}
         title={editingBank ? 'Edit Rekening' : 'Tambah Rekening'}
         onSubmit={handleSaveBank}
-        isSubmitting={isSubmitting}
+        isSubmitting={bankMutation.isPending}
         size="lg"
       >
         <div className="grid gap-4 sm:grid-cols-2">

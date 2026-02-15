@@ -20,28 +20,26 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Plus, MoreHorizontal, Eye, Pencil, Trash2, Shield, UserX, UserCheck } from 'lucide-react';
-import { mockUsersExtended } from '@/lib/mock-data-extended';
-import { formatDateTime } from '@/lib/mock-data';
+import { formatDateTime } from '@/lib/utils';
 import type { User, UserRole } from '@/types';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 const roleLabels: Record<UserRole, string> = {
   admin: 'Admin',
   staff: 'Staff',
   teacher: 'Pengajar',
   operator: 'Operator',
 };
-
 const roleColors: Record<UserRole, string> = {
   admin: 'bg-destructive/10 text-destructive border-destructive/30',
   staff: 'bg-info/10 text-info border-info/30',
   teacher: 'bg-primary/10 text-primary border-primary/30',
   operator: 'bg-warning/10 text-warning border-warning/30',
 };
-
 export default function UsersPage() {
-  const [data, setData] = useState<User[]>(mockUsersExtended);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -53,16 +51,59 @@ export default function UsersPage() {
     email: '',
     phone: '',
     role: 'staff' as UserRole,
+    password: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showConfirm } = useAppStore();
-
+  const { data: usersData, isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const response = await api.get('/admin/users');
+      return response.data.data;
+    },
+  });
+  const createUserMutation = useMutation({
+    mutationFn: async (newUser: any) => {
+      return await api.post('/admin/users', newUser);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User berhasil ditambahkan');
+      setIsModalOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Gagal menambahkan user');
+    },
+  });
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return await api.put(`/admin/users/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User berhasil diperbarui');
+      setIsModalOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Gagal memperbarui user');
+    },
+  });
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await api.delete(`/admin/users/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User berhasil dihapus');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Gagal menghapus user');
+    },
+  });
   const handleCreate = () => {
     setEditingUser(null);
-    setFormData({ first_name: '', last_name: '', username: '', email: '', phone: '', role: 'staff' });
+    setFormData({ first_name: '', last_name: '', username: '', email: '', phone: '', role: 'staff', password: '' });
     setIsModalOpen(true);
   };
-
   const handleEdit = (user: User) => {
     setEditingUser(user);
     setFormData({
@@ -72,66 +113,39 @@ export default function UsersPage() {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      password: '', 
     });
     setIsModalOpen(true);
   };
-
   const handleView = (user: User) => {
     setViewingUser(user);
     setIsViewModalOpen(true);
   };
-
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    
+    const payload = { ...formData };
     if (editingUser) {
-      setData((prev) =>
-        prev.map((u) =>
-          u.id === editingUser.id
-            ? { ...u, ...formData, updated_at: new Date().toISOString() }
-            : u
-        )
-      );
-      toast.success('User berhasil diperbarui');
+      if (!payload.password) delete (payload as any).password; 
+      updateUserMutation.mutate({ id: editingUser.id, data: payload });
     } else {
-      const newUser: User = {
-        id: String(Date.now()),
-        ...formData,
-        is_active: true,
-        is_staff: true,
-        is_superuser: formData.role === 'admin',
-        date_joined: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-      };
-      setData((prev) => [newUser, ...prev]);
-      toast.success('User berhasil ditambahkan');
+      createUserMutation.mutate(payload);
     }
-    setIsSubmitting(false);
-    setIsModalOpen(false);
   };
-
   const handleDelete = (id: string) => {
     showConfirm({
       title: 'Hapus User',
       description: 'Apakah Anda yakin ingin menghapus user ini?',
       variant: 'destructive',
       onConfirm: () => {
-        setData((prev) => prev.filter((u) => u.id !== id));
-        toast.success('User berhasil dihapus');
+        deleteUserMutation.mutate(id);
       },
     });
   };
-
   const handleToggleStatus = (user: User) => {
-    setData((prev) =>
-      prev.map((u) =>
-        u.id === user.id ? { ...u, is_active: !u.is_active } : u
-      )
-    );
-    toast.success(`User ${user.is_active ? 'dinonaktifkan' : 'diaktifkan'}`);
+    updateUserMutation.mutate({ 
+        id: user.id, 
+        data: { isActive: !user.is_active } 
+    });
   };
-
   const columns: ColumnDef<User>[] = [
     getSelectionColumn<User>(),
     {
@@ -139,17 +153,19 @@ export default function UsersPage() {
       header: 'Nama',
       cell: ({ row }) => {
         const user = row.original;
-        const initials = `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+        const firstName = user.first_name || '';
+        const lastName = user.last_name || '';
+        const initials = `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
         return (
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
               <AvatarImage src={user.avatar} />
               <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                {initials}
+                {initials || '?'}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{user.first_name} {user.last_name}</p>
+              <p className="font-medium">{firstName} {lastName}</p>
               <p className="text-xs text-muted-foreground">@{user.username}</p>
             </div>
           </div>
@@ -221,7 +237,6 @@ export default function UsersPage() {
       },
     },
   ];
-
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Pengguna" description="Kelola pengguna sistem" icon={Users}>
@@ -229,32 +244,20 @@ export default function UsersPage() {
           <Plus className="mr-2 h-4 w-4" /> Tambah User
         </Button>
       </PageHeader>
-
       <DataTable
         columns={columns}
-        data={data}
+        data={usersData || []}
+        isLoading={isLoading}
         searchPlaceholder="Cari nama, email..."
-        onBulkDelete={(ids) => {
-          showConfirm({
-            title: 'Hapus User',
-            description: `Hapus ${ids.length} user?`,
-            variant: 'destructive',
-            onConfirm: () => {
-              setData((prev) => prev.filter((u) => !ids.includes(u.id)));
-              toast.success(`${ids.length} user dihapus`);
-            },
-          });
-        }}
       />
-
-      {/* Create/Edit Modal */}
+      {}
       <CrudModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         title={editingUser ? 'Edit User' : 'Tambah User Baru'}
         description={editingUser ? 'Perbarui informasi user' : 'Isi form untuk menambah user baru'}
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={createUserMutation.isPending || updateUserMutation.isPending}
         size="lg"
       >
         <div className="grid gap-4 sm:grid-cols-2">
@@ -313,10 +316,20 @@ export default function UsersPage() {
               </SelectContent>
             </Select>
           </div>
+          {!editingUser && (
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Password</Label>
+                <Input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Password"
+                />
+              </div>
+          )}
         </div>
       </CrudModal>
-
-      {/* View Modal */}
+      {}
       <CrudModal
         open={isViewModalOpen}
         onOpenChange={setIsViewModalOpen}

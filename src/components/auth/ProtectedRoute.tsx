@@ -1,0 +1,41 @@
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuthStore } from '@/stores/auth-store';
+import { jwtDecode } from 'jwt-decode';
+import { useEffect } from 'react';
+export default function ProtectedRoute() {
+  const { isAuthenticated, token, logout } = useAuthStore();
+  const location = useLocation();
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+        if (decoded.exp < currentTime) {
+          logout();
+        }
+      } catch (e) {
+        logout();
+      }
+    }
+  }, [token, logout]);
+  if (!isAuthenticated || !token) {
+    const isAdminRoute = location.pathname.startsWith('/admin') || 
+                         location.pathname.startsWith('/dashboard') || 
+                         location.pathname.startsWith('/users');
+    const loginPath = isAdminRoute ? "/admin/login" : "/login";
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
+  }
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
+    const allowedRoles = ['superadmin', 'admin', 'staff', 'petugaspendaftaran', 'bendahara'];
+    const userRole = useAuthStore.getState().user?.role;
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      if (userRole === 'santri' || userRole === 'user') {
+        const identifier = useAuthStore.getState().user?.username || useAuthStore.getState().user?.id;
+        return <Navigate to={`/santri/dashboard/${identifier}`} replace />;
+      }
+      logout();
+      return <Navigate to="/login" replace />;
+    }
+  }
+  return <Outlet />;
+}

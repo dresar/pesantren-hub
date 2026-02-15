@@ -1,0 +1,27 @@
+{
+  "version": "5",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1770999007073,
+      "tag": "0000_mean_vindicator",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1771056444113,
+      "tag": "0001_grey_the_watchers",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771089511439,
+      "tag": "0002_quick_sphinx",
+      "breakpoints": true
+    }
+  ]
+}

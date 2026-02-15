@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-
 interface CrudModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,7 +24,6 @@ interface CrudModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   hideFooter?: boolean;
 }
-
 const sizeClasses = {
   sm: 'max-w-sm',
   md: 'max-w-md',
@@ -33,7 +31,6 @@ const sizeClasses = {
   xl: 'max-w-xl',
   full: 'max-w-4xl',
 };
-
 export function CrudModal({
   open,
   onOpenChange,
@@ -53,7 +50,6 @@ export function CrudModal({
     onCancel?.();
     onOpenChange(false);
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={sizeClasses[size]}>
@@ -82,4 +78,4 @@ export function CrudModal({
       </DialogContent>
     </Dialog>
   );
-}
+}

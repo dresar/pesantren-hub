@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,28 +25,41 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Newspaper, ArrowLeft, Save, Eye, Image } from 'lucide-react';
-import { mockCategoriesExtended } from '@/lib/mock-data-extended';
 import { toast } from 'sonner';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { DualImageInput } from '@/components/forms/DualImageInput';
 const postSchema = z.object({
   title: z.string().min(5, 'Judul minimal 5 karakter'),
   slug: z.string().optional(),
   content: z.string().min(50, 'Konten minimal 50 karakter'),
   excerpt: z.string().optional(),
   category_id: z.string().optional(),
+  featured_image: z.string().optional(),
   meta_title: z.string().optional(),
   meta_description: z.string().optional(),
   meta_keywords: z.string().optional(),
   is_featured: z.boolean().default(false),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
 });
-
 type PostFormValues = z.infer<typeof postSchema>;
-
 export default function BlogEditorPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const { data: categories = [] } = useQuery({
+    queryKey: ['blog-categories'],
+    queryFn: async () => (await api.get('/admin/generic/blogCategory')).data.data,
+  });
+  const { data: postData } = useQuery({
+    queryKey: ['blog-post', id],
+    queryFn: async () => {
+      const response = await api.get(`/admin/generic/blogBlogpost/${id}`);
+      return response.data.data || response.data; 
+    },
+    enabled: !!id,
+  });
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
     defaultValues: {
@@ -55,6 +68,7 @@ export default function BlogEditorPage() {
       content: '',
       excerpt: '',
       category_id: '',
+      featured_image: '',
       meta_title: '',
       meta_description: '',
       meta_keywords: '',
@@ -62,37 +76,61 @@ export default function BlogEditorPage() {
       status: 'draft',
     },
   });
-
+  useEffect(() => {
+    if (postData) {
+      form.reset({
+        title: postData.title,
+        slug: postData.slug,
+        content: postData.content,
+        excerpt: postData.excerpt || '',
+        category_id: String(postData.category_id || ''),
+        featured_image: postData.featured_image || postData.featuredImage || '',
+        meta_title: postData.meta_title || postData.metaTitle || '',
+        meta_description: postData.meta_description || postData.metaDescription || '',
+        meta_keywords: postData.meta_keywords || postData.metaKeywords || '',
+        is_featured: Boolean(postData.is_featured || postData.isFeatured),
+        status: postData.status || 'draft',
+      });
+    }
+  }, [postData, form]);
+  const mutation = useMutation({
+    mutationFn: async (values: PostFormValues) => {
+      if (id) {
+        return api.put(`/admin/generic/blogBlogpost/${id}`, values);
+      }
+      return api.post('/admin/generic/blogBlogpost', values);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+      toast.success(id ? 'Artikel diperbarui' : 'Artikel berhasil disimpan');
+      navigate('/admin/blog/posts');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Gagal menyimpan artikel');
+    }
+  });
   const onSubmit = async (values: PostFormValues) => {
     setIsSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      console.log('Post:', values);
-      toast.success('Artikel berhasil disimpan');
-      navigate('/blog');
-    } catch {
-      toast.error('Gagal menyimpan artikel');
+      await mutation.mutateAsync(values);
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const generateSlug = (title: string) => {
     return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
-
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Editor Artikel" description="Tulis artikel baru" icon={Newspaper}>
-        <Button variant="outline" onClick={() => navigate('/blog')}>
+      <PageHeader title={id ? "Edit Artikel" : "Tulis Artikel"} description="Manajemen konten artikel" icon={Newspaper}>
+        <Button variant="outline" onClick={() => navigate('/admin/blog/posts')}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
         </Button>
       </PageHeader>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Main Content */}
+            {}
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardHeader>
@@ -111,7 +149,9 @@ export default function BlogEditorPage() {
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              form.setValue('slug', generateSlug(e.target.value));
+                              if (!id) { 
+                                form.setValue('slug', generateSlug(e.target.value));
+                              }
                             }}
                           />
                         </FormControl>
@@ -119,7 +159,6 @@ export default function BlogEditorPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="slug"
@@ -133,7 +172,6 @@ export default function BlogEditorPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="excerpt"
@@ -147,7 +185,6 @@ export default function BlogEditorPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="content"
@@ -168,27 +205,34 @@ export default function BlogEditorPage() {
                   />
                 </CardContent>
               </Card>
-
-              {/* Featured Image */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle>Gambar Utama</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors">
-                    <Image className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      Klik untuk upload atau drag & drop
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG maksimal 2MB</p>
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="featured_image"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <DualImageInput
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="URL gambar (contoh: https://images.unsplash.com/...)"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
             </div>
-
-            {/* Sidebar */}
+            {}
             <div className="space-y-6">
-              {/* Publish Settings */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle>Publikasi</CardTitle>
@@ -216,22 +260,22 @@ export default function BlogEditorPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="category_id"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kategori</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kategori" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {mockCategoriesExtended.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>
+                            {}
+                            {categories.map((cat: any) => (
+                              <SelectItem key={cat.id} value={String(cat.id)}>
                                 {cat.name}
                               </SelectItem>
                             ))}
@@ -241,7 +285,6 @@ export default function BlogEditorPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="is_featured"
@@ -257,7 +300,6 @@ export default function BlogEditorPage() {
                       </FormItem>
                     )}
                   />
-
                   <div className="flex gap-2">
                     <Button type="submit" className="flex-1" disabled={isSubmitting}>
                       <Save className="mr-2 h-4 w-4" />
@@ -269,8 +311,7 @@ export default function BlogEditorPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* SEO */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle>SEO</CardTitle>
@@ -289,7 +330,6 @@ export default function BlogEditorPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="meta_description"
@@ -303,7 +343,6 @@ export default function BlogEditorPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="meta_keywords"

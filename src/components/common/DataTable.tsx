@@ -48,7 +48,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -60,8 +59,8 @@ interface DataTableProps<TData, TValue> {
   filterComponent?: React.ReactNode;
   emptyMessage?: string;
   pageSize?: number;
+  hideSearch?: boolean;
 }
-
 export function DataTable<TData, TValue>({
   columns,
   data,
@@ -73,13 +72,13 @@ export function DataTable<TData, TValue>({
   filterComponent,
   emptyMessage = 'Tidak ada data.',
   pageSize = 10,
+  hideSearch = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState('');
-
   const table = useReactTable({
     data,
     columns,
@@ -106,41 +105,38 @@ export function DataTable<TData, TValue>({
       },
     },
   });
-
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const selectedIds = selectedRows.map((row) => (row.original as any).id);
-
   const handleBulkDelete = useCallback(() => {
     if (onBulkDelete && selectedIds.length > 0) {
       onBulkDelete(selectedIds);
       setRowSelection({});
     }
   }, [onBulkDelete, selectedIds]);
-
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
-          {/* Search */}
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={searchKey ? (table.getColumn(searchKey)?.getFilterValue() as string) ?? '' : globalFilter}
-              onChange={(event) =>
-                searchKey
-                  ? table.getColumn(searchKey)?.setFilterValue(event.target.value)
-                  : setGlobalFilter(event.target.value)
-              }
-              className="pl-9 bg-card"
-            />
-          </div>
-
-          {/* Custom Filters */}
+          {}
+          {!hideSearch && (
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={searchKey ? (table.getColumn(searchKey)?.getFilterValue() as string) ?? '' : globalFilter}
+                onChange={(event) =>
+                  searchKey
+                    ? table.getColumn(searchKey)?.setFilterValue(event.target.value)
+                    : setGlobalFilter(event.target.value)
+                }
+                className="pl-9 bg-card"
+              />
+            </div>
+          )}
+          {}
           {filterComponent}
-
-          {/* Refresh */}
+          {}
           {onRefresh && (
             <Button
               variant="outline"
@@ -153,17 +149,15 @@ export function DataTable<TData, TValue>({
             </Button>
           )}
         </div>
-
         <div className="flex items-center gap-2">
-          {/* Bulk Delete */}
+          {}
           {selectedRows.length > 0 && onBulkDelete && (
             <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
               <Trash2 className="mr-2 h-4 w-4" />
               Hapus ({selectedRows.length})
             </Button>
           )}
-
-          {/* Column Visibility */}
+          {}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="ml-auto">
@@ -191,8 +185,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenu>
         </div>
       </div>
-
-      {/* Table */}
+      {}
       <div className="rounded-lg border bg-card overflow-hidden">
         <Table>
           <TableHeader>
@@ -251,8 +244,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-
-      {/* Pagination */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-muted-foreground">
           {selectedRows.length > 0 ? (
@@ -270,9 +262,8 @@ export function DataTable<TData, TValue>({
             </span>
           )}
         </div>
-
         <div className="flex items-center gap-4">
-          {/* Page Size */}
+          {}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">Per halaman</span>
             <Select
@@ -293,13 +284,11 @@ export function DataTable<TData, TValue>({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Page Info */}
+          {}
           <div className="text-sm text-muted-foreground whitespace-nowrap">
             Halaman {table.getState().pagination.pageIndex + 1} dari {table.getPageCount()}
           </div>
-
-          {/* Navigation */}
+          {}
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
@@ -343,8 +332,6 @@ export function DataTable<TData, TValue>({
     </div>
   );
 }
-
-// Column Helper for Selection
 export function getSelectionColumn<TData>(): ColumnDef<TData> {
   return {
     id: 'select',
@@ -369,4 +356,4 @@ export function getSelectionColumn<TData>(): ColumnDef<TData> {
     enableSorting: false,
     enableHiding: false,
   };
-}
+}

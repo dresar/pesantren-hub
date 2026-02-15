@@ -1,7 +1,3 @@
-// ============================================
-// NAVIGATION CONFIGURATION
-// ============================================
-
 import {
   LayoutDashboard,
   Users,
@@ -24,6 +20,7 @@ import {
   Globe,
   Sparkles,
   FileCode,
+  Tag,
   FolderOpen,
   Phone,
   Share2,
@@ -31,9 +28,9 @@ import {
   Shirt,
   BarChart3,
   Clock,
+  Home,
   type LucideIcon,
 } from 'lucide-react';
-
 export interface NavItem {
   title: string;
   href: string;
@@ -41,232 +38,346 @@ export interface NavItem {
   badge?: string | number;
   children?: NavItem[];
   disabled?: boolean;
+  roles?: string[]; 
 }
-
 export interface NavSection {
   title: string;
   items: NavItem[];
+  icon?: LucideIcon;
+  roles?: string[]; 
 }
-
-export const navigationConfig: NavSection[] = [
+export const santriNavigation: NavSection[] = [
   {
-    title: 'Overview',
+    title: 'Santri',
     items: [
       {
         title: 'Dashboard',
-        href: '/dashboard',
+        href: '/santri/dashboard',
         icon: LayoutDashboard,
       },
-    ],
-  },
-  {
-    title: 'Penerimaan Santri',
-    items: [
       {
-        title: 'Pendaftaran',
-        href: '/admissions',
-        icon: GraduationCap,
-        badge: 156,
+        title: 'Form Pendaftaran',
+        href: '/app/form-pendaftaran',
+        icon: FileText,
+      },
+      {
+        title: 'Status Pendaftaran',
+        href: '/app/status',
+        icon: Clock,
       },
       {
         title: 'Pembayaran',
-        href: '/payments',
+        href: '/app/pembayaran',
         icon: CreditCard,
       },
       {
-        title: 'Rekening Bank',
-        href: '/bank-accounts',
-        icon: Wallet,
+        title: 'Jadwal Pelajaran',
+        href: '/app/jadwal',
+        icon: BookOpen,
+      },
+      {
+        title: 'Jadwal Ujian',
+        href: '/app/jadwal-ujian',
+        icon: Calendar,
+      },
+      {
+        title: 'Notifikasi',
+        href: '/app/notifikasi',
+        icon: Bell,
+      },
+      {
+        title: 'Pengaturan',
+        href: '/app/pengaturan',
+        icon: Settings,
+      },
+    ],
+  },
+];
+export const navigationConfig: NavSection[] = [
+  {
+    title: 'Overview',
+    icon: LayoutDashboard,
+    roles: ['admin', 'superadmin', 'staff'],
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/admin/dashboard',
+        icon: LayoutDashboard,
+      },
+      {
+        title: 'Dashboard Keuangan',
+        href: '/admin/financial-dashboard',
+        icon: BarChart3,
       },
     ],
   },
   {
-    title: 'Konten',
+    title: 'Manajemen Santri',
+    icon: Users,
+    roles: ['admin', 'superadmin', 'staff', 'petugaspendaftaran'],
     items: [
       {
-        title: 'Blog',
-        href: '/blog',
+        title: 'Daftar Santri',
+        href: '/admin/admissions',
+        icon: Users,
+      },
+      {
+        title: 'List Dokumen Santri',
+        href: '/admin/admissions/documents',
+        icon: FileText,
+      },
+      {
+        title: 'Jadwal Seleksi',
+        href: '/admin/admissions/schedules',
+        icon: Calendar,
+      },
+      {
+        title: 'Hasil Seleksi',
+        href: '/admin/admissions/results',
+        icon: Award,
+      },
+      {
+        title: 'Pengaturan Akun User',
+        href: '/admin/users',
+        icon: UserCheck,
+      },
+    ],
+  },
+  {
+    title: 'Keuangan',
+    icon: Wallet,
+    roles: ['admin', 'superadmin', 'bendahara'],
+    items: [
+      {
+        title: 'Pembayaran',
+        href: '/admin/payments',
+        icon: CreditCard,
+      },
+    ],
+  },
+  {
+    title: 'Konten Website',
+    icon: Globe,
+    roles: ['admin', 'superadmin'],
+    items: [
+      {
+        title: 'Blog & Artikel',
+        href: '/admin/blog/posts',
         icon: Newspaper,
       },
       {
         title: 'Kategori',
-        href: '/categories',
+        href: '/admin/blog/categories',
         icon: FolderOpen,
       },
       {
+        title: 'Tag',
+        href: '/admin/blog/tags',
+        icon: Tag,
+      },
+      {
         title: 'Pengumuman',
-        href: '/announcements',
+        href: '/admin/announcements',
         icon: Megaphone,
       },
       {
         title: 'Testimoni',
-        href: '/testimonials',
+        href: '/admin/testimonials',
         icon: MessageSquare,
       },
     ],
   },
   {
     title: 'Website',
+    icon: Settings,
+    roles: ['admin', 'superadmin'],
     items: [
       {
+        title: 'Halaman Depan',
+        href: '/admin/home-settings',
+        icon: Home,
+      },
+      {
         title: 'Pengaturan',
-        href: '/website-settings',
+        href: '/admin/website-settings',
         icon: Globe,
       },
       {
+        title: 'Alur Pendaftaran',
+        href: '/admin/registration-flow',
+        icon: Clock,
+      },
+      {
         title: 'Hero Section',
-        href: '/hero-sections',
+        href: '/admin/hero-sections',
         icon: Sparkles,
       },
       {
         title: 'Visi & Misi',
-        href: '/vision-mission',
+        href: '/admin/vision-mission',
         icon: Award,
       },
       {
         title: 'Sejarah',
-        href: '/history',
+        href: '/admin/history',
         icon: BookOpen,
       },
       {
+        title: 'Pendiri & Pengasuh',
+        href: '/admin/website/founders',
+        icon: Users,
+      },
+      {
         title: 'Program',
-        href: '/programs',
+        href: '/admin/programs',
         icon: Calendar,
       },
       {
         title: 'Pendidikan',
-        href: '/education',
+        href: '/admin/education',
         icon: GraduationCap,
       },
       {
         title: 'Fasilitas',
-        href: '/facilities',
+        href: '/admin/facilities',
         icon: Building2,
       },
       {
         title: 'Ekstrakurikuler',
-        href: '/extracurricular',
+        href: '/admin/extracurricular',
         icon: Award,
       },
       {
         title: 'Jadwal Harian',
-        href: '/daily-schedule',
+        href: '/admin/daily-schedule',
         icon: Clock,
       },
       {
         title: 'Biaya Pendidikan',
-        href: '/tuition-fees',
+        href: '/admin/tuition-fees',
         icon: DollarSign,
       },
       {
         title: 'Seragam',
-        href: '/uniforms',
+        href: '/admin/uniforms',
         icon: Shirt,
       },
       {
         title: 'Statistik',
-        href: '/statistics',
+        href: '/admin/statistics',
         icon: BarChart3,
       },
       {
         title: 'FAQ',
-        href: '/faq',
+        href: '/admin/faq',
         icon: HelpCircle,
       },
     ],
   },
   {
     title: 'SDM',
+    icon: UserCheck,
+    roles: ['admin', 'superadmin'],
     items: [
       {
         title: 'Tenaga Pengajar',
-        href: '/teachers',
+        href: '/admin/teachers',
         icon: UserCheck,
       },
       {
         title: 'Jabatan',
-        href: '/positions',
+        href: '/admin/positions',
         icon: Award,
       },
     ],
   },
   {
     title: 'Media',
+    icon: ImageIcon,
+    roles: ['admin', 'superadmin'],
     items: [
       {
         title: 'Galeri',
-        href: '/gallery',
+        href: '/admin/gallery',
         icon: ImageIcon,
       },
       {
         title: 'Dokumentasi',
-        href: '/documentation',
+        href: '/admin/documentation',
         icon: FolderOpen,
       },
       {
         title: 'File Manager',
-        href: '/files',
+        href: '/admin/files',
         icon: FolderOpen,
       },
     ],
   },
   {
     title: 'Komunikasi',
+    icon: MessageSquare,
+    roles: ['admin', 'superadmin'],
     items: [
       {
         title: 'Kontak Masuk',
-        href: '/contacts',
+        href: '/admin/contacts',
         icon: MessageSquare,
-        badge: 12,
       },
       {
         title: 'Contact Person',
-        href: '/contact-persons',
+        href: '/admin/contact-persons',
         icon: Phone,
       },
       {
         title: 'Sosial Media',
-        href: '/social-media',
+        href: '/admin/social-media',
         icon: Share2,
       },
       {
         title: 'Template WhatsApp',
-        href: '/whatsapp-templates',
+        href: '/admin/whatsapp-templates',
         icon: MessageSquare,
       },
     ],
   },
   {
     title: 'Dokumen',
+    icon: FileCode,
+    roles: ['admin', 'superadmin'],
     items: [
       {
         title: 'Template Surat',
-        href: '/document-templates',
+        href: '/admin/document-templates',
         icon: FileCode,
       },
     ],
   },
   {
     title: 'Sistem',
+    icon: Settings,
+    roles: ['admin', 'superadmin'],
     items: [
       {
+        title: 'Profil Saya',
+        href: '/admin/profile',
+        icon: UserCheck,
+      },
+      {
         title: 'Pengguna',
-        href: '/users',
+        href: '/admin/users',
         icon: Users,
       },
       {
         title: 'Pengaturan',
-        href: '/settings',
+        href: '/admin/settings',
         icon: Settings,
       },
     ],
   },
 ];
-
-// Flatten navigation for search
 export const flattenedNav = navigationConfig.flatMap((section) =>
   section.items.map((item) => ({
     ...item,
     section: section.title,
   }))
-);
+);

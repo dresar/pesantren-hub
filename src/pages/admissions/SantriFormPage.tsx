@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, type ChangeEvent } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   GraduationCap,
   Save,
@@ -34,95 +35,171 @@ import {
   MapPin,
   School,
   FileText,
-  CheckCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-
+import { api } from '@/lib/api';
+import { formatDate } from '@/lib/utils'; 
 const santriFormSchema = z.object({
-  // Personal Data
-  nama_lengkap: z.string().min(3, 'Nama minimal 3 karakter'),
-  nama_panggilan: z.string().min(1, 'Nama panggilan wajib diisi'),
-  nisn: z.string().length(10, 'NISN harus 10 digit'),
-  tempat_lahir: z.string().min(1, 'Tempat lahir wajib diisi'),
-  tanggal_lahir: z.string().min(1, 'Tanggal lahir wajib diisi'),
-  jenis_kelamin: z.enum(['L', 'P'], { required_error: 'Pilih jenis kelamin' }),
+  namaLengkap: z.string().min(3, 'Nama minimal 3 karakter'),
+  namaPanggilan: z.string().optional(),
+  nisn: z.string().length(10, 'NISN harus 10 digit').optional().or(z.literal('')),
+  tempatLahir: z.string().min(1, 'Tempat lahir wajib diisi'),
+  tanggalLahir: z.string().min(1, 'Tanggal lahir wajib diisi'),
+  jenisKelamin: z.enum(['L', 'P'], { required_error: 'Pilih jenis kelamin' }),
   agama: z.string().default('Islam'),
   kewarganegaraan: z.string().default('WNI'),
-  anak_ke: z.coerce.number().min(1).optional(),
-  jumlah_saudara: z.coerce.number().min(0).optional(),
-  bahasa_sehari_hari: z.string().optional(),
-  golongan_darah: z.string().optional(),
-  tinggi_badan: z.coerce.number().optional(),
-  berat_badan: z.coerce.number().optional(),
-  riwayat_penyakit: z.string().optional(),
-  tinggal_dengan: z.string().optional(),
-
-  // Parent - Father
-  nama_ayah: z.string().min(1, 'Nama ayah wajib diisi'),
-  nik_ayah: z.string().optional(),
-  pendidikan_ayah: z.string().optional(),
-  pekerjaan_ayah: z.string().optional(),
-  no_hp_ayah: z.string().optional(),
-  status_ayah: z.string().default('Hidup'),
-
-  // Parent - Mother
-  nama_ibu: z.string().min(1, 'Nama ibu wajib diisi'),
-  nik_ibu: z.string().optional(),
-  pendidikan_ibu: z.string().optional(),
-  pekerjaan_ibu: z.string().optional(),
-  no_hp_ibu: z.string().optional(),
-  status_ibu: z.string().default('Hidup'),
-
-  // Address
+  anakKe: z.coerce.number().optional(),
+  jumlahSaudara: z.coerce.number().optional(),
+  bahasaSehariHari: z.string().optional(),
+  golonganDarah: z.string().optional(),
+  tinggiBadan: z.coerce.number().optional(),
+  beratBadan: z.coerce.number().optional(),
+  riwayatPenyakit: z.string().optional(),
+  tinggalDengan: z.string().optional(),
+  namaAyah: z.string().min(1, 'Nama ayah wajib diisi'),
+  nikAyah: z.string().optional(),
+  pendidikanAyah: z.string().optional(),
+  pekerjaanAyah: z.string().optional(),
+  penghasilanAyah: z.string().optional(),
+  noHpAyah: z.string().optional(),
+  statusAyah: z.string().default('Hidup'),
+  namaIbu: z.string().min(1, 'Nama ibu wajib diisi'),
+  nikIbu: z.string().optional(),
+  pendidikanIbu: z.string().optional(),
+  pekerjaanIbu: z.string().optional(),
+  penghasilanIbu: z.string().optional(),
+  noHpIbu: z.string().optional(),
+  statusIbu: z.string().default('Hidup'),
   alamat: z.string().min(1, 'Alamat wajib diisi'),
   desa: z.string().optional(),
   kecamatan: z.string().optional(),
   kabupaten: z.string().optional(),
   provinsi: z.string().optional(),
-  kode_pos: z.string().optional(),
-  no_hp: z.string().optional(),
+  kodePos: z.string().optional(),
+  noHp: z.string().optional(),
   email: z.string().email('Email tidak valid').optional().or(z.literal('')),
-
-  // School Origin
-  asal_sekolah: z.string().min(1, 'Asal sekolah wajib diisi'),
-  npsn_sekolah: z.string().optional(),
-  kelas_terakhir: z.string().optional(),
-  tahun_lulus: z.string().optional(),
-  no_ijazah: z.string().optional(),
+  alamatOrangTua: z.string().optional(),
+  asalSekolah: z.string().min(1, 'Asal sekolah wajib diisi'),
+  npsnSekolah: z.string().optional(),
+  kelasTerakhir: z.string().optional(),
+  tahunLulus: z.string().optional(),
+  noIjazah: z.string().optional(),
+  fotoSantri: z.string().optional(),
+  fotoKtp: z.string().optional(),
+  fotoAkta: z.string().optional(),
+  fotoIjazah: z.string().optional(),
+  fotoKk: z.string().optional(),
+  suratSehat: z.string().optional(),
 });
-
 type SantriFormValues = z.infer<typeof santriFormSchema>;
-
 export default function SantriFormPage() {
   const navigate = useNavigate();
+  const { id } = useParams(); 
+  const isEditMode = Boolean(id);
   const [activeTab, setActiveTab] = useState('personal');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false); 
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const handleFileUpload = async (
+    e: ChangeEvent<HTMLInputElement>,
+    field: keyof SantriFormValues
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Ukuran file melebihi 2MB');
+      return;
+    }
+    setUploading((prev) => ({ ...prev, [field as string]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const url = res.data?.url;
+      if (!url) {
+        toast.error('Gagal mengunggah file');
+        return;
+      }
+      form.setValue(field, url);
+      toast.success('File berhasil diunggah');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Gagal mengunggah file';
+      toast.error(message);
+    } finally {
+      setUploading((prev) => ({ ...prev, [field as string]: false }));
+      e.target.value = '';
+    }
+  };
+  const [sameAddress, setSameAddress] = useState(false);
   const form = useForm<SantriFormValues>({
     resolver: zodResolver(santriFormSchema),
     defaultValues: {
-      agama: 'Islam',
-      kewarganegaraan: 'WNI',
-      status_ayah: 'Hidup',
-      status_ibu: 'Hidup',
+      statusAyah: 'Hidup',
+      statusIbu: 'Hidup',
+      tinggalDengan: 'Orang Tua',
     },
   });
-
+  useEffect(() => {
+    if (isEditMode && id) {
+      const fetchSantri = async () => {
+        setIsLoading(true);
+        try {
+          const response = await api.get(`/admin/santri/${id}`);
+          const data = response.data;
+          const formValues = {
+            ...data,
+            tanggalLahir: data.tanggalLahir ? new Date(data.tanggalLahir).toISOString().split('T')[0] : '',
+            anakKe: data.anakKe?.toString(),
+            jumlahSaudara: data.jumlahSaudara?.toString(),
+            tinggiBadan: data.tinggiBadan?.toString(),
+            beratBadan: data.beratBadan?.toString(),
+            nisn: data.nisn || '',
+            email: data.email || '',
+          };
+          form.reset(formValues);
+          if (data.alamat && data.alamat === data.alamatOrangTua) {
+            setSameAddress(true);
+          }
+        } catch (error) {
+          console.error('Failed to fetch santri:', error);
+          toast.error('Gagal memuat data santri');
+          navigate('/admin/admissions');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchSantri();
+    }
+  }, [id, isEditMode, form, navigate]);
   const onSubmit = async (values: SantriFormValues) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log('Form values:', values);
-      toast.success('Data santri berhasil disimpan');
-      navigate('/admissions');
-    } catch (error) {
-      toast.error('Gagal menyimpan data santri');
+      const payload = {
+        ...values,
+        alamatOrangTua: sameAddress ? values.alamat : (values.alamatOrangTua || values.alamat),
+        anakKe: values.anakKe ? Number(values.anakKe) : undefined,
+        jumlahSaudara: values.jumlahSaudara ? Number(values.jumlahSaudara) : undefined,
+        tinggiBadan: values.tinggiBadan ? Number(values.tinggiBadan) : undefined,
+        beratBadan: values.beratBadan ? Number(values.beratBadan) : undefined,
+      };
+      if (isEditMode) {
+        await api.put(`/admin/santri/${id}`, payload);
+        toast.success('Data santri berhasil diperbarui');
+      } else {
+        await api.post('/admin/santri', payload);
+        toast.success('Data santri berhasil disimpan');
+      }
+      navigate('/admin/admissions');
+    } catch (error: unknown) {
+      console.error('Submission error:', error);
+      const message = error instanceof Error ? error.message : 'Gagal menyimpan data santri';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const tabs = [
     { id: 'personal', label: 'Data Pribadi', icon: User },
     { id: 'parents', label: 'Data Orang Tua', icon: Users },
@@ -130,20 +207,28 @@ export default function SantriFormPage() {
     { id: 'school', label: 'Asal Sekolah', icon: School },
     { id: 'documents', label: 'Dokumen', icon: FileText },
   ];
-
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin text-4xl mb-4">⏳</div>
+          <p className="text-muted-foreground">Memuat data santri...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
-        title="Tambah Santri Baru"
-        description="Formulir pendaftaran santri baru"
+        title={isEditMode ? "Edit Data Santri" : "Tambah Santri Baru"}
+        description={isEditMode ? "Perbarui informasi santri" : "Formulir pendaftaran santri baru"}
         icon={GraduationCap}
       >
-        <Button variant="outline" onClick={() => navigate('/admissions')}>
+        <Button variant="outline" onClick={() => navigate('/admin/admissions')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Kembali
         </Button>
       </PageHeader>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -156,8 +241,7 @@ export default function SantriFormPage() {
                 </TabsTrigger>
               ))}
             </TabsList>
-
-            {/* Personal Data Tab */}
+            {}
             <TabsContent value="personal">
               <Card>
                 <CardHeader>
@@ -169,7 +253,7 @@ export default function SantriFormPage() {
                 <CardContent className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="nama_lengkap"
+                    name="namaLengkap"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-2">
                         <FormLabel>Nama Lengkap *</FormLabel>
@@ -180,10 +264,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="nama_panggilan"
+                    name="namaPanggilan"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nama Panggilan *</FormLabel>
@@ -194,7 +277,6 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="nisn"
@@ -208,10 +290,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="tempat_lahir"
+                    name="tempatLahir"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tempat Lahir *</FormLabel>
@@ -222,10 +303,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="tanggal_lahir"
+                    name="tanggalLahir"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tanggal Lahir *</FormLabel>
@@ -236,10 +316,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="jenis_kelamin"
+                    name="jenisKelamin"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Jenis Kelamin *</FormLabel>
@@ -258,10 +337,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="golongan_darah"
+                    name="golonganDarah"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Golongan Darah</FormLabel>
@@ -282,10 +360,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="anak_ke"
+                    name="anakKe"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Anak Ke</FormLabel>
@@ -296,10 +373,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="jumlah_saudara"
+                    name="jumlahSaudara"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Jumlah Saudara</FormLabel>
@@ -310,10 +386,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="tinggi_badan"
+                    name="tinggiBadan"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tinggi Badan (cm)</FormLabel>
@@ -324,10 +399,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="berat_badan"
+                    name="beratBadan"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Berat Badan (kg)</FormLabel>
@@ -338,10 +412,22 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="riwayat_penyakit"
+                    name="bahasaSehariHari"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bahasa Sehari-hari</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Indonesia, Jawa, dll" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="riwayatPenyakit"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-2">
                         <FormLabel>Riwayat Penyakit</FormLabel>
@@ -358,11 +444,10 @@ export default function SantriFormPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-
-            {/* Parents Tab */}
+            {}
             <TabsContent value="parents">
               <div className="grid gap-6 lg:grid-cols-2">
-                {/* Father */}
+                {}
                 <Card>
                   <CardHeader>
                     <CardTitle>Data Ayah</CardTitle>
@@ -370,7 +455,7 @@ export default function SantriFormPage() {
                   <CardContent className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="nama_ayah"
+                      name="namaAyah"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Nama Lengkap Ayah *</FormLabel>
@@ -381,10 +466,9 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="nik_ayah"
+                      name="nikAyah"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>NIK Ayah</FormLabel>
@@ -395,10 +479,9 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="pendidikan_ayah"
+                      name="pendidikanAyah"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Pendidikan Terakhir</FormLabel>
@@ -422,10 +505,9 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="pekerjaan_ayah"
+                      name="pekerjaanAyah"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Pekerjaan</FormLabel>
@@ -436,10 +518,32 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="no_hp_ayah"
+                      name="penghasilanAyah"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Penghasilan</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih kisaran penghasilan" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="< 1 Juta">&lt; 1 Juta</SelectItem>
+                              <SelectItem value="1-3 Juta">1 - 3 Juta</SelectItem>
+                              <SelectItem value="3-5 Juta">3 - 5 Juta</SelectItem>
+                              <SelectItem value="> 5 Juta">&gt; 5 Juta</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="noHpAyah"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>No. HP</FormLabel>
@@ -450,10 +554,9 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="status_ayah"
+                      name="statusAyah"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status</FormLabel>
@@ -474,8 +577,7 @@ export default function SantriFormPage() {
                     />
                   </CardContent>
                 </Card>
-
-                {/* Mother */}
+                {}
                 <Card>
                   <CardHeader>
                     <CardTitle>Data Ibu</CardTitle>
@@ -483,7 +585,7 @@ export default function SantriFormPage() {
                   <CardContent className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="nama_ibu"
+                      name="namaIbu"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Nama Lengkap Ibu *</FormLabel>
@@ -494,10 +596,9 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="nik_ibu"
+                      name="nikIbu"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>NIK Ibu</FormLabel>
@@ -508,10 +609,9 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="pendidikan_ibu"
+                      name="pendidikanIbu"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Pendidikan Terakhir</FormLabel>
@@ -535,10 +635,9 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="pekerjaan_ibu"
+                      name="pekerjaanIbu"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Pekerjaan</FormLabel>
@@ -549,10 +648,32 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="no_hp_ibu"
+                      name="penghasilanIbu"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Penghasilan</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih kisaran penghasilan" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="< 1 Juta">&lt; 1 Juta</SelectItem>
+                              <SelectItem value="1-3 Juta">1 - 3 Juta</SelectItem>
+                              <SelectItem value="3-5 Juta">3 - 5 Juta</SelectItem>
+                              <SelectItem value="> 5 Juta">&gt; 5 Juta</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="noHpIbu"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>No. HP</FormLabel>
@@ -563,10 +684,9 @@ export default function SantriFormPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="status_ibu"
+                      name="statusIbu"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status</FormLabel>
@@ -589,8 +709,7 @@ export default function SantriFormPage() {
                 </Card>
               </div>
             </TabsContent>
-
-            {/* Address Tab */}
+            {}
             <TabsContent value="address">
               <Card>
                 <CardHeader>
@@ -614,7 +733,6 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="desa"
@@ -628,7 +746,6 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="kecamatan"
@@ -642,7 +759,6 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="kabupaten"
@@ -656,7 +772,6 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="provinsi"
@@ -670,10 +785,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="kode_pos"
+                    name="kodePos"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kode Pos</FormLabel>
@@ -684,10 +798,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="no_hp"
+                    name="noHp"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>No. HP Santri</FormLabel>
@@ -698,7 +811,6 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="email"
@@ -712,11 +824,43 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Checkbox 
+                        id="sameAddress" 
+                        checked={sameAddress}
+                        onCheckedChange={(checked) => setSameAddress(checked === true)}
+                      />
+                      <label
+                        htmlFor="sameAddress"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Alamat Orang Tua sama dengan Alamat Santri
+                      </label>
+                    </div>
+                    {!sameAddress && (
+                      <FormField
+                        control={form.control}
+                        name="alamatOrangTua"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Alamat Orang Tua</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Alamat lengkap orang tua"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
-
-            {/* School Origin Tab */}
+            {}
             <TabsContent value="school">
               <Card>
                 <CardHeader>
@@ -726,7 +870,7 @@ export default function SantriFormPage() {
                 <CardContent className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="asal_sekolah"
+                    name="asalSekolah"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-2">
                         <FormLabel>Nama Sekolah Asal *</FormLabel>
@@ -737,10 +881,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="npsn_sekolah"
+                    name="npsnSekolah"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>NPSN Sekolah</FormLabel>
@@ -752,10 +895,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="kelas_terakhir"
+                    name="kelasTerakhir"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kelas Terakhir</FormLabel>
@@ -766,10 +908,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="tahun_lulus"
+                    name="tahunLulus"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tahun Lulus</FormLabel>
@@ -780,10 +921,9 @@ export default function SantriFormPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="no_ijazah"
+                    name="noIjazah"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nomor Ijazah</FormLabel>
@@ -797,8 +937,7 @@ export default function SantriFormPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-
-            {/* Documents Tab */}
+            {}
             <TabsContent value="documents">
               <Card>
                 <CardHeader>
@@ -810,24 +949,55 @@ export default function SantriFormPage() {
                 <CardContent>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {[
-                      { id: 'foto_santri', label: 'Foto Santri (3x4)', desc: 'Foto formal berlatar merah/biru' },
-                      { id: 'foto_ktp', label: 'KTP Orang Tua', desc: 'Scan KTP ayah/ibu' },
-                      { id: 'foto_akta', label: 'Akta Kelahiran', desc: 'Scan akta kelahiran santri' },
-                      { id: 'foto_ijazah', label: 'Ijazah', desc: 'Scan ijazah terakhir' },
-                      { id: 'surat_sehat', label: 'Surat Sehat', desc: 'Surat keterangan sehat dari dokter' },
+                      { id: 'fotoSantri', label: 'Foto Santri (3x4)', desc: 'Foto formal berlatar merah/biru' },
+                      { id: 'fotoKtp', label: 'KTP Orang Tua', desc: 'Scan KTP ayah/ibu' },
+                      { id: 'fotoAkta', label: 'Akta Kelahiran', desc: 'Scan akta kelahiran santri' },
+                      { id: 'fotoIjazah', label: 'Ijazah', desc: 'Scan ijazah terakhir' },
+                      { id: 'fotoKk', label: 'Kartu Keluarga', desc: 'Scan kartu keluarga' },
+                      { id: 'suratSehat', label: 'Surat Sehat', desc: 'Surat keterangan sehat dari dokter' },
                     ].map((doc) => (
                       <div
                         key={doc.id}
-                        className="relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                        className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+                          form.watch(doc.id as keyof SantriFormValues) 
+                            ? 'border-green-500 bg-green-50' 
+                            : 'border-muted-foreground/25 hover:border-primary/50 cursor-pointer'
+                        }`}
                       >
-                        <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="font-medium text-sm">{doc.label}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{doc.desc}</p>
-                        <Input
-                          type="file"
-                          accept="image/*,.pdf"
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
+                        {uploading[doc.id] ? (
+                          <div className="animate-spin text-2xl">⏳</div>
+                        ) : form.watch(doc.id as keyof SantriFormValues) ? (
+                          <>
+                            <div className="text-green-600 font-bold mb-2">✓ Terupload</div>
+                            <p className="text-xs text-green-700 truncate w-full px-2">
+                              {String(form.watch(doc.id as keyof SantriFormValues)).split('/').pop()}
+                            </p>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              className="mt-2 text-red-500 hover:text-red-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                form.setValue(doc.id as keyof SantriFormValues, '');
+                              }}
+                            >
+                              Hapus
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-8 w-8 text-muted-foreground mb-2" />
+                            <p className="font-medium text-sm">{doc.label}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{doc.desc}</p>
+                            <Input
+                              type="file"
+                              accept="image/*,.pdf"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              onChange={(e) => handleFileUpload(e, doc.id)}
+                            />
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -838,8 +1008,7 @@ export default function SantriFormPage() {
               </Card>
             </TabsContent>
           </Tabs>
-
-          {/* Submit Button */}
+          {}
           <div className="flex justify-end gap-4 mt-6">
             <Button
               type="button"

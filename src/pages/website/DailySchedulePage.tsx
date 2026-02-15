@@ -20,20 +20,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Clock, Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { mockJadwalHarian } from '@/lib/mock-data-extended';
 import type { JadwalHarian } from '@/types';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 const kategoriColors: Record<string, string> = {
   ibadah: 'bg-primary/10 text-primary border-primary/30',
   pendidikan: 'bg-info/10 text-info border-info/30',
   istirahat: 'bg-warning/10 text-warning border-warning/30',
   kegiatan: 'bg-success/10 text-success border-success/30',
 };
-
 export default function DailySchedulePage() {
-  const [data, setData] = useState<JadwalHarian[]>(mockJadwalHarian);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<JadwalHarian | null>(null);
   const [formData, setFormData] = useState({
@@ -42,15 +41,38 @@ export default function DailySchedulePage() {
     deskripsi: '',
     kategori: 'pendidikan',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showConfirm } = useAppStore();
-
+  const { data: data = [], isLoading } = useQuery({
+    queryKey: ['jadwalHarian'],
+    queryFn: async () => (await api.get('/admin/generic/jadwalHarian')).data.data,
+  });
+  const mutation = useMutation({
+    mutationFn: async (newItem: any) => {
+      if (editingItem) {
+        return api.put(`/admin/generic/jadwalHarian/${editingItem.id}`, newItem);
+      }
+      return api.post('/admin/generic/jadwalHarian', newItem);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jadwalHarian'] });
+      toast.success(editingItem ? 'Jadwal berhasil diperbarui' : 'Jadwal berhasil ditambahkan');
+      setIsModalOpen(false);
+    },
+    onError: () => toast.error('Gagal menyimpan jadwal'),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/admin/generic/jadwalHarian/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jadwalHarian'] });
+      toast.success('Jadwal berhasil dihapus');
+    },
+    onError: () => toast.error('Gagal menghapus jadwal'),
+  });
   const handleAdd = () => {
     setEditingItem(null);
     setFormData({ waktu: '', judul: '', deskripsi: '', kategori: 'pendidikan' });
     setIsModalOpen(true);
   };
-
   const handleEdit = (item: JadwalHarian) => {
     setEditingItem(item);
     setFormData({
@@ -61,41 +83,17 @@ export default function DailySchedulePage() {
     });
     setIsModalOpen(true);
   };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    if (editingItem) {
-      setData((prev) =>
-        prev.map((item) => (item.id === editingItem.id ? { ...item, ...formData } : item))
-      );
-      toast.success('Jadwal berhasil diperbarui');
-    } else {
-      const newItem: JadwalHarian = {
-        id: String(Date.now()),
-        ...formData,
-        order: data.length + 1,
-        created_at: new Date().toISOString(),
-      };
-      setData((prev) => [...prev, newItem]);
-      toast.success('Jadwal berhasil ditambahkan');
-    }
-    setIsSubmitting(false);
-    setIsModalOpen(false);
+  const handleSubmit = () => {
+    mutation.mutate({ ...formData, order: editingItem?.order || data.length + 1 });
   };
-
   const handleDelete = (id: string) => {
     showConfirm({
       title: 'Hapus Jadwal',
       description: 'Yakin ingin menghapus jadwal ini?',
       variant: 'destructive',
-      onConfirm: () => {
-        setData((prev) => prev.filter((item) => item.id !== id));
-        toast.success('Jadwal berhasil dihapus');
-      },
+      onConfirm: () => deleteMutation.mutate(id),
     });
   };
-
   const columns: ColumnDef<JadwalHarian>[] = [
     {
       accessorKey: 'waktu',
@@ -148,7 +146,6 @@ export default function DailySchedulePage() {
       ),
     },
   ];
-
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Jadwal Harian" description="Kelola jadwal aktivitas harian santri" icon={Clock}>
@@ -156,15 +153,13 @@ export default function DailySchedulePage() {
           <Plus className="mr-2 h-4 w-4" /> Tambah Jadwal
         </Button>
       </PageHeader>
-
-      <DataTable columns={columns} data={data} searchPlaceholder="Cari jadwal..." />
-
+      <DataTable columns={columns} data={data} isLoading={isLoading} searchPlaceholder="Cari jadwal..." />
       <CrudModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         title={editingItem ? 'Edit Jadwal' : 'Tambah Jadwal'}
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={mutation.isPending}
         size="lg"
       >
         <div className="grid gap-4 sm:grid-cols-2">

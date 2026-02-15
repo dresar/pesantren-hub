@@ -4,8 +4,6 @@ import { PageHeader, DataTable, getSelectionColumn, StatusBadge, CrudModal } fro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
@@ -14,149 +12,170 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Newspaper, Plus, MoreHorizontal, Eye, Pencil, Trash2, FolderOpen, Tags as TagsIcon } from 'lucide-react';
-import { mockBlogPostsExtended, mockCategoriesExtended, mockTagsExtended } from '@/lib/mock-data-extended';
-import { formatDateTime } from '@/lib/mock-data';
-import type { BlogPost, Category, Tag, PostStatus } from '@/types';
+import { formatDateTime } from '@/lib/utils';
+import type { BlogPost, Category, Tag } from '@/types';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 export default function BlogPage() {
-  const [posts, setPosts] = useState<BlogPost[]>(mockBlogPostsExtended);
-  const [categories, setCategories] = useState<Category[]>(mockCategoriesExtended);
-  const [tags, setTags] = useState<Tag[]>(mockTagsExtended);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('posts');
-  
-  // Category Modal
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryForm, setCategoryForm] = useState({ name: '', slug: '' });
-  
-  // Tag Modal
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [tagForm, setTagForm] = useState({ name: '', slug: '' });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showConfirm } = useAppStore();
-
+  const { data: posts = [] } = useQuery({
+    queryKey: ['blog-posts'],
+    queryFn: async () => (await api.get('/admin/generic/blogBlogpost')).data.data,
+    refetchInterval: 10000,
+  });
+  const { data: categories = [] } = useQuery({
+    queryKey: ['blog-categories'],
+    queryFn: async () => (await api.get('/admin/generic/blogCategory')).data.data,
+    refetchInterval: 60000, 
+  });
+  const { data: tags = [] } = useQuery({
+    queryKey: ['blog-tags'],
+    queryFn: async () => (await api.get('/admin/generic/blogTag')).data.data,
+    refetchInterval: 60000,
+  });
   const getCategoryName = (categoryId?: string) => {
     if (!categoryId) return '-';
-    const category = categories.find((c) => c.id === categoryId);
+    const category = categories.find((c: any) => String(c.id) === String(categoryId));
     return category?.name || '-';
   };
-
-  // Category handlers
+  const categoryMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (editingCategory) {
+        return api.put(`/admin/generic/blogCategory/${editingCategory.id}`, data);
+      }
+      return api.post('/admin/generic/blogCategory', data);
+    },
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: ['blog-categories'] });
+      const previous = queryClient.getQueryData(['blog-categories']);
+      queryClient.setQueryData(['blog-categories'], (old: any[] = []) => {
+        if (editingCategory) {
+           return old.map(c => c.id === editingCategory.id ? { ...c, ...newData } : c);
+        }
+        return [...old, { id: 'temp-' + Date.now(), ...newData }];
+      });
+      return { previous };
+    },
+    onError: (err, newTodo, context) => {
+      queryClient.setQueryData(['blog-categories'], context?.previous);
+      toast.error('Gagal menyimpan kategori');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-categories'] });
+      setIsCategoryModalOpen(false);
+      toast.success(editingCategory ? 'Kategori diperbarui' : 'Kategori ditambahkan');
+    }
+  });
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/admin/generic/blogCategory/${id}`),
+    onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['blog-categories'] });
+       toast.success('Kategori dihapus');
+    }
+  });
+  const tagMutation = useMutation({
+    mutationFn: async (data: any) => {
+       if (editingTag) {
+         return api.put(`/admin/generic/blogTag/${editingTag.id}`, data);
+       }
+       return api.post('/admin/generic/blogTag', data);
+    },
+    onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['blog-tags'] });
+       setIsTagModalOpen(false);
+       toast.success(editingTag ? 'Tag diperbarui' : 'Tag ditambahkan');
+    }
+  });
+  const deleteTagMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/admin/generic/blogTag/${id}`),
+    onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['blog-tags'] });
+       toast.success('Tag dihapus');
+    }
+  });
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map(id => api.delete(`/admin/generic/blogBlogpost/${id}`)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+      toast.success('Artikel terpilih berhasil dihapus');
+    },
+    onError: () => {
+      toast.error('Gagal menghapus beberapa artikel');
+    }
+  });
+  const deletePostMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/admin/generic/blogBlogpost/${id}`),
+    onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+       toast.success('Artikel dihapus');
+    }
+  });
   const handleAddCategory = () => {
     setEditingCategory(null);
     setCategoryForm({ name: '', slug: '' });
     setIsCategoryModalOpen(true);
   };
-
   const handleEditCategory = (category: Category) => {
     setEditingCategory(category);
     setCategoryForm({ name: category.name, slug: category.slug });
     setIsCategoryModalOpen(true);
   };
-
-  const handleSaveCategory = async () => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
+  const handleSaveCategory = () => {
     const slug = categoryForm.slug || categoryForm.name.toLowerCase().replace(/\s+/g, '-');
-    if (editingCategory) {
-      setCategories((prev) =>
-        prev.map((c) => (c.id === editingCategory.id ? { ...c, ...categoryForm, slug } : c))
-      );
-      toast.success('Kategori berhasil diperbarui');
-    } else {
-      const newCategory: Category = {
-        id: String(Date.now()),
-        name: categoryForm.name,
-        slug,
-        order: categories.length + 1,
-        created_at: new Date().toISOString(),
-      };
-      setCategories((prev) => [...prev, newCategory]);
-      toast.success('Kategori berhasil ditambahkan');
-    }
-    setIsSubmitting(false);
-    setIsCategoryModalOpen(false);
+    categoryMutation.mutate({ ...categoryForm, slug, order: 0 }); 
   };
-
   const handleDeleteCategory = (id: string) => {
     showConfirm({
       title: 'Hapus Kategori',
       description: 'Yakin ingin menghapus kategori ini?',
       variant: 'destructive',
-      onConfirm: () => {
-        setCategories((prev) => prev.filter((c) => c.id !== id));
-        toast.success('Kategori berhasil dihapus');
-      },
+      onConfirm: () => deleteCategoryMutation.mutate(id),
     });
   };
-
-  // Tag handlers
   const handleAddTag = () => {
     setEditingTag(null);
     setTagForm({ name: '', slug: '' });
     setIsTagModalOpen(true);
   };
-
   const handleEditTag = (tag: Tag) => {
     setEditingTag(tag);
     setTagForm({ name: tag.name, slug: tag.slug });
     setIsTagModalOpen(true);
   };
-
-  const handleSaveTag = async () => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
+  const handleSaveTag = () => {
     const slug = tagForm.slug || tagForm.name.toLowerCase().replace(/\s+/g, '-');
-    if (editingTag) {
-      setTags((prev) =>
-        prev.map((t) => (t.id === editingTag.id ? { ...t, ...tagForm, slug } : t))
-      );
-      toast.success('Tag berhasil diperbarui');
-    } else {
-      const newTag: Tag = {
-        id: String(Date.now()),
-        name: tagForm.name,
-        slug,
-        order: tags.length + 1,
-        created_at: new Date().toISOString(),
-      };
-      setTags((prev) => [...prev, newTag]);
-      toast.success('Tag berhasil ditambahkan');
-    }
-    setIsSubmitting(false);
-    setIsTagModalOpen(false);
+    tagMutation.mutate({ ...tagForm, slug, order: 0 });
   };
-
   const handleDeleteTag = (id: string) => {
     showConfirm({
       title: 'Hapus Tag',
       description: 'Yakin ingin menghapus tag ini?',
       variant: 'destructive',
-      onConfirm: () => {
-        setTags((prev) => prev.filter((t) => t.id !== id));
-        toast.success('Tag berhasil dihapus');
-      },
+      onConfirm: () => deleteTagMutation.mutate(id),
     });
   };
-
   const handleDeletePost = (id: string) => {
     showConfirm({
       title: 'Hapus Artikel',
       description: 'Yakin ingin menghapus artikel ini?',
       variant: 'destructive',
-      onConfirm: () => {
-        setPosts((prev) => prev.filter((p) => p.id !== id));
-        toast.success('Artikel berhasil dihapus');
-      },
+      onConfirm: () => deletePostMutation.mutate(id),
     });
   };
-
   const postColumns: ColumnDef<BlogPost>[] = [
     getSelectionColumn<BlogPost>(),
     {
@@ -186,7 +205,7 @@ export default function BlogPage() {
     {
       accessorKey: 'views_count',
       header: 'Views',
-      cell: ({ row }) => <span className="text-muted-foreground">{row.original.views_count.toLocaleString()}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground">{Number(row.original.views_count || 0).toLocaleString()}</span>,
     },
     {
       accessorKey: 'created_at',
@@ -219,7 +238,6 @@ export default function BlogPage() {
       ),
     },
   ];
-
   const categoryColumns: ColumnDef<Category>[] = [
     {
       accessorKey: 'name',
@@ -254,7 +272,6 @@ export default function BlogPage() {
       ),
     },
   ];
-
   const tagColumns: ColumnDef<Tag>[] = [
     {
       accessorKey: 'name',
@@ -289,7 +306,6 @@ export default function BlogPage() {
       ),
     },
   ];
-
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Blog" description="Kelola artikel, kategori, dan tag" icon={Newspaper}>
@@ -309,14 +325,12 @@ export default function BlogPage() {
           </Button>
         )}
       </PageHeader>
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="posts">Artikel ({posts.length})</TabsTrigger>
           <TabsTrigger value="categories">Kategori ({categories.length})</TabsTrigger>
           <TabsTrigger value="tags">Tag ({tags.length})</TabsTrigger>
         </TabsList>
-
         <TabsContent value="posts" className="mt-6">
           <DataTable
             columns={postColumns}
@@ -324,34 +338,28 @@ export default function BlogPage() {
             searchPlaceholder="Cari artikel..."
             onBulkDelete={(ids) => {
               showConfirm({
-                title: 'Hapus Artikel',
-                description: `Hapus ${ids.length} artikel?`,
+                title: 'Hapus Artikel Terpilih',
+                description: `Apakah Anda yakin ingin menghapus ${ids.length} artikel ini?`,
                 variant: 'destructive',
-                onConfirm: () => {
-                  setPosts((prev) => prev.filter((p) => !ids.includes(p.id)));
-                  toast.success(`${ids.length} artikel dihapus`);
-                },
+                onConfirm: () => bulkDeleteMutation.mutate(ids as string[]),
               });
             }}
           />
         </TabsContent>
-
         <TabsContent value="categories" className="mt-6">
           <DataTable columns={categoryColumns} data={categories} searchPlaceholder="Cari kategori..." />
         </TabsContent>
-
         <TabsContent value="tags" className="mt-6">
           <DataTable columns={tagColumns} data={tags} searchPlaceholder="Cari tag..." />
         </TabsContent>
       </Tabs>
-
-      {/* Category Modal */}
+      {}
       <CrudModal
         open={isCategoryModalOpen}
         onOpenChange={setIsCategoryModalOpen}
         title={editingCategory ? 'Edit Kategori' : 'Tambah Kategori'}
         onSubmit={handleSaveCategory}
-        isSubmitting={isSubmitting}
+        isSubmitting={categoryMutation.isPending}
       >
         <div className="space-y-4">
           <div className="space-y-2">
@@ -372,14 +380,13 @@ export default function BlogPage() {
           </div>
         </div>
       </CrudModal>
-
-      {/* Tag Modal */}
+      {}
       <CrudModal
         open={isTagModalOpen}
         onOpenChange={setIsTagModalOpen}
         title={editingTag ? 'Edit Tag' : 'Tambah Tag'}
         onSubmit={handleSaveTag}
-        isSubmitting={isSubmitting}
+        isSubmitting={tagMutation.isPending}
       >
         <div className="space-y-4">
           <div className="space-y-2">

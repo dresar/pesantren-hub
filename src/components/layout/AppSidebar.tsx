@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { navigationConfig, type NavItem as NavItemType } from '@/config/navigation';
+import { navigationConfig, santriNavigation, type NavItem as NavItemType, type NavSection } from '@/config/navigation';
 import { useAppStore } from '@/stores/app-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -14,34 +15,57 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useState } from 'react';
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 export function AppSidebar() {
   const location = useLocation();
   const { sidebarCollapsed, setSidebarCollapsed, sidebarOpen, setSidebarOpen } = useAppStore();
-
+  const { user } = useAuthStore();
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, []); 
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname, setSidebarOpen]);
+  const isSantri = user?.role === 'santri';
+  const rawNavigation = isSantri ? santriNavigation : navigationConfig;
+  const navigation = isSantri 
+    ? rawNavigation 
+    : rawNavigation.filter(section => {
+        if (!section.roles) return true;
+        return section.roles.includes(user?.role || '');
+      });
   return (
     <>
-      {/* Mobile Overlay */}
+      {}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-[90] bg-background/80 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-
-      {/* Sidebar */}
+      {}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen border-r bg-sidebar transition-all duration-300 ease-in-out',
-          sidebarCollapsed ? 'w-16' : 'w-64',
-          // Mobile: slide in/out
+          'fixed left-0 top-0 z-[100] h-screen border-r bg-sidebar transition-all duration-300 ease-in-out',
+          sidebarCollapsed ? 'w-16' : 'w-72',
           'lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0' 
         )}
       >
-        {/* Header */}
+        {}
         <div className={cn(
           'flex h-16 items-center border-b border-sidebar-border px-4',
           sidebarCollapsed ? 'justify-center' : 'justify-between'
@@ -49,22 +73,22 @@ export function AppSidebar() {
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-                PP
+                PH
               </div>
               <div className="flex flex-col">
-                <span className="font-semibold text-sidebar-foreground text-sm">Pesantren</span>
-                <span className="text-xs text-muted-foreground">Admin Panel</span>
+                <span className="font-semibold text-sidebar-foreground text-sm">Pesantren Hub</span>
+                <span className="text-xs text-muted-foreground">
+                  {user?.role === 'santri' ? 'Santri Portal' : 'Administrator'}
+                </span>
               </div>
             </div>
           )}
-
           {sidebarCollapsed && (
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-              PP
+              PH
             </div>
           )}
-
-          {/* Mobile Close */}
+          {}
           <Button
             variant="ghost"
             size="icon"
@@ -74,33 +98,20 @@ export function AppSidebar() {
             <X className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Navigation */}
+        {}
         <ScrollArea className="h-[calc(100vh-4rem-4rem)]">
-          <nav className="p-2 space-y-4">
-            {navigationConfig.map((section) => (
-              <div key={section.title}>
-                {!sidebarCollapsed && (
-                  <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    {section.title}
-                  </h3>
-                )}
-                <ul className="space-y-1">
-                  {section.items.map((item) => (
-                    <NavItem
-                      key={item.href}
-                      item={item}
-                      isActive={location.pathname === item.href || location.pathname.startsWith(item.href + '/')}
-                      collapsed={sidebarCollapsed}
-                    />
-                  ))}
-                </ul>
-              </div>
+          <nav className="p-2 space-y-2">
+            {navigation.map((section) => (
+              <NavSectionItem 
+                key={section.title} 
+                section={section} 
+                collapsed={sidebarCollapsed}
+                currentPath={location.pathname}
+              />
             ))}
           </nav>
         </ScrollArea>
-
-        {/* Footer - Collapse Toggle */}
+        {}
         <div className="absolute bottom-0 left-0 right-0 h-16 border-t border-sidebar-border bg-sidebar">
           <div className="flex h-full items-center justify-center px-4">
             <Button
@@ -127,59 +138,98 @@ export function AppSidebar() {
     </>
   );
 }
-
-interface NavItemProps {
-  item: NavItemType;
-  isActive: boolean;
+interface NavSectionProps {
+  section: NavSection;
   collapsed: boolean;
+  currentPath: string;
 }
-
-function NavItem({ item, isActive, collapsed }: NavItemProps) {
-  const Icon = item.icon;
-
-  const content = (
-    <Link
-      to={item.href}
-      className={cn(
-        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-        'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-        isActive
-          ? 'bg-primary/10 text-primary border-l-2 border-primary -ml-[2px] pl-[calc(0.75rem+2px)]'
-          : 'text-sidebar-foreground',
-        collapsed && 'justify-center px-2'
-      )}
-    >
-      <Icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary')} />
-      {!collapsed && (
-        <>
-          <span className="flex-1 truncate">{item.title}</span>
-          {item.badge && (
-            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground">
-              {item.badge}
-            </span>
-          )}
-        </>
-      )}
-    </Link>
+function NavSectionItem({ section, collapsed, currentPath }: NavSectionProps) {
+  const Icon = section.icon || ChevronRight;
+  const isActive = section.items.some(item => 
+    currentPath === item.href || currentPath.startsWith(item.href + '/')
   );
-
+  const [isOpen, setIsOpen] = useState(isActive);
+  useEffect(() => {
+    if (isActive) setIsOpen(true);
+  }, [isActive]);
   if (collapsed) {
     return (
-      <Tooltip delayDuration={0}>
-        <TooltipTrigger asChild>
-          <li>{content}</li>
-        </TooltipTrigger>
-        <TooltipContent side="right" className="flex items-center gap-2">
-          {item.title}
-          {item.badge && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground">
-              {item.badge}
-            </span>
-          )}
-        </TooltipContent>
-      </Tooltip>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-10 w-10 rounded-lg mx-auto flex",
+              isActive && "bg-primary/10 text-primary"
+            )}
+            title={section.title}
+          >
+            <Icon className="h-5 w-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" className="w-56" align="start">
+          <DropdownMenuLabel>{section.title}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {section.items.map((item) => {
+            const ItemIcon = item.icon;
+            const isItemActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
+            return (
+              <DropdownMenuItem key={item.href} asChild className={cn(isItemActive && "bg-primary/10 text-primary")}>
+                <Link to={item.href} className="cursor-pointer flex items-center gap-2">
+                  <ItemIcon className="h-4 w-4" />
+                  <span>{item.title}</span>
+                </Link>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
-
-  return <li>{content}</li>;
-}
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-1">
+      <CollapsibleTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn(
+            "w-full justify-between px-3 py-2 h-auto font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            isActive && !isOpen && "text-primary"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="text-sm">{section.title}</span>
+          </div>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 transition-transform duration-200",
+              isOpen ? "rotate-0" : "-rotate-90"
+            )}
+          />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-1 data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+        {section.items.map((item) => {
+          const ItemIcon = item.icon;
+          const isItemActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-lg pl-10 pr-3 py-2 text-sm transition-colors",
+                isItemActive 
+                  ? "bg-primary/10 text-primary font-medium" 
+                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <ItemIcon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{item.title}</span>
+            </Link>
+          );
+        })}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}

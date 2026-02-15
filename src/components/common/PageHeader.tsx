@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
-
 interface PageHeaderProps {
   title: string;
   description?: string;
@@ -8,7 +7,6 @@ interface PageHeaderProps {
   children?: React.ReactNode;
   className?: string;
 }
-
 export function PageHeader({
   title,
   description,
@@ -34,4 +32,4 @@ export function PageHeader({
       {children && <div className="flex items-center gap-2">{children}</div>}
     </div>
   );
-}
+}

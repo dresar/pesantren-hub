@@ -1,22 +1,20 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
 interface LoadingSkeletonProps {
   rows?: number;
   columns?: number;
   className?: string;
 }
-
 export function TableSkeleton({ rows = 5, columns = 5, className }: LoadingSkeletonProps) {
   return (
     <div className={cn('space-y-3', className)}>
-      {/* Header */}
+      {}
       <div className="flex gap-4 p-4 bg-muted/50 rounded-t-lg">
         {Array.from({ length: columns }).map((_, i) => (
           <Skeleton key={i} className="h-4 flex-1" />
         ))}
       </div>
-      {/* Rows */}
+      {}
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div key={rowIndex} className="flex gap-4 p-4 border-b">
           {Array.from({ length: columns }).map((_, colIndex) => (
@@ -27,7 +25,6 @@ export function TableSkeleton({ rows = 5, columns = 5, className }: LoadingSkele
     </div>
   );
 }
-
 export function CardSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn('rounded-lg border p-6 space-y-4', className)}>
@@ -41,7 +38,6 @@ export function CardSkeleton({ className }: { className?: string }) {
     </div>
   );
 }
-
 export function FormSkeleton({ fields = 6, className }: { fields?: number; className?: string }) {
   return (
     <div className={cn('space-y-6', className)}>
@@ -57,4 +53,4 @@ export function FormSkeleton({ fields = 6, className }: { fields?: number; class
       </div>
     </div>
   );
-}
+}

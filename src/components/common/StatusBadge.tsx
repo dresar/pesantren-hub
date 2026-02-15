@@ -1,34 +1,24 @@
 import { cn } from '@/lib/utils';
 import type { SantriStatus, PaymentStatus, PostStatus } from '@/types';
 import { Badge } from '@/components/ui/badge';
-
 type StatusType = SantriStatus | PaymentStatus | PostStatus | 'active' | 'inactive';
-
 interface StatusBadgeProps {
   status: StatusType;
   className?: string;
 }
-
 const statusConfig: Record<StatusType, { label: string; className: string }> = {
-  // Santri Status
   pending: { label: 'Menunggu', className: 'badge-pending' },
   verified: { label: 'Terverifikasi', className: 'badge-verified' },
   accepted: { label: 'Diterima', className: 'badge-accepted' },
   rejected: { label: 'Ditolak', className: 'badge-rejected' },
-
-  // Post Status
   draft: { label: 'Draft', className: 'badge-draft' },
   published: { label: 'Dipublikasi', className: 'badge-published' },
   archived: { label: 'Diarsipkan', className: 'badge-draft' },
-
-  // General Status
   active: { label: 'Aktif', className: 'badge-accepted' },
   inactive: { label: 'Nonaktif', className: 'badge-draft' },
 };
-
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   const config = statusConfig[status] || { label: status, className: 'badge-draft' };
-
   return (
     <Badge
       variant="outline"
@@ -41,4 +31,4 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       {config.label}
     </Badge>
   );
-}
+}

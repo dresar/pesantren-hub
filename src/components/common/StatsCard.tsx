@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-
 interface StatsCardProps {
   title: string;
   value: string | number;
@@ -14,7 +13,6 @@ interface StatsCardProps {
   variant?: 'default' | 'primary' | 'accent' | 'success' | 'warning' | 'destructive';
   className?: string;
 }
-
 const variantStyles = {
   default: 'bg-card',
   primary: 'bg-primary/5 border-primary/20',
@@ -23,7 +21,6 @@ const variantStyles = {
   warning: 'bg-warning/5 border-warning/20',
   destructive: 'bg-destructive/5 border-destructive/20',
 };
-
 const iconStyles = {
   default: 'bg-muted text-muted-foreground',
   primary: 'bg-primary/10 text-primary',
@@ -32,7 +29,6 @@ const iconStyles = {
   warning: 'bg-warning/10 text-warning-foreground',
   destructive: 'bg-destructive/10 text-destructive',
 };
-
 export function StatsCard({
   title,
   value,
@@ -84,8 +80,7 @@ export function StatsCard({
           <Icon className="h-5 w-5" />
         </div>
       </div>
-
-      {/* Decorative element */}
+      {}
       <div
         className={cn(
           'absolute -right-4 -bottom-4 h-24 w-24 rounded-full opacity-5',
@@ -99,4 +94,4 @@ export function StatsCard({
       />
     </div>
   );
-}
+}
