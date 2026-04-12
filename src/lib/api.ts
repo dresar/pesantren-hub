@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth-store';
+
+// Use relative path '/api' to avoid CORS issues and leverage Vite proxy in dev / Nginx in prod
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
 });
+
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
   if (token) {

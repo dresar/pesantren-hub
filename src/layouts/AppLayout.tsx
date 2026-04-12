@@ -1,11 +1,16 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import AppHeader from '@/components/app/AppHeader';
 import AppSidebar from '@/components/app/AppSidebar';
 import { Link } from 'react-router-dom';
-import { Home, ClipboardList, Clock, CreditCard, Calendar, Bell, Settings } from 'lucide-react';
+import { Home, ClipboardList, Clock, CreditCard, Calendar, Bell, Settings, LayoutDashboard, FileEdit, Users, MessageSquare } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import WhatsAppButton from '@/components/shared/WhatsAppButton';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { useSantriRegistrationStatus } from '@/hooks/use-santri';
+import { RegistrationSuccessModal } from '@/components/admissions/RegistrationSuccessModal';
+
 interface AppLayoutProps {
   children: ReactNode;
 }
@@ -14,8 +19,38 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuthStore();
   const userIdentifier = (user as any)?.username || user?.id || '';
+  const isAuthor = user?.role === 'author' || (user as any)?.publicationStatus !== 'none';
+  
+  const { data: userDetails } = useQuery({
+    queryKey: ['me-details'],
+    queryFn: async () => {
+        const res = await api.get('/users/me');
+        return res.data.user;
+    },
+    enabled: !!user,
+    refetchOnWindowFocus: true
+  });
+
+  const { data: santriStatus } = useSantriRegistrationStatus();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  useEffect(() => {
+    if (userDetails && santriStatus) {
+        // Trigger if verified/accepted AND not seen yet
+        const isVerified = ['verified', 'accepted'].includes(santriStatus.status);
+        if (isVerified && userDetails.isNotificationSeen === false) {
+            setShowSuccessModal(true);
+        }
+    }
+  }, [userDetails, santriStatus]);
+
   return (
     <div className="h-screen flex overflow-hidden bg-background">
+      <RegistrationSuccessModal 
+        isOpen={showSuccessModal} 
+        onClose={() => setShowSuccessModal(false)}
+        santriName={santriStatus?.namaLengkap || userDetails?.firstName || 'Santri'}
+      />
       {}
       <div className="hidden lg:block shrink-0">
         <AppSidebar collapsed={collapsed} />
@@ -55,41 +90,83 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background lg:hidden">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between gap-2 overflow-x-auto py-2">
-              <Link
-                to={`/santri/dashboard/${userIdentifier}`}
-                title="Dashboard"
-                className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <Home className="h-6 w-6" />
-              </Link>
-              <Link
-                to={`/app/form-pendaftaran/${userIdentifier}`}
-                title="Form"
-                className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <ClipboardList className="h-6 w-6" />
-              </Link>
-              <Link
-                to={`/app/status/${userIdentifier}`}
-                title="Status"
-                className="flex items-center justify-center px-5 h-12 rounded-full bg-primary text-primary-foreground shadow-glow"
-              >
-                <Clock className="h-6 w-6" />
-              </Link>
-              <Link
-                to={`/app/pembayaran/${userIdentifier}`}
-                title="Pembayaran"
-                className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <CreditCard className="h-6 w-6" />
-              </Link>
-              <Link
-                to={`/app/notifikasi/${userIdentifier}`}
-                title="Notifikasi"
-                className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <Bell className="h-6 w-6" />
-              </Link>
+              {isAuthor ? (
+                <>
+                  <Link
+                    to="/author/dashboard"
+                    title="Dashboard"
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <LayoutDashboard className="h-6 w-6" />
+                  </Link>
+                  <Link
+                    to="/author/articles"
+                    title="Artikel"
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <FileEdit className="h-6 w-6" />
+                  </Link>
+                  <Link
+                    to="/author/collaborations"
+                    title="Kolaborasi"
+                    className="flex items-center justify-center px-5 h-12 rounded-full bg-primary text-primary-foreground shadow-glow"
+                  >
+                    <Users className="h-6 w-6" />
+                  </Link>
+                  <Link
+                    to="/author/discussions"
+                    title="Diskusi"
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <MessageSquare className="h-6 w-6" />
+                  </Link>
+                  <Link
+                    to="/author/profile"
+                    title="Profil"
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Settings className="h-6 w-6" />
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to={`/santri/dashboard/${userIdentifier}`}
+                    title="Dashboard"
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Home className="h-6 w-6" />
+                  </Link>
+                  <Link
+                    to={`/app/form-pendaftaran/${userIdentifier}`}
+                    title="Form"
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <ClipboardList className="h-6 w-6" />
+                  </Link>
+                  <Link
+                    to={`/app/status/${userIdentifier}`}
+                    title="Status"
+                    className="flex items-center justify-center px-5 h-12 rounded-full bg-primary text-primary-foreground shadow-glow"
+                  >
+                    <Clock className="h-6 w-6" />
+                  </Link>
+                  <Link
+                    to={`/app/pembayaran/${userIdentifier}`}
+                    title="Pembayaran"
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <CreditCard className="h-6 w-6" />
+                  </Link>
+                  <Link
+                    to={`/app/notifikasi/${userIdentifier}`}
+                    title="Notifikasi"
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Bell className="h-6 w-6" />
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -98,4 +175,4 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     </div>
   );
 };
-export default AppLayout;
+export default AppLayout;

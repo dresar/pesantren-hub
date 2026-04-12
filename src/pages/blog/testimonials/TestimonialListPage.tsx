@@ -8,12 +8,23 @@ export default function TestimonialListPage() {
       accessorKey: 'foto',
       header: 'Foto',
       cell: ({ row }) => (
-        <div className="h-10 w-10 rounded-full overflow-hidden bg-muted">
+        <div className="h-10 w-10 rounded-full overflow-hidden bg-muted relative group">
           {row.original.foto ? (
-            <img src={row.original.foto} alt={row.original.nama} className="h-full w-full object-cover" />
+            <img 
+                src={row.original.foto} 
+                alt={row.original.nama} 
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement?.querySelector('.fallback')?.classList.remove('hidden');
+                }}
+            />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-[10px] text-muted-foreground">No Img</div>
           )}
+          <div className="fallback hidden absolute inset-0 flex items-center justify-center bg-muted text-[10px] text-muted-foreground">
+            Err
+          </div>
         </div>
       ),
     },

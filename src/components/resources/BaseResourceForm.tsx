@@ -56,10 +56,19 @@ export function BaseResourceForm<T extends FieldValues>({
   }, [itemData, form]);
   const mutation = useMutation({
     mutationFn: (values: T) => {
-      if (isEdit) {
-        return api.put(`${endpoint}/${id}`, values);
+      const payload = { ...values };
+      // Inject timestamps client-side as fallback
+      if (!payload.createdAt) {
+          (payload as any).createdAt = new Date().toISOString();
       }
-      return api.post(endpoint, values);
+      if (!payload.updatedAt) {
+          (payload as any).updatedAt = new Date().toISOString();
+      }
+
+      if (isEdit) {
+        return api.put(`${endpoint}/${id}`, payload);
+      }
+      return api.post(endpoint, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resource', resource] });
@@ -67,8 +76,19 @@ export function BaseResourceForm<T extends FieldValues>({
       navigate(basePath);
     },
     onError: (error: any) => {
-        console.error(error);
-      toast.error(error.response?.data?.message || 'Terjadi kesalahan');
+      // Clean up error message for display
+      const message = error.response?.data?.message || 
+                      error.response?.data?.details || 
+                      error.message || 
+                      'Terjadi kesalahan saat menyimpan data';
+      
+      // Avoid logging to console as requested
+      // console.error(error);
+      
+      toast.error(message, {
+        duration: 5000,
+        description: error.response?.data?.details ? `Detail: ${error.response.data.details}` : undefined
+      });
     },
   });
   const onSubmit = (values: T) => {

@@ -23,6 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { DatePickerInput } from '@/components/ui/date-picker-input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -308,9 +309,13 @@ export default function SantriFormPage() {
                     name="tanggalLahir"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tanggal Lahir *</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <DatePickerInput
+                            label="Tanggal Lahir *"
+                            value={field.value}
+                            onChange={field.onChange}
+                            error={form.formState.errors.tanggalLahir?.message}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

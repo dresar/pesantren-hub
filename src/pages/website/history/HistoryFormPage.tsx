@@ -89,6 +89,7 @@ export default function HistoryFormPage() {
                   value={field.value?.[0] || ''}
                   onChange={(val) => field.onChange(val ? [val] : [])}
                   placeholder="https://..."
+                  showMediaLibrary
                 />
                 <FormMessage />
               </FormItem>

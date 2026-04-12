@@ -1,18 +1,31 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BookOpen, Calendar, Bell, Settings, LogOut, ClipboardList, CreditCard } from 'lucide-react';
+import { Home, FileText, BookOpen, Calendar, Bell, Settings, LogOut, ClipboardList, CreditCard, LayoutDashboard, FileEdit, Users, Upload, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { usePublicData } from '@/hooks/use-public-data';
+
 interface AppSidebarProps {
   collapsed: boolean;
   onClose?: () => void;
 }
+
 const AppSidebar = ({ collapsed, onClose }: AppSidebarProps) => {
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { data: settings } = usePublicData<any>(['settings'], '/core/settings');
   const userIdentifier = (user as any)?.username || user?.id || '';
-  const menuItems = [
+
+  // Determine role-based menu items
+  const isAuthor = user?.role === 'author' || (user as any)?.publicationStatus !== 'none';
+
+  const menuItems = isAuthor ? [
+    { icon: LayoutDashboard, label: 'Dashboard Penulis', href: '/author/dashboard' },
+    { icon: FileEdit, label: 'Artikel Saya', href: '/author/articles' },
+    { icon: Upload, label: 'Upload Jurnal', href: '/author/journals' }, // Future feature
+    { icon: Users, label: 'Kolaborasi', href: '/author/collaborations' }, // Future feature
+    { icon: MessageSquare, label: 'Diskusi & Review', href: '/author/discussions' }, // Future feature
+    { icon: Settings, label: 'Profil Publikasi', href: '/author/profile' },
+  ] : [
     { icon: Home, label: 'Dashboard', href: `/santri/dashboard/${userIdentifier}` },
     { icon: ClipboardList, label: 'Form Pendaftaran', href: `/app/form-pendaftaran/${userIdentifier}` },
     { icon: FileText, label: 'Status Pendaftaran', href: `/app/status/${userIdentifier}` },
@@ -22,6 +35,7 @@ const AppSidebar = ({ collapsed, onClose }: AppSidebarProps) => {
     { icon: Bell, label: 'Notifikasi', href: `/app/notifikasi/${userIdentifier}` },
     { icon: Settings, label: 'Pengaturan', href: `/app/pengaturan/${userIdentifier}` },
   ];
+
   const handleLogout = () => {
     logout();
     if (onClose) onClose();
@@ -85,4 +99,4 @@ const AppSidebar = ({ collapsed, onClose }: AppSidebarProps) => {
     </aside>
   );
 };
-export default AppSidebar;
+export default AppSidebar;

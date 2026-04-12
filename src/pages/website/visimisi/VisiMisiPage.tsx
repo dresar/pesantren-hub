@@ -4,13 +4,15 @@ import { api } from '@/lib/api';
 import { PageHeader } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Save, Loader2, Award } from 'lucide-react';
+import { Save, Loader2, Award, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 const visiMisiSchema = z.object({
   visi: z.string().min(1, 'Visi harus diisi'),
   misi: z.string().min(1, 'Misi harus diisi'),
@@ -18,6 +20,8 @@ const visiMisiSchema = z.object({
 type VisiMisiForm = z.infer<typeof visiMisiSchema>;
 export default function VisiMisiPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const location = useLocation();
   const form = useForm<VisiMisiForm>({
     resolver: zodResolver(visiMisiSchema),
     defaultValues: {
@@ -40,6 +44,25 @@ export default function VisiMisiPage() {
       });
     }
   }, [data, form]);
+
+  useEffect(() => {
+    if (location.state?.aiContent) {
+      const content = location.state.aiContent;
+      // Mencoba memisahkan Visi dan Misi jika formatnya jelas
+      const parts = content.split(/Misi:/i);
+      if (parts.length > 1) {
+        form.setValue('visi', parts[0].replace(/Visi:/i, '').trim(), { shouldDirty: true });
+        form.setValue('misi', parts[1].trim(), { shouldDirty: true });
+      } else {
+        form.setValue('visi', content, { shouldDirty: true });
+      }
+      
+      // Clear state so it doesn't re-apply on refresh/navigation
+      window.history.replaceState({}, document.title);
+      toast.success("Konten dari AI berhasil dimuat");
+    }
+  }, [location.state, form]);
+
   const mutation = useMutation({
     mutationFn: (values: VisiMisiForm) => api.put('/core/visi-misi', values),
     onSuccess: () => {
@@ -59,8 +82,16 @@ export default function VisiMisiPage() {
         icon={Award}
       />
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle>Form Visi & Misi</CardTitle>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/admin/ai-generator?type=vision_mission&returnUrl=/admin/vision-mission')}
+          >
+            <Wand2 className="w-4 h-4 mr-2" />
+            Bantu Buat Visi Misi
+          </Button>
         </CardHeader>
         <CardContent>
           <Form {...form}>

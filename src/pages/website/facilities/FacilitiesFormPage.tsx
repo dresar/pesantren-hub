@@ -66,6 +66,7 @@ export default function FacilitiesFormPage() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="https://..."
+                    showMediaLibrary
                   />
                   <FormMessage />
                 </FormItem>

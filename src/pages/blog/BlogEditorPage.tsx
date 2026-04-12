@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,11 +24,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Newspaper, ArrowLeft, Save, Eye, Image } from 'lucide-react';
+import { Newspaper, ArrowLeft, Save, Eye, Image, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/stores/auth-store';
 import { DualImageInput } from '@/components/forms/DualImageInput';
+import { MultiImageInput } from '@/components/forms/MultiImageInput';
+
 const postSchema = z.object({
   title: z.string().min(5, 'Judul minimal 5 karakter'),
   slug: z.string().optional(),
@@ -36,6 +39,8 @@ const postSchema = z.object({
   excerpt: z.string().optional(),
   category_id: z.string().optional(),
   featured_image: z.string().optional(),
+  video_url: z.string().optional(),
+  gallery: z.array(z.string()).optional().default([]),
   meta_title: z.string().optional(),
   meta_description: z.string().optional(),
   meta_keywords: z.string().optional(),
@@ -46,6 +51,7 @@ type PostFormValues = z.infer<typeof postSchema>;
 export default function BlogEditorPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: categories = [] } = useQuery({
@@ -69,6 +75,8 @@ export default function BlogEditorPage() {
       excerpt: '',
       category_id: '',
       featured_image: '',
+      video_url: '',
+      gallery: [],
       meta_title: '',
       meta_description: '',
       meta_keywords: '',
@@ -77,7 +85,19 @@ export default function BlogEditorPage() {
     },
   });
   useEffect(() => {
-    if (postData) {
+    if (location.state?.generatedData) {
+        const data = location.state.generatedData;
+        form.setValue('title', data.title, { shouldDirty: true });
+        form.setValue('slug', generateSlug(data.title), { shouldDirty: true });
+        form.setValue('content', data.content, { shouldDirty: true });
+        if (data.metaTitle) form.setValue('meta_title', data.metaTitle, { shouldDirty: true });
+        if (data.metaDesc) form.setValue('meta_description', data.metaDesc, { shouldDirty: true });
+        if (data.keywords) form.setValue('meta_keywords', data.keywords, { shouldDirty: true });
+        
+        // Clear state to prevent re-fill on refresh if desired, 
+        // but react-router state persists. 
+        // Optional: window.history.replaceState({}, document.title)
+    } else if (postData) {
       form.reset({
         title: postData.title,
         slug: postData.slug,
@@ -85,6 +105,8 @@ export default function BlogEditorPage() {
         excerpt: postData.excerpt || '',
         category_id: String(postData.category_id || ''),
         featured_image: postData.featured_image || postData.featuredImage || '',
+        video_url: postData.video_url || postData.videoUrl || '',
+        gallery: postData.gallery || [],
         meta_title: postData.meta_title || postData.metaTitle || '',
         meta_description: postData.meta_description || postData.metaDescription || '',
         meta_keywords: postData.meta_keywords || postData.metaKeywords || '',
@@ -93,14 +115,34 @@ export default function BlogEditorPage() {
       });
     }
   }, [postData, form]);
+  const { user } = useAuthStore();
   const mutation = useMutation({
     mutationFn: async (values: PostFormValues) => {
+      const payload = {
+        title: values.title,
+        slug: values.slug,
+        content: values.content,
+        excerpt: values.excerpt,
+        featuredImage: values.featured_image,
+        metaTitle: values.meta_title,
+        metaDescription: values.meta_description,
+        metaKeywords: values.meta_keywords,
+        videoUrl: values.video_url,
+        gallery: values.gallery,
+        status: values.status,
+        isFeatured: values.is_featured,
+        categoryId: values.category_id ? Number(values.category_id) : null,
+        authorId: user?.id || 1, // Use logged in user ID or default to 1
+        publishedAt: values.status === 'published' ? new Date().toISOString() : null,
+      };
+
       if (id) {
-        return api.put(`/admin/generic/blogBlogpost/${id}`, values);
+        return api.put(`/admin/generic/blogBlogpost/${id}`, payload);
       }
-      return api.post('/admin/generic/blogBlogpost', values);
+      return api.post('/admin/generic/blogBlogpost', payload);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['generic', 'blogBlogpost'] });
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
       toast.success(id ? 'Artikel diperbarui' : 'Artikel berhasil disimpan');
       navigate('/admin/blog/posts');
@@ -133,8 +175,18 @@ export default function BlogEditorPage() {
             {}
             <div className="lg:col-span-2 space-y-6">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle>Konten Artikel</CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    type="button" 
+                    onClick={() => navigate('/admin/blog/generate-ai')}
+                    className="border-blue-200 hover:bg-blue-50 hover:text-blue-600 text-blue-600"
+                  >
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Generate Blog dengan AI
+                  </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -208,19 +260,53 @@ export default function BlogEditorPage() {
               {}
               <Card>
                 <CardHeader>
-                  <CardTitle>Gambar Utama</CardTitle>
+                  <CardTitle>Media</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
                     name="featured_image"
                     render={({ field }) => (
                       <FormItem>
+                        <FormLabel>Gambar Utama (Cover)</FormLabel>
                         <FormControl>
                           <DualImageInput
                             value={field.value}
                             onChange={field.onChange}
                             placeholder="URL gambar (contoh: https://images.unsplash.com/...)"
+                            showMediaLibrary
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="video_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Video URL (YouTube)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://youtube.com/watch?v=..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="gallery"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <MultiImageInput
+                            values={field.value || []}
+                            onChange={field.onChange}
+                            label="Galeri Foto (Unlimited)"
+                            maxFiles={50}
                           />
                         </FormControl>
                         <FormMessage />

@@ -58,7 +58,7 @@ export default function DashboardPage() {
       const response = await api.get('/admin/stats');
       return response.data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 300000, // 5 minutes
   });
   if (isLoading) {
     return (
@@ -200,7 +200,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pl-0">
             <div className="h-[350px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <AreaChart data={financialTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -242,8 +242,8 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="h-[200px] relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <PieChart>
                     <Pie
                       data={genderDistribution}
                       cx="50%"
@@ -290,8 +290,8 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="h-[120px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={registrationStats}>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <BarChart data={registrationStats}>
                     <XAxis dataKey="name" hide />
                     <Tooltip 
                       cursor={{fill: 'transparent'}}

@@ -26,7 +26,15 @@ export default function ProtectedRoute() {
     return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
   if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
-    const allowedRoles = ['superadmin', 'admin', 'staff', 'petugaspendaftaran', 'bendahara'];
+    const allowedRoles = [
+      'superadmin',
+      'admin',
+      'operator',
+      'staff',
+      'petugaspendaftaran',
+      'bendahara',
+      'author', // role berita (akses terbatas via sidebar)
+    ];
     const userRole = useAuthStore.getState().user?.role;
     if (!userRole || !allowedRoles.includes(userRole)) {
       if (userRole === 'santri' || userRole === 'user') {

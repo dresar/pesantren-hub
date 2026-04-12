@@ -21,17 +21,20 @@ interface SantriSelectProps {
   value?: number;
   onSelect: (value: number) => void;
   disabled?: boolean;
+  status?: string;
 }
-export function SantriSelect({ value, onSelect, disabled }: SantriSelectProps) {
+
+export function SantriSelect({ value, onSelect, disabled, status }: SantriSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const { data, isLoading } = useQuery({
-    queryKey: ['santri-select', search],
+    queryKey: ['santri-select', search, status],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('page', '1');
       params.append('limit', '20');
       if (search) params.append('search', search);
+      if (status) params.append('status', status);
       const res = await api.get(`/admin/santri?${params.toString()}`);
       return res.data;
     },

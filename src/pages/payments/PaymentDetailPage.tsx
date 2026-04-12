@@ -4,12 +4,14 @@ import { PageHeader, StatusBadge } from '@/components/common';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CreditCard, ArrowLeft, CheckCircle, XCircle, Undo2 } from 'lucide-react';
+import { CreditCard, ArrowLeft, CheckCircle, XCircle, Undo2, Printer } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import type { PaymentStatus } from '@/types';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { generateReceiptPdf } from '@/lib/pdf-utils';
+
 type AdminPayment = {
   id: number | string;
   status: PaymentStatus;
@@ -34,15 +36,61 @@ type AdminPayment = {
   buktiTransfer?: string;
   createdAt?: string;
 };
+
 export default function PaymentDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [note, setNote] = useState('');
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['payment-detail', id],
     queryFn: async () => (await api.get(`/admin/payments/${id}`)).data.data as AdminPayment,
   });
+
+  const { data: docSettings } = useQuery({
+    queryKey: ['documentSettings'],
+    queryFn: async () => {
+      try {
+        const response = await api.get('/admin/generic/documentSettings');
+        const items = response.data?.data || [];
+        return items[0] || {};
+      } catch (e) {
+        return {};
+      }
+    },
+  });
+
+  const handlePrintReceipt = async () => {
+    if (!data) return;
+    try {
+        const paymentData = {
+            id: data.id,
+            jumlah: data.jumlah_transfer ?? data.jumlahTransfer ?? 0,
+            jenisPembayaran: 'Pembayaran Pondok', // Adjust if you have type
+            createdAt: data.created_at ?? data.createdAt ?? new Date().toISOString(),
+            status: data.status,
+        };
+        const santriData = {
+            namaLengkap: data.santri?.namaLengkap || 'Umum',
+        };
+        
+        toast.info('Sedang membuat kuitansi...');
+        await generateReceiptPdf(paymentData, santriData, docSettings);
+        
+        // Log activity
+        await api.post('/admin/logs/document', {
+            action: 'print_receipt',
+            details: `Payment ID: ${data.id}, Santri: ${data.santri?.namaLengkap}`
+        });
+
+        toast.success('Kuitansi berhasil didownload');
+    } catch (e) {
+        console.error(e);
+        toast.error('Gagal membuat kuitansi');
+    }
+  };
+
   const verifyMutation = useMutation({
     mutationFn: async (status: PaymentStatus) => api.put(`/payments/${id}`, { status, catatan: note }),
     onSuccess: () => {
@@ -51,6 +99,7 @@ export default function PaymentDetailPage() {
       navigate('/admin/payments');
     },
   });
+
   const cancelMutation = useMutation({
     mutationFn: async () => api.post(`/payments/${id}/cancel`),
     onSuccess: () => {
@@ -59,6 +108,7 @@ export default function PaymentDetailPage() {
       navigate(`/admin/payments/${id}`);
     },
   });
+
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -84,9 +134,16 @@ export default function PaymentDetailPage() {
         description="Lihat detail dan bukti transfer"
         icon={CreditCard}
       >
-        <Button variant="outline" onClick={() => navigate('/admin/payments')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-        </Button>
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/admin/payments')}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+            </Button>
+            {data.status === 'verified' && (
+                <Button variant="default" onClick={handlePrintReceipt}>
+                  <Printer className="mr-2 h-4 w-4" /> Cetak Kuitansi
+                </Button>
+            )}
+        </div>
       </PageHeader>
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

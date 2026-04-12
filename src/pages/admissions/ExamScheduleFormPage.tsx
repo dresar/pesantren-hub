@@ -124,6 +124,7 @@ export default function ExamScheduleFormPage() {
                                 value={formData.santriId} 
                                 onSelect={(val) => setFormData({ ...formData, santriId: val })}
                                 disabled={isEditing} 
+                                status="verified"
                             />
                         </div>
                         <div className="space-y-2">

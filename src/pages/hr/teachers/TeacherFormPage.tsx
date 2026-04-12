@@ -8,9 +8,14 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DualImageInput } from '@/components/forms/DualImageInput';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+
 const teacherSchema = z.object({
   namaLengkap: z.string().min(1, 'Nama lengkap harus diisi'),
   namaPanggilan: z.string().optional(),
+  jabatan: z.string().optional(),
+  bagianJabatanId: z.coerce.number().optional(),
   jenisKelamin: z.enum(['L', 'P']),
   foto: z.string().optional(),
   tempatLahir: z.string().optional(),
@@ -36,6 +41,16 @@ const teacherSchema = z.object({
 });
 type TeacherForm = z.infer<typeof teacherSchema>;
 export default function TeacherFormPage() {
+  const { data: jabatanData } = useQuery({
+    queryKey: ['generic', 'bagianJabatan'],
+    queryFn: async () => {
+      const response = await api.get('/admin/generic/bagianJabatan');
+      return response.data;
+    },
+  });
+
+  const jabatans = Array.isArray(jabatanData) ? jabatanData : (jabatanData?.data || []);
+
   return (
     <BaseResourceForm<TeacherForm>
       resource="tenagaPengajar"
@@ -45,6 +60,8 @@ export default function TeacherFormPage() {
       defaultValues={{
         namaLengkap: '',
         namaPanggilan: '',
+        jabatan: '',
+        bagianJabatanId: undefined,
         jenisKelamin: 'L',
         foto: '',
         tempatLahir: '',
@@ -107,6 +124,40 @@ export default function TeacherFormPage() {
               />
               <FormField
                 control={form.control}
+                name="bagianJabatanId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Jabatan & Posisi</FormLabel>
+                    <Select 
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        // Also set the legacy jabatan string field for compatibility
+                        const selectedJabatan = jabatans?.find((j: any) => j.id.toString() === val);
+                        if (selectedJabatan) {
+                          form.setValue('jabatan', selectedJabatan.nama);
+                        }
+                      }} 
+                      value={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Jabatan" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {jabatans?.map((jabatan: any) => (
+                          <SelectItem key={jabatan.id} value={jabatan.id.toString()}>
+                            {jabatan.nama}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="jenisKelamin"
                 render={({ field }) => (
                   <FormItem>
@@ -162,6 +213,7 @@ export default function TeacherFormPage() {
                       value={field.value}
                       onChange={field.onChange}
                       placeholder="https://..."
+                      showMediaLibrary
                     />
                     <FormMessage />
                   </FormItem>

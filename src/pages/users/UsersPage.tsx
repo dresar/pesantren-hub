@@ -6,13 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,18 +19,35 @@ import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-const roleLabels: Record<UserRole, string> = {
-  admin: 'Admin',
-  staff: 'Staff',
-  teacher: 'Pengajar',
-  operator: 'Operator',
+const roleLabels: Record<string, string> = {
+  superadmin: 'Super Admin',
+  bendahara: 'Bendahara',
+  petugaspendaftaran: 'Petugas Pendaftaran',
+  author: 'Editor Berita',
+  // Role lain yang ditampilkan sebagai "User" biasa di tabel
+  user: 'User',
+  santri: 'User',
 };
-const roleColors: Record<UserRole, string> = {
-  admin: 'bg-destructive/10 text-destructive border-destructive/30',
-  staff: 'bg-info/10 text-info border-info/30',
-  teacher: 'bg-primary/10 text-primary border-primary/30',
-  operator: 'bg-warning/10 text-warning border-warning/30',
+const roleColors: Record<string, string> = {
+  superadmin: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+  bendahara: 'bg-warning/10 text-warning border-warning/30',
+  petugaspendaftaran: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
+  author: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
+  user: 'bg-muted text-muted-foreground border-muted-foreground/30',
+  santri: 'bg-muted text-muted-foreground border-muted-foreground/30',
 };
+
+// Hanya 4 role yang boleh dipilih lewat UI admin:
+// - superadmin
+// - bendahara
+// - petugaspendaftaran
+// - author (role berita)
+const roleOptions: Array<{ value: UserRole; label: string }> = [
+  { value: 'superadmin', label: 'Super Admin' },
+  { value: 'bendahara', label: 'Bendahara' },
+  { value: 'petugaspendaftaran', label: 'Petugas Pendaftaran' },
+  { value: 'author', label: 'Editor Berita' },
+];
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,19 +55,22 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
+    firstName: '',
+    lastName: '',
     username: '',
     email: '',
     phone: '',
     role: 'staff' as UserRole,
     password: '',
+    isActive: true,
   });
   const { showConfirm } = useAppStore();
   const { data: usersData, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const response = await api.get('/admin/users');
+      const response = await api.get('/admin/users', {
+        params: { page: 1, limit: 200 },
+      });
       return response.data.data;
     },
   });
@@ -101,19 +114,20 @@ export default function UsersPage() {
   });
   const handleCreate = () => {
     setEditingUser(null);
-    setFormData({ first_name: '', last_name: '', username: '', email: '', phone: '', role: 'staff', password: '' });
+    setFormData({ firstName: '', lastName: '', username: '', email: '', phone: '', role: 'staff', password: '', isActive: true });
     setIsModalOpen(true);
   };
   const handleEdit = (user: User) => {
     setEditingUser(user);
     setFormData({
-      first_name: user.first_name,
-      last_name: user.last_name,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       username: user.username,
       email: user.email,
       phone: user.phone,
       role: user.role,
       password: '', 
+      isActive: user.isActive !== false,
     });
     setIsModalOpen(true);
   };
@@ -143,18 +157,18 @@ export default function UsersPage() {
   const handleToggleStatus = (user: User) => {
     updateUserMutation.mutate({ 
         id: user.id, 
-        data: { isActive: !user.is_active } 
+        data: { isActive: !(user.isActive !== false) } 
     });
   };
   const columns: ColumnDef<User>[] = [
     getSelectionColumn<User>(),
     {
-      accessorKey: 'first_name',
+      accessorKey: 'firstName',
       header: 'Nama',
       cell: ({ row }) => {
         const user = row.original;
-        const firstName = user.first_name || '';
-        const lastName = user.last_name || '';
+        const firstName = user.firstName || '';
+        const lastName = user.lastName || '';
         const initials = `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
         return (
           <div className="flex items-center gap-3">
@@ -181,25 +195,28 @@ export default function UsersPage() {
       accessorKey: 'role',
       header: 'Role',
       cell: ({ row }) => (
-        <Badge variant="outline" className={roleColors[row.original.role]}>
+        <Badge
+          variant="outline"
+          className={roleColors[row.original.role] || 'bg-muted/20 text-muted-foreground border-muted-foreground/20'}
+        >
           <Shield className="mr-1 h-3 w-3" />
-          {roleLabels[row.original.role]}
+          {roleLabels[row.original.role] || row.original.role}
         </Badge>
       ),
     },
     {
-      accessorKey: 'is_active',
+      accessorKey: 'isActive',
       header: 'Status',
       cell: ({ row }) => (
-        <StatusBadge status={row.original.is_active ? 'active' : 'inactive'} />
+        <StatusBadge status={row.original.isActive !== false ? 'active' : 'inactive'} />
       ),
     },
     {
-      accessorKey: 'last_login',
+      accessorKey: 'lastLogin',
       header: 'Login Terakhir',
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {row.original.last_login ? formatDateTime(row.original.last_login) : '-'}
+          {row.original.lastLogin ? formatDateTime(row.original.lastLogin) : '-'}
         </span>
       ),
     },
@@ -222,7 +239,7 @@ export default function UsersPage() {
                 <Pencil className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
-                {user.is_active ? (
+                {user.isActive !== false ? (
                   <><UserX className="mr-2 h-4 w-4" /> Nonaktifkan</>
                 ) : (
                   <><UserCheck className="mr-2 h-4 w-4" /> Aktifkan</>
@@ -249,6 +266,7 @@ export default function UsersPage() {
         data={usersData || []}
         isLoading={isLoading}
         searchPlaceholder="Cari nama, email..."
+        pageSize={20}
       />
       {}
       <CrudModal
@@ -264,16 +282,16 @@ export default function UsersPage() {
           <div className="space-y-2">
             <Label>Nama Depan</Label>
             <Input
-              value={formData.first_name}
-              onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               placeholder="Nama depan"
             />
           </div>
           <div className="space-y-2">
             <Label>Nama Belakang</Label>
             <Input
-              value={formData.last_name}
-              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+              value={formData.lastName}
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               placeholder="Nama belakang"
             />
           </div>
@@ -304,17 +322,17 @@ export default function UsersPage() {
           </div>
           <div className="space-y-2">
             <Label>Role</Label>
-            <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v as UserRole })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="staff">Staff</SelectItem>
-                <SelectItem value="teacher">Pengajar</SelectItem>
-                <SelectItem value="operator">Operator</SelectItem>
-              </SelectContent>
-            </Select>
+            <select
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+            >
+              {roleOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
           {!editingUser && (
               <div className="space-y-2 sm:col-span-2">
@@ -342,11 +360,11 @@ export default function UsersPage() {
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                  {viewingUser.first_name[0]}{viewingUser.last_name[0]}
+                  {(viewingUser.firstName || '?')[0]}{(viewingUser.lastName || '?')[0]}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="text-lg font-semibold">{viewingUser.first_name} {viewingUser.last_name}</h3>
+                <h3 className="text-lg font-semibold">{viewingUser.firstName} {viewingUser.lastName}</h3>
                 <p className="text-muted-foreground">@{viewingUser.username}</p>
               </div>
             </div>
@@ -361,17 +379,20 @@ export default function UsersPage() {
               </div>
               <div className="flex justify-between py-2 border-b">
                 <span className="text-muted-foreground">Role</span>
-                <Badge variant="outline" className={roleColors[viewingUser.role]}>
-                  {roleLabels[viewingUser.role]}
+                <Badge
+                  variant="outline"
+                  className={roleColors[viewingUser.role] || 'bg-muted/20 text-muted-foreground border-muted-foreground/20'}
+                >
+                  {roleLabels[viewingUser.role] || viewingUser.role}
                 </Badge>
               </div>
               <div className="flex justify-between py-2 border-b">
                 <span className="text-muted-foreground">Status</span>
-                <StatusBadge status={viewingUser.is_active ? 'active' : 'inactive'} />
+                <StatusBadge status={viewingUser.isActive !== false ? 'active' : 'inactive'} />
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-muted-foreground">Login Terakhir</span>
-                <span>{viewingUser.last_login ? formatDateTime(viewingUser.last_login) : '-'}</span>
+                <span>{viewingUser.lastLogin ? formatDateTime(viewingUser.lastLogin) : '-'}</span>
               </div>
             </div>
           </div>

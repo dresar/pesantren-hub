@@ -12,6 +12,8 @@ interface BlogPost {
   excerpt: string;
   content: string;
   featuredImage?: string;
+  videoUrl?: string;
+  gallery?: string[];
   publishedAt: string;
   category: { name: string } | null;
   author: { firstName: string; lastName: string; username: string } | null;
@@ -38,19 +40,42 @@ const BlogDetail = () => {
   }
   if (!post) return null;
   const authorName = post.author ? `${post.author.firstName} ${post.author.lastName || ''}`.trim() : 'Admin';
+  
+  // Helper for YouTube ID
+  const getYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+  const videoId = post.videoUrl ? getYoutubeId(post.videoUrl) : null;
+
   return (
     <>
       <PageHeader title={post.title} breadcrumbs={[{ label: 'Blog', href: '/blog' }, { label: post.title }]} />
       <SectionWrapper>
         <div className="max-w-3xl mx-auto">
           <motion.article initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card overflow-hidden">
-            <div className="aspect-video bg-muted relative">
-               {post.featuredImage ? (
-                  <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
-               ) : (
-                 <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">No Image</div>
-               )}
-            </div>
+            {videoId ? (
+                <div className="aspect-video bg-black relative">
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={`https://www.youtube.com/embed/${videoId}`} 
+                        title={post.title} 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen 
+                    />
+                </div>
+            ) : (
+                <div className="aspect-video bg-muted relative">
+                {post.featuredImage ? (
+                    <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">No Image</div>
+                )}
+                </div>
+            )}
             <div className="p-5 md:p-8">
               <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-6">
                 <span className="px-2.5 py-1 rounded bg-primary/10 text-primary font-medium">{post.category?.name || 'Uncategorized'}</span>
@@ -61,6 +86,20 @@ const BlogDetail = () => {
               <div className="prose prose-sm prose-invert max-w-none">
                 <p className="text-muted-foreground leading-relaxed font-medium">{post.excerpt}</p>
                 <div className="text-muted-foreground leading-relaxed mt-4 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: post.content }} />
+                
+                {/* Gallery Section */}
+                {post.gallery && post.gallery.length > 0 && (
+                    <div className="mt-8 not-prose">
+                        <h3 className="text-lg font-semibold mb-4">Galeri Foto</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {post.gallery.map((img, idx) => (
+                                <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity">
+                                    <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
               </div>
             </div>
           </motion.article>

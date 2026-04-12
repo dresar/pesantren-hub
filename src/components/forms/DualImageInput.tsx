@@ -3,16 +3,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Link as LinkIcon, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Upload, Link as LinkIcon, X, Loader2, Image as ImageIcon, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { MediaLibraryModal } from '../media/MediaLibraryModal';
+
 interface DualImageInputProps {
   value?: string;
   onChange: (value: string) => void;
   label?: string;
   placeholder?: string;
   disabled?: boolean;
+  /** Tampilkan tombol "Pilih dari Galeri" (Media Library). Hanya untuk admin panel. */
+  showMediaLibrary?: boolean;
 }
 export function DualImageInput({
   value,
@@ -20,9 +24,11 @@ export function DualImageInput({
   label = 'Gambar / Foto',
   placeholder = 'https://...',
   disabled = false,
+  showMediaLibrary = false,
 }: DualImageInputProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const handleFileUpload = async (file: File) => {
     if (!file) return;
@@ -81,7 +87,21 @@ export function DualImageInput({
   };
   return (
     <div className="space-y-3">
-      {label && <Label>{label}</Label>}
+      <div className="flex items-center justify-between">
+        {label && <Label>{label}</Label>}
+        {showMediaLibrary && (
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            className="h-8 text-xs"
+            onClick={() => setMediaLibraryOpen(true)}
+          >
+            <LayoutGrid className="w-3.5 h-3.5 mr-2" />
+            Pilih dari Galeri
+          </Button>
+        )}
+      </div>
       <Tabs defaultValue="upload" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-2">
           <TabsTrigger value="upload" disabled={disabled}>
@@ -168,6 +188,20 @@ export function DualImageInput({
             <X className="h-3 w-3" />
           </Button>
         </div>
+      )}
+      
+      {showMediaLibrary && (
+        <MediaLibraryModal 
+          open={mediaLibraryOpen} 
+          onOpenChange={setMediaLibraryOpen}
+          mode="select"
+          onSelect={(files) => {
+            if (files?.[0]) {
+              onChange(files[0].url);
+              setMediaLibraryOpen(false);
+            }
+          }}
+        />
       )}
     </div>
   );

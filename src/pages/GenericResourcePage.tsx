@@ -82,6 +82,24 @@ export default function GenericResourcePage({ resource, title, description, base
       cell: ({ row }) => {
         const val = row.getValue(key);
         if (typeof val === 'boolean') return <Badge variant={val ? 'default' : 'secondary'}>{val ? 'Yes' : 'No'}</Badge>;
+        if (key === 'warna' && typeof val === 'string') {
+           const colorMap: Record<string, string> = {
+             green: 'bg-green-500',
+             blue: 'bg-blue-500',
+             purple: 'bg-purple-500',
+             orange: 'bg-orange-500',
+             red: 'bg-red-500',
+             teal: 'bg-teal-500',
+             pink: 'bg-pink-500',
+           };
+           const colorClass = colorMap[val] || 'bg-gray-500';
+           return (
+             <div className="flex items-center gap-2">
+               <div className={`w-4 h-4 rounded-full ${colorClass}`} />
+               <span>{val}</span>
+             </div>
+           );
+        }
         return <div className="truncate max-w-[200px]" title={String(val)}>{String(val)}</div>;
       }
     }));
@@ -261,12 +279,101 @@ export default function GenericResourcePage({ resource, title, description, base
     }
   };
   const defaultFields = ['nama', 'deskripsi', 'keterangan', 'status', 'is_active'];
-  const formFields = items.length > 0 
+  
+  // Configuration for specific resources
+  const resourceConfig: Record<string, { 
+    fields: string[], 
+    types?: Record<string, 'text' | 'number' | 'textarea' | 'boolean' | 'image' | 'select'>,
+    labels?: Record<string, string>,
+    options?: Record<string, { label: string, value: any }[]>
+  }> = {
+    blogTestimoni: {
+      fields: ['nama', 'jabatan', 'testimoni', 'rating', 'order', 'isPublished', 'foto'],
+      types: {
+        testimoni: 'textarea',
+        rating: 'number',
+        order: 'number',
+        isPublished: 'boolean',
+        foto: 'image'
+      },
+      labels: {
+        isPublished: 'Publikasi'
+      }
+    },
+    blogCategory: {
+      fields: ['name', 'slug', 'order'],
+      types: { order: 'number' }
+    },
+    blogTag: {
+      fields: ['name', 'slug', 'order'],
+      types: { order: 'number' }
+    },
+    faq: {
+      fields: ['pertanyaan', 'jawaban', 'isPublished', 'order'],
+      types: {
+        jawaban: 'textarea',
+        isPublished: 'boolean',
+        order: 'number'
+      },
+      labels: {
+        isPublished: 'Publikasi'
+      }
+    },
+    statistik: {
+      fields: ['judul', 'nilai', 'icon', 'deskripsi', 'warna', 'order', 'isPublished'],
+      types: {
+        deskripsi: 'textarea',
+        order: 'number',
+        isPublished: 'boolean',
+        icon: 'image'
+      },
+      labels: {
+        isPublished: 'Publikasi',
+        icon: 'Ikon / Gambar'
+      }
+    },
+    biayaPendidikan: {
+      fields: ['tipe', 'nama', 'jumlah', 'keterangan', 'order'],
+      types: {
+        jumlah: 'number',
+        order: 'number',
+        keterangan: 'textarea'
+      }
+    },
+    registrationFlow: {
+      fields: ['title', 'description', 'icon', 'order', 'isActive'],
+      types: {
+        description: 'textarea',
+        order: 'number',
+        isActive: 'boolean',
+        icon: 'image'
+      },
+      labels: {
+        isActive: 'Aktif'
+      }
+    }
+  };
+
+  const currentConfig = resourceConfig[resource] || {};
+  
+  const formFields = currentConfig.fields || (items.length > 0 
     ? Object.keys(items[0]).filter(k => 
         !['id', 'created_at', 'updated_at', 'createdAt', 'updatedAt'].includes(k) &&
         typeof items[0][k] !== 'object'
       )
-    : defaultFields;
+    : defaultFields);
+
+  const getFieldType = (key: string) => {
+    if (currentConfig.types?.[key]) return currentConfig.types[key];
+    if (key.includes('deskripsi') || key.includes('content') || key.includes('alamat')) return 'textarea';
+    if (key.includes('email')) return 'email';
+    if (key.includes('tanggal')) return 'date';
+    if (key.startsWith('is') || key.startsWith('has')) return 'boolean';
+    if (key === 'order' || key.includes('jumlah') || key.includes('harga')) return 'number';
+    if (key.includes('image') || key.includes('foto') || key.includes('gambar')) return 'image';
+    return 'text';
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title={title} description={description || `Kelola data ${title}`} icon={Database}>
@@ -330,7 +437,7 @@ export default function GenericResourcePage({ resource, title, description, base
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
           {}
           {items.map((item: any) => {
-            const imageUrl = item.featuredImage || item.image || item.cover_image || item.thumbnail || item.gambar || item.gambarPutra || item.gambarPutri || null;
+            const imageUrl = item.featuredImage || item.featured_image || item.image || item.cover_image || item.thumbnail || item.gambar || item.gambarPutra || item.gambarPutri || null;
             const itemTitle = item.title || item.nama || item.name || `Item #${item.id}`;
             const itemDescription = item.description || item.excerpt || item.summary || item.content || '';
             const plainDescription = typeof itemDescription === 'string' 
@@ -355,12 +462,23 @@ export default function GenericResourcePage({ resource, title, description, base
                       src={imageUrl} 
                       alt={itemTitle}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                      }}
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground/40 bg-muted/50">
+                    <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground/40 bg-muted/50 fallback-icon">
                       <ImageIcon className="h-14 w-14 mb-3 opacity-50" />
                       <span className="text-sm font-medium">No Cover Image</span>
                     </div>
+                  )}
+                  {/* Fallback for image error (hidden by default if image exists) */}
+                  {imageUrl && (
+                     <div className="hidden absolute inset-0 flex flex-col items-center justify-center w-full h-full text-muted-foreground/40 bg-muted/50 fallback-icon pointer-events-none">
+                        <ImageIcon className="h-14 w-14 mb-3 opacity-50" />
+                        <span className="text-sm font-medium">Image Error</span>
+                     </div>
                   )}
                   {}
                   <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
@@ -429,16 +547,84 @@ export default function GenericResourcePage({ resource, title, description, base
           size="lg"
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            {formFields.map((key) => (
-              <div key={key} className="space-y-2">
-                <Label className="capitalize">{key.replace(/_/g, ' ')}</Label>
-                <Input
-                  value={formData[key] || ''}
-                  onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                  placeholder={`Masukkan ${key}`}
-                />
-              </div>
-            ))}
+            {formFields.map((key) => {
+              const fieldType = getFieldType(key);
+              const label = currentConfig.labels?.[key] || key.replace(/_/g, ' ');
+
+              if (fieldType === 'textarea') {
+                return (
+                  <div key={key} className="space-y-2 col-span-2">
+                    <Label className="capitalize">{label}</Label>
+                    <textarea
+                      value={formData[key] || ''}
+                      onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                      placeholder={`Masukkan ${key.replace(/_/g, ' ')}`}
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      rows={4}
+                    />
+                  </div>
+                );
+              }
+
+              if (fieldType === 'boolean') {
+                return (
+                  <div key={key} className="space-y-2 flex flex-col justify-end">
+                    <Label className="capitalize mb-2">{label}</Label>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox 
+                            checked={Boolean(formData[key])}
+                            onCheckedChange={(checked) => setFormData({ ...formData, [key]: !!checked })}
+                        />
+                        <span className="text-sm text-muted-foreground">{formData[key] ? 'Ya' : 'Tidak'}</span>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (fieldType === 'number') {
+                return (
+                  <div key={key} className="space-y-2">
+                    <Label className="capitalize">{label}</Label>
+                    <Input
+                      type="number"
+                      value={formData[key] || ''}
+                      onChange={(e) => setFormData({ ...formData, [key]: Number(e.target.value) })}
+                      placeholder={`0`}
+                    />
+                  </div>
+                );
+              }
+
+              if (fieldType === 'image') {
+                  // Basic text input for image URL for now, could be upgraded to DualImageInput later
+                  return (
+                    <div key={key} className="space-y-2 col-span-2">
+                      <Label className="capitalize">{label}</Label>
+                      <Input
+                        value={formData[key] || ''}
+                        onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                        placeholder="https://..."
+                      />
+                      {formData[key] && (
+                          <div className="mt-2 w-20 h-20 rounded border overflow-hidden">
+                              <img src={formData[key]} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                      )}
+                    </div>
+                  );
+              }
+
+              return (
+                <div key={key} className="space-y-2">
+                  <Label className="capitalize">{label}</Label>
+                  <Input
+                    value={formData[key] || ''}
+                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                    placeholder={`Masukkan ${key}`}
+                  />
+                </div>
+              );
+            })}
             {formFields.length === 0 && (
               <div className="col-span-2 text-center text-muted-foreground py-4">
                 Belum ada data untuk mendeteksi kolom. Silakan tambahkan data pertama melalui database atau API langsung.

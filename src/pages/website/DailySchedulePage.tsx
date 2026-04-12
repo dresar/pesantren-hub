@@ -1,65 +1,50 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ColumnDef } from '@tanstack/react-table';
-import { PageHeader, DataTable, CrudModal } from '@/components/common';
+import { PageHeader, DataTable } from '@/components/common';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Clock, Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Clock, Plus, MoreHorizontal, Pencil, Trash2, CalendarDays } from 'lucide-react';
 import type { JadwalHarian } from '@/types';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+
 const kategoriColors: Record<string, string> = {
   ibadah: 'bg-primary/10 text-primary border-primary/30',
   pendidikan: 'bg-info/10 text-info border-info/30',
   istirahat: 'bg-warning/10 text-warning border-warning/30',
   kegiatan: 'bg-success/10 text-success border-success/30',
 };
+
 export default function DailySchedulePage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<JadwalHarian | null>(null);
-  const [formData, setFormData] = useState({
-    waktu: '',
-    judul: '',
-    deskripsi: '',
-    kategori: 'pendidikan',
-  });
+  const [activeTab, setActiveTab] = useState<'putra' | 'putri'>('putra');
   const { showConfirm } = useAppStore();
-  const { data: data = [], isLoading } = useQuery({
+
+  const { data: allData = [], isLoading } = useQuery({
     queryKey: ['jadwalHarian'],
-    queryFn: async () => (await api.get('/admin/generic/jadwalHarian')).data.data,
-  });
-  const mutation = useMutation({
-    mutationFn: async (newItem: any) => {
-      if (editingItem) {
-        return api.put(`/admin/generic/jadwalHarian/${editingItem.id}`, newItem);
-      }
-      return api.post('/admin/generic/jadwalHarian', newItem);
+    queryFn: async () => {
+        const res = await api.get('/admin/generic/jadwalHarian');
+        return res.data.data || res.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jadwalHarian'] });
-      toast.success(editingItem ? 'Jadwal berhasil diperbarui' : 'Jadwal berhasil ditambahkan');
-      setIsModalOpen(false);
-    },
-    onError: () => toast.error('Gagal menyimpan jadwal'),
   });
+
+  // Filter data based on active tab (target)
+  const data = (Array.isArray(allData) ? allData : []).filter((item: any) => {
+      // Backward compatibility: if no target, assume based on old category or default to 'semua'
+      const itemTarget = item.target || (['putra', 'putri'].includes(item.kategori) ? item.kategori : 'semua');
+      return itemTarget === activeTab || itemTarget === 'semua';
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/admin/generic/jadwalHarian/${id}`),
     onSuccess: () => {
@@ -68,38 +53,25 @@ export default function DailySchedulePage() {
     },
     onError: () => toast.error('Gagal menghapus jadwal'),
   });
-  const handleAdd = () => {
-    setEditingItem(null);
-    setFormData({ waktu: '', judul: '', deskripsi: '', kategori: 'pendidikan' });
-    setIsModalOpen(true);
-  };
-  const handleEdit = (item: JadwalHarian) => {
-    setEditingItem(item);
-    setFormData({
-      waktu: item.waktu,
-      judul: item.judul,
-      deskripsi: item.deskripsi,
-      kategori: item.kategori,
-    });
-    setIsModalOpen(true);
-  };
-  const handleSubmit = () => {
-    mutation.mutate({ ...formData, order: editingItem?.order || data.length + 1 });
-  };
+
   const handleDelete = (id: string) => {
     showConfirm({
       title: 'Hapus Jadwal',
-      description: 'Yakin ingin menghapus jadwal ini?',
+      description: 'Yakin ingin menghapus jadwal ini? Tindakan ini tidak dapat dibatalkan.',
       variant: 'destructive',
       onConfirm: () => deleteMutation.mutate(id),
     });
   };
+
   const columns: ColumnDef<JadwalHarian>[] = [
     {
       accessorKey: 'waktu',
       header: 'Waktu',
       cell: ({ row }) => (
-        <code className="text-sm font-medium">{row.original.waktu}</code>
+        <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <code className="text-sm font-medium">{row.original.waktu}</code>
+        </div>
       ),
     },
     {
@@ -107,8 +79,8 @@ export default function DailySchedulePage() {
       header: 'Kegiatan',
       cell: ({ row }) => (
         <div>
-          <p className="font-medium">{row.original.judul}</p>
-          <p className="text-xs text-muted-foreground">{row.original.deskripsi}</p>
+          <p className="font-medium text-base">{row.original.judul}</p>
+          <p className="text-sm text-muted-foreground line-clamp-1">{row.original.deskripsi}</p>
         </div>
       ),
     },
@@ -116,14 +88,19 @@ export default function DailySchedulePage() {
       accessorKey: 'kategori',
       header: 'Kategori',
       cell: ({ row }) => (
-        <Badge variant="outline" className={kategoriColors[row.original.kategori] || ''}>
+        <Badge variant="outline" className={`${kategoriColors[row.original.kategori] || ''} capitalize`}>
           {row.original.kategori}
         </Badge>
       ),
     },
     {
-      accessorKey: 'order',
-      header: 'Urutan',
+      accessorKey: 'target',
+      header: 'Target',
+      cell: ({ row }) => (
+        <Badge variant="secondary" className="capitalize">
+            {row.original.target || 'Semua'}
+        </Badge>
+      ),
     },
     {
       id: 'actions',
@@ -135,7 +112,7 @@ export default function DailySchedulePage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+            <DropdownMenuItem onClick={() => navigate(`/admin/daily-schedule/${row.original.id}/edit`)}>
               <Pencil className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id)} className="text-destructive">
@@ -146,67 +123,47 @@ export default function DailySchedulePage() {
       ),
     },
   ];
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Jadwal Harian" description="Kelola jadwal aktivitas harian santri" icon={Clock}>
-        <Button onClick={handleAdd}>
+    <div className="space-y-6 animate-fade-in pb-10">
+      <PageHeader 
+        title="Jadwal Harian" 
+        description="Kelola jadwal aktivitas harian santri secara terstruktur." 
+        icon={CalendarDays}
+      >
+        <Button onClick={() => navigate('/admin/daily-schedule/new')} className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="mr-2 h-4 w-4" /> Tambah Jadwal
         </Button>
       </PageHeader>
-      <DataTable columns={columns} data={data} isLoading={isLoading} searchPlaceholder="Cari jadwal..." />
-      <CrudModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        title={editingItem ? 'Edit Jadwal' : 'Tambah Jadwal'}
-        onSubmit={handleSubmit}
-        isSubmitting={mutation.isPending}
-        size="lg"
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Waktu</Label>
-            <Input
-              value={formData.waktu}
-              onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
-              placeholder="04:00 - 04:30"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Kategori</Label>
-            <Select
-              value={formData.kategori}
-              onValueChange={(v) => setFormData({ ...formData, kategori: v })}
+      
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-muted/30 p-4 rounded-lg border">
+        <div className="flex gap-2">
+            <Button 
+            variant={activeTab === 'putra' ? 'default' : 'outline'} 
+            onClick={() => setActiveTab('putra')}
+            className={`w-32 ${activeTab === 'putra' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ibadah">Ibadah</SelectItem>
-                <SelectItem value="pendidikan">Pendidikan</SelectItem>
-                <SelectItem value="istirahat">Istirahat</SelectItem>
-                <SelectItem value="kegiatan">Kegiatan</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Nama Kegiatan</Label>
-            <Input
-              value={formData.judul}
-              onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
-              placeholder="Shalat Subuh"
-            />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Deskripsi</Label>
-            <Textarea
-              value={formData.deskripsi}
-              onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-              placeholder="Deskripsi kegiatan..."
-              rows={3}
-            />
-          </div>
+            Putra
+            </Button>
+            <Button 
+            variant={activeTab === 'putri' ? 'default' : 'outline'} 
+            onClick={() => setActiveTab('putri')}
+            className={`w-32 ${activeTab === 'putri' ? 'bg-pink-600 hover:bg-pink-700' : ''}`}
+            >
+            Putri
+            </Button>
         </div>
-      </CrudModal>
+        <div className="text-sm text-muted-foreground">
+            Menampilkan {data.length} kegiatan untuk santri <span className="font-medium capitalize">{activeTab}</span>
+        </div>
+      </div>
+
+      <DataTable 
+        columns={columns} 
+        data={data} 
+        isLoading={isLoading} 
+        searchPlaceholder="Cari nama kegiatan atau waktu..." 
+      />
     </div>
   );
 }

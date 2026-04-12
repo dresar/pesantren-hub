@@ -79,6 +79,7 @@ export default function ProgramFormPage() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="https://..."
+                    showMediaLibrary
                   />
                   <FormMessage />
                 </FormItem>

@@ -10,6 +10,7 @@ import { AdminLayout } from "@/components/layout";
 import { ConfirmDialog, TableSkeleton } from "@/components/common";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import SantriProtectedRoute from "@/components/auth/SantriProtectedRoute";
+import AuthorProtectedRoute from "@/components/auth/AuthorProtectedRoute";
 import DataPrefetcher from "@/components/common/DataPrefetcher";
 import ThemeProvider from "@/components/ThemeProvider";
 import { api } from "@/lib/api";
@@ -20,11 +21,14 @@ import AdminDashboardPage from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import GenericResourcePage from "./pages/GenericResourcePage";
 const GenericResourceFormPage = lazy(() => import("./pages/GenericResourceFormPage"));
+const GenericAIGeneratorPage = lazy(() => import("./pages/ai/GenericAIGeneratorPage"));
 const Home = lazy(() => import("./pages/Home"));
 const Sejarah = lazy(() => import("./pages/Sejarah"));
 const ProfilKami = lazy(() => import("./pages/ProfilKami"));
 const VisiMisi = lazy(() => import("./pages/VisiMisi"));
 const Organisasi = lazy(() => import("./pages/Organisasi"));
+const OrganisasiListPage = lazy(() => import("./pages/website/organisasi/OrganisasiListPage"));
+const OrganisasiFormPage = lazy(() => import("./pages/website/organisasi/OrganisasiFormPage"));
 const PublicProgramPage = lazy(() => import("./pages/ProgramPage"));
 const ProgramDetail = lazy(() => import("./pages/ProgramDetail"));
 const FasilitasPage = lazy(() => import("./pages/FasilitasPage"));
@@ -37,7 +41,10 @@ const BlogDetail = lazy(() => import("./pages/BlogDetail"));
 const KontakPage = lazy(() => import("./pages/KontakPage"));
 const PendaftaranPage = lazy(() => import("./pages/PendaftaranPage"));
 const AlurPendaftaranPage = lazy(() => import("./pages/website/AlurPendaftaranPage"));
+const DailySchedulePage = lazy(() => import("./pages/website/DailySchedulePage")); // Fixed route
+const DailyScheduleFormPage = lazy(() => import("./pages/website/DailyScheduleFormPage"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
+const DataSyncPage = lazy(() => import("./pages/auth/DataSyncPage"));
 const UserDashboardPage = lazy(() => import("./pages/DashboardPage"));
 const FormPendaftaranPage = lazy(() => import("./pages/FormPendaftaranPage"));
 const StatusPendaftaranPage = lazy(() => import("./pages/StatusPendaftaranPage"));
@@ -60,6 +67,7 @@ const PaymentsPage = lazy(() => import("./pages/payments/PaymentsPage"));
 const PaymentDetailPage = lazy(() => import("./pages/payments/PaymentDetailPage"));
 const FinancialDashboard = lazy(() => import("./pages/financial/FinancialDashboard"));
 const BlogEditorPage = lazy(() => import("./pages/blog/BlogEditorPage"));
+const BlogAIGeneratorPage = lazy(() => import("./pages/blog/BlogAIGeneratorPage"));
 const VisiMisiPage = lazy(() => import("./pages/website/visimisi/VisiMisiPage"));
 const HeroListPage = lazy(() => import("./pages/website/hero/HeroListPage"));
 const HeroFormPage = lazy(() => import("./pages/website/hero/HeroFormPage"));
@@ -76,6 +84,7 @@ const EducationFormPage = lazy(() => import("./pages/website/education/Education
 const WebsiteSettingsPage = lazy(() => import("./pages/website/settings/WebsiteSettingsPage"));
 const UniformListPage = lazy(() => import("./pages/website/uniforms/UniformListPage"));
 const HomePageManager = lazy(() => import("./pages/website/home/HomePageManager"));
+const FormConfigPage = lazy(() => import("./pages/website/settings/FormConfigPage"));
 const AnnouncementListPage = lazy(() => import("./pages/blog/announcements/AnnouncementListPage"));
 const AnnouncementFormPage = lazy(() => import("./pages/blog/announcements/AnnouncementFormPage"));
 const TestimonialListPage = lazy(() => import("./pages/blog/testimonials/TestimonialListPage"));
@@ -90,11 +99,37 @@ const GalleryListPage = lazy(() => import("./pages/media/gallery/GalleryListPage
 const GalleryFormPage = lazy(() => import("./pages/media/gallery/GalleryFormPage"));
 const DocumentationListPage = lazy(() => import("./pages/media/documentation/DocumentationListPage"));
 const DocumentationFormPage = lazy(() => import("./pages/media/documentation/DocumentationFormPage"));
-const FileManagerPage = lazy(() => import("./pages/media/files/FileManagerPage"));
-const FileManagerFormPage = lazy(() => import("./pages/media/files/FileManagerFormPage"));
+const MediaDashboardPage = lazy(() => import("./pages/media/MediaDashboardPage"));
+const MediaAddAccountPage = lazy(() => import("./pages/media/MediaAddAccountPage"));
+const MediaSettingsPage = lazy(() => import("./pages/media/MediaSettingsPage"));
 const WhatsAppTemplateListPage = lazy(() => import("./pages/communication/whatsapp/WhatsAppTemplateListPage"));
 const WhatsAppTemplateFormPage = lazy(() => import("./pages/communication/whatsapp/WhatsAppTemplateFormPage"));
 const SystemSettingsPage = lazy(() => import("./pages/system/SystemSettingsPage"));
+const DocumentSettingsPage = lazy(() => import("./pages/system/DocumentSettingsPage"));
+const DocumentTemplateManager = lazy(() => import("./pages/system/DocumentTemplateManager"));
+
+const ArticleListPage = lazy(() => import("./pages/publication/ArticleListPage"));
+const ArticleDetailPage = lazy(() => import("./pages/publication/ArticleDetailPage"));
+const JournalListPage = lazy(() => import("./pages/publication/JournalListPage"));
+const JournalDetailPage = lazy(() => import("./pages/publication/JournalDetailPage"));
+const PublicationRegisterPage = lazy(() => import("./pages/publication/PublicationRegisterPage"));
+
+const AuthorDashboardPage = lazy(() => import("./pages/author/AuthorDashboardPage"));
+const AuthorArticleListPage = lazy(() => import("./pages/author/AuthorArticleListPage"));
+const AuthorJournalListPage = lazy(() => import("./pages/author/AuthorJournalListPage"));
+const AuthorArticleFormPage = lazy(() => import("./pages/author/AuthorArticleFormPage"));
+const AuthorProfilePage = lazy(() => import("./pages/author/AuthorProfilePage"));
+const AuthorCollaborationsPage = lazy(() => import("./pages/author/AuthorCollaborationsPage"));
+const AuthorCollaborationDetailPage = lazy(() => import("./pages/author/AuthorCollaborationDetailPage"));
+const AuthorDiscussionsPage = lazy(() => import("./pages/author/AuthorDiscussionsPage"));
+
+const AdminArticleListPage = lazy(() => import("./pages/admin/publication/AdminArticleListPage"));
+const AdminJournalListPage = lazy(() => import("./pages/admin/publication/AdminJournalListPage"));
+const AdminAuthorVerificationPage = lazy(() => import("./pages/admin/publication/AdminAuthorVerificationPage"));
+const AdminPublicationDashboard = lazy(() => import("./pages/admin/publication/AdminPublicationDashboard"));
+const AdminPublicationCategoryPage = lazy(() => import("./pages/admin/publication/AdminPublicationCategoryPage"));
+const AdminVolumePage = lazy(() => import("./pages/admin/publication/AdminVolumePage"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -152,26 +187,20 @@ const PageLoader = () => (
     <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
   </div>
 );
+import { AnimatePresence, motion } from "framer-motion";
+import PublicPreloader from "@/components/common/PublicPreloader";
+import { useState } from "react";
+
 const App = () => {
+  const [showPreloader, setShowPreloader] = useState(() => {
+     // Check immediately to avoid flicker if already visited
+     return !sessionStorage.getItem('hasVisited');
+  });
+
   useEffect(() => {
-    let stopped = false;
-    const ping = async () => {
-      try {
-        const { data } = await api.get('/core/health/db');
-        if (!data?.ok && !stopped) {
-          notify.error('MySQL belum terkoneksi. Jalankan MySQL di XAMPP lalu refresh.');
-        }
-      } catch {
-        if (!stopped) notify.error('MySQL belum terkoneksi. Jalankan MySQL di XAMPP lalu refresh.');
-      }
-    };
-    ping();
-    const id = setInterval(ping, 15000);
-    return () => {
-      stopped = true;
-      clearInterval(id);
-    };
+    // MySQL check removed as requested
   }, []);
+
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
@@ -179,19 +208,32 @@ const App = () => {
           <Toaster />
           <Sonner position="top-right" richColors />
           <ConfirmDialog />
-          <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
-            <DataPrefetcher />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
+          
+          <AnimatePresence mode="wait">
+            {showPreloader ? (
+              <PublicPreloader key="preloader" onComplete={() => setShowPreloader(false)} />
+            ) : (
+              <motion.div 
+                key="content"
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="w-full h-full"
+              >
+                <BrowserRouter
+                  future={{
+                    v7_startTransition: true,
+                    v7_relativeSplatPath: true,
+                  }}
+                >
+                  <DataPrefetcher />
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
               {}
               <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-              <Route path="/profil" element={<MainLayout><ProfilKami /></MainLayout>} />
-              <Route path="/profil/sejarah" element={<Navigate to="/profil" replace />} />
+              <Route path="/sejarah" element={<MainLayout><Sejarah /></MainLayout>} />
+              <Route path="/profil" element={<Navigate to="/sejarah" replace />} />
+              <Route path="/profil/sejarah" element={<Navigate to="/sejarah" replace />} />
               <Route path="/profil/visi-misi" element={<MainLayout><VisiMisi /></MainLayout>} />
               <Route path="/profil/organisasi" element={<MainLayout><Organisasi /></MainLayout>} />
               <Route path="/program" element={<MainLayout><PublicProgramPage /></MainLayout>} />
@@ -204,6 +246,11 @@ const App = () => {
               <Route path="/galeri" element={<MainLayout><GaleriPage /></MainLayout>} />
               <Route path="/blog" element={<MainLayout><PublicBlogPage /></MainLayout>} />
               <Route path="/blog/:slug" element={<MainLayout><BlogDetail /></MainLayout>} />
+              <Route path="/artikel" element={<MainLayout><ArticleListPage /></MainLayout>} />
+              <Route path="/artikel/:slug" element={<MainLayout><ArticleDetailPage /></MainLayout>} />
+              <Route path="/jurnal" element={<MainLayout><JournalListPage /></MainLayout>} />
+              <Route path="/jurnal/:id" element={<MainLayout><JournalDetailPage /></MainLayout>} />
+              <Route path="/publikasi/register" element={<MainLayout><PublicationRegisterPage /></MainLayout>} />
               <Route path="/kontak" element={<MainLayout><KontakPage /></MainLayout>} />
               <Route path="/pendaftaran" element={<MainLayout><PendaftaranPage /></MainLayout>} />
               <Route path="/alur-pendaftaran" element={<MainLayout><AlurPendaftaranPage /></MainLayout>} />
@@ -228,15 +275,36 @@ const App = () => {
                  <Route path="/app/pengaturan/:santriId" element={<AppLayout><PengaturanPage /></AppLayout>} />
                  <Route path="/app/pembayaran/:santriId" element={<AppLayout><PaymentPage /></AppLayout>} />
               </Route>
-              {}
+              
+              <Route element={<AuthorProtectedRoute />}>
+                 <Route path="/author/dashboard" element={<AppLayout><AuthorDashboardPage /></AppLayout>} />
+                 <Route path="/author/articles" element={<AppLayout><AuthorArticleListPage /></AppLayout>} />
+                 <Route path="/author/articles/new" element={<AppLayout><AuthorArticleFormPage /></AppLayout>} />
+                 <Route path="/author/articles/:id/edit" element={<AppLayout><AuthorArticleFormPage /></AppLayout>} />
+                 <Route path="/author/journals" element={<AppLayout><AuthorJournalListPage /></AppLayout>} />
+                 <Route path="/author/profile" element={<AppLayout><AuthorProfilePage /></AppLayout>} />
+                 <Route path="/author/collaborations" element={<AppLayout><AuthorCollaborationsPage /></AppLayout>} />
+                 <Route path="/author/collaborations/:id" element={<AppLayout><AuthorCollaborationDetailPage /></AppLayout>} />
+                 <Route path="/author/discussions" element={<AppLayout><AuthorDiscussionsPage /></AppLayout>} />
+              </Route>
+              
+              {/* Santri Redirects */}
               <Route path="/santri/dashboard" element={<SantriRedirect />} />
               <Route path="/app/*" element={<SantriRedirect />} />
               {}
-              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin" element={<Navigate to="/admin/sync" replace />} />
               <Route element={<ProtectedRoute />}>
+                <Route path="/admin/sync" element={<DataSyncPage />} />
                 <Route element={<AdminLayout />}>
                   <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                   <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+                  
+                  <Route path="/admin/publication/dashboard" element={<AdminPublicationDashboard />} />
+                  <Route path="/admin/publication/articles" element={<AdminArticleListPage />} />
+                  <Route path="/admin/publication/journals" element={<AdminJournalListPage />} />
+                  <Route path="/admin/publication/categories" element={<AdminPublicationCategoryPage />} />
+                  <Route path="/admin/publication/volumes" element={<AdminVolumePage />} />
+                  <Route path="/admin/publication/authors" element={<AdminAuthorVerificationPage />} />
                   {}
                   <Route path="/admin/admissions" element={<AdmissionsPage />} />
                   <Route path="/admin/admissions/new" element={<SantriFormPage />} />
@@ -270,6 +338,7 @@ const App = () => {
                   {}
                   <Route path="/admin/blog" element={<Navigate to="/admin/blog/posts" replace />} />
                   <Route path="/admin/blog/posts" element={<GenericResourcePage resource="blogBlogpost" title="Artikel & Berita" basePath="/admin/blog/posts" viewMode="grid" />} />
+                  <Route path="/admin/blog/generate-ai" element={<BlogAIGeneratorPage />} />
                   <Route path="/admin/blog/posts/new" element={<BlogEditorPage />} />
                   <Route path="/admin/blog/posts/:id/edit" element={<BlogEditorPage />} />
                   {}
@@ -302,17 +371,20 @@ const App = () => {
                   <Route path="/admin/faq" element={<GenericResourcePage resource="faq" title="FAQ" basePath="/admin/faq" />} />
                   <Route path="/admin/faq/new" element={<GenericResourceFormPage resource="faq" title="FAQ" basePath="/admin/faq" />} />
                   <Route path="/admin/faq/:id/edit" element={<GenericResourceFormPage resource="faq" title="FAQ" basePath="/admin/faq" />} />
+                  <Route path="/admin/ai-generator" element={<GenericAIGeneratorPage />} />
                   <Route path="/admin/extracurricular" element={<GenericResourcePage resource="ekstrakurikuler" title="Ekstrakurikuler" basePath="/admin/extracurricular" />} />
                   <Route path="/admin/extracurricular/new" element={<GenericResourceFormPage resource="ekstrakurikuler" title="Ekstrakurikuler" basePath="/admin/extracurricular" />} />
                   <Route path="/admin/extracurricular/:id/edit" element={<GenericResourceFormPage resource="ekstrakurikuler" title="Ekstrakurikuler" basePath="/admin/extracurricular" />} />
-                  <Route path="/admin/daily-schedule" element={<GenericResourcePage resource="jadwalHarian" title="Jadwal Harian" basePath="/admin/daily-schedule" />} />
-                  <Route path="/admin/daily-schedule/new" element={<GenericResourceFormPage resource="jadwalHarian" title="Jadwal Harian" basePath="/admin/daily-schedule" />} />
-                  <Route path="/admin/daily-schedule/:id/edit" element={<GenericResourceFormPage resource="jadwalHarian" title="Jadwal Harian" basePath="/admin/daily-schedule" />} />
+                  <Route path="/admin/daily-schedule" element={<DailySchedulePage />} />
+                  <Route path="/admin/daily-schedule/new" element={<DailyScheduleFormPage />} />
+                  <Route path="/admin/daily-schedule/:id/edit" element={<DailyScheduleFormPage />} />
                   <Route path="/admin/website-settings" element={<WebsiteSettingsPage />} />
-                  <Route path="/admin/registration-flow" element={<GenericResourcePage resource="registrationFlow" title="Alur Pendaftaran" />} />
+                  <Route path="/admin/registration-flow" element={<GenericResourcePage resource="registrationFlow" title="Alur Pendaftaran" basePath="/admin/registration-flow" />} />
+                  <Route path="/admin/registration-flow/new" element={<GenericResourceFormPage resource="registrationFlow" title="Alur Pendaftaran" basePath="/admin/registration-flow" />} />
+                  <Route path="/admin/registration-flow/:id/edit" element={<GenericResourceFormPage resource="registrationFlow" title="Alur Pendaftaran" basePath="/admin/registration-flow" />} />
+                  <Route path="/admin/form-config" element={<FormConfigPage />} />
                   <Route path="/admin/home-settings" element={<HomePageManager />} />
-                  {}
-                  <Route path="/faq" element={<Navigate to="/admin/faq" replace />} />
+                  {/* === REDIRECTS === */}              <Route path="/faq" element={<Navigate to="/admin/faq" replace />} />
                   <Route path="/extracurricular" element={<Navigate to="/admin/extracurricular" replace />} />
                   <Route path="/daily-schedule" element={<Navigate to="/admin/daily-schedule" replace />} />
                   <Route path="/website-settings" element={<Navigate to="/admin/website-settings" replace />} />
@@ -336,6 +408,13 @@ const App = () => {
                   <Route path="/history" element={<Navigate to="/admin/history" replace />} />
                   <Route path="/history/*" element={<Navigate to="/admin/history" replace />} />
                   {}
+                  <Route path="/admin/media" element={<MediaDashboardPage />} />
+                  <Route path="/admin/media/add-account" element={<MediaAddAccountPage />} />
+                  <Route path="/admin/media/settings" element={<MediaSettingsPage />} />
+                  <Route path="/admin/media/*" element={<Navigate to="/admin/media" replace />} />
+                  <Route path="/media" element={<Navigate to="/admin/media" replace />} />
+                  <Route path="/media/*" element={<Navigate to="/admin/media" replace />} />
+                  {}
                   <Route path="/admin/website/founders" element={<FounderListPage />} />
                   <Route path="/admin/website/founders/new" element={<FounderFormPage />} />
                   <Route path="/admin/website/founders/:id/edit" element={<FounderFormPage />} />
@@ -353,18 +432,27 @@ const App = () => {
                   {}
                   <Route path="/facilities" element={<Navigate to="/admin/facilities" replace />} />
                   <Route path="/facilities/*" element={<Navigate to="/admin/facilities" replace />} />
-                  {}
+                  {/* ORGANISASI */}
+                  <Route path="/admin/organisasi" element={<OrganisasiListPage />} />
+                  <Route path="/admin/organisasi/new" element={<OrganisasiFormPage />} />
+                  <Route path="/admin/organisasi/:id/edit" element={<OrganisasiFormPage />} />
+                  <Route path="/organisasi" element={<Navigate to="/admin/organisasi" replace />} />
+                  {/* END ORGANISASI */}
                   <Route path="/admin/education" element={<EducationListPage />} />
                   <Route path="/admin/education/new" element={<EducationFormPage />} />
                   <Route path="/admin/education/:id/edit" element={<EducationFormPage />} />
                   {}
                   <Route path="/education" element={<Navigate to="/admin/education" replace />} />
                   <Route path="/education/*" element={<Navigate to="/admin/education" replace />} />
-                  <Route path="/admin/tuition-fees" element={<GenericResourcePage resource="biayaPendidikan" title="Biaya Pendidikan" />} />
+                  <Route path="/admin/tuition-fees" element={<GenericResourcePage resource="biayaPendidikan" title="Biaya Pendidikan" basePath="/admin/tuition-fees" />} />
+                  <Route path="/admin/tuition-fees/new" element={<GenericResourceFormPage resource="biayaPendidikan" title="Biaya Pendidikan" basePath="/admin/tuition-fees" />} />
+                  <Route path="/admin/tuition-fees/:id/edit" element={<GenericResourceFormPage resource="biayaPendidikan" title="Biaya Pendidikan" basePath="/admin/tuition-fees" />} />
                   <Route path="/admin/uniforms" element={<UniformListPage />} />
                   <Route path="/admin/uniforms/new" element={<GenericResourceFormPage resource="seragam" title="Seragam" basePath="/admin/uniforms" />} />
                   <Route path="/admin/uniforms/:id/edit" element={<GenericResourceFormPage resource="seragam" title="Seragam" basePath="/admin/uniforms" />} />
-                  <Route path="/admin/statistics" element={<GenericResourcePage resource="statistik" title="Statistik" />} />
+                  <Route path="/admin/statistics" element={<GenericResourcePage resource="statistik" title="Statistik" basePath="/admin/statistics" />} />
+                  <Route path="/admin/statistics/new" element={<GenericResourceFormPage resource="statistik" title="Statistik" basePath="/admin/statistics" />} />
+                  <Route path="/admin/statistics/:id/edit" element={<GenericResourceFormPage resource="statistik" title="Statistik" basePath="/admin/statistics" />} />
                   {}
                   <Route path="/tuition-fees" element={<Navigate to="/admin/tuition-fees" replace />} />
                   <Route path="/uniforms" element={<Navigate to="/admin/uniforms" replace />} />
@@ -390,34 +478,33 @@ const App = () => {
                   {}
                   <Route path="/documentation" element={<Navigate to="/admin/documentation" replace />} />
                   <Route path="/documentation/*" element={<Navigate to="/admin/documentation" replace />} />
-                  <Route path="/admin/files" element={<FileManagerPage />} /> 
-                  <Route path="/admin/files/new" element={<FileManagerFormPage />} />
-                  <Route path="/admin/files/:id/edit" element={<FileManagerFormPage />} />
+                  <Route path="/admin/media" element={<MediaDashboardPage />} />
                   {}
-                  <Route path="/files" element={<Navigate to="/admin/files" replace />} />
-                  <Route path="/files/*" element={<Navigate to="/admin/files" replace />} />
                   <Route path="/admin/contacts" element={<GenericResourcePage resource="kontak" title="Kontak Masuk" />} />
                   <Route path="/admin/contact-persons" element={<GenericResourcePage resource="contactPersons" title="Contact Person" />} />
                   <Route path="/admin/social-media" element={<GenericResourcePage resource="socialMedia" title="Sosial Media" />} />
                   <Route path="/admin/whatsapp-templates" element={<WhatsAppTemplateListPage />} />
                   <Route path="/admin/whatsapp-templates/new" element={<WhatsAppTemplateFormPage />} />
                   <Route path="/admin/whatsapp-templates/:id/edit" element={<WhatsAppTemplateFormPage />} />
-                  <Route path="/admin/document-templates" element={<GenericResourcePage resource="documentTemplates" title="Template Dokumen" />} />
                   <Route path="/admin/settings" element={<SystemSettingsPage />} />
+                  <Route path="/admin/document-settings" element={<DocumentSettingsPage />} />
+                  <Route path="/admin/document-templates" element={<DocumentTemplateManager />} />
                   {}
                   <Route path="/contacts" element={<Navigate to="/admin/contacts" replace />} />
                   <Route path="/contact-persons" element={<Navigate to="/admin/contact-persons" replace />} />
                   <Route path="/social-media" element={<Navigate to="/admin/social-media" replace />} />
                   <Route path="/whatsapp-templates" element={<Navigate to="/admin/whatsapp-templates" replace />} />
                   <Route path="/whatsapp-templates/*" element={<Navigate to="/admin/whatsapp-templates" replace />} />
-                  <Route path="/document-templates" element={<Navigate to="/admin/document-templates" replace />} />
                   <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
                 </Route>
               </Route>
               <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+            </motion.div>
+          )}
+          </AnimatePresence>
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>

@@ -1,7 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { PageHeader } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,9 +24,13 @@ import {
 import { api } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate } from '@/lib/utils';
+import { generateStudentPdf } from '@/lib/pdf-utils';
+import { toast } from 'sonner';
+
 export default function SantriDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  
   const { data: santri, isLoading, error } = useQuery({
     queryKey: ['santri', id],
     queryFn: async () => {
@@ -36,92 +38,40 @@ export default function SantriDetailPage() {
       return response.data;
     },
   });
-  const handleDownloadPDF = () => {
+
+  const { data: docSettings } = useQuery({
+    queryKey: ['documentSettings'],
+    queryFn: async () => {
+      try {
+        const response = await api.get('/admin/generic/documentSettings');
+        const items = response.data?.data || [];
+        return items[0] || {};
+      } catch (e) {
+        return {};
+      }
+    },
+  });
+
+  const handleDownloadPDF = async () => {
     if (!santri) return;
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    doc.setFillColor(220, 220, 220);
-    doc.circle(25, 25, 12, 'F');
-    doc.setFontSize(10);
-    doc.text("LOGO", 25, 25, { align: 'center' });
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PONDOK PESANTREN AL-HIDAYAH', pageWidth / 2, 20, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Jl. Raya Pesantren No. 123, Desa Sukamaju, Kec. Cilawu', pageWidth / 2, 26, { align: 'center' });
-    doc.text('Kab. Garut, Jawa Barat - 44181 | Telp: (0262) 123456', pageWidth / 2, 31, { align: 'center' });
-    doc.text('Email: info@ponpes-alhidayah.sch.id | Website: www.ponpes-alhidayah.sch.id', pageWidth / 2, 36, { align: 'center' });
-    doc.setLineWidth(0.5);
-    doc.line(15, 42, pageWidth - 15, 42);
-    doc.setLineWidth(0.1);
-    doc.line(15, 43, pageWidth - 15, 43);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('BIODATA SANTRI', pageWidth / 2, 55, { align: 'center' });
-    doc.setLineWidth(0.1);
-    doc.line(pageWidth / 2 - 25, 56, pageWidth / 2 + 25, 56);
-    let finalY = 65;
-    const addSection = (title: string, data: string[][]) => {
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title, 15, finalY);
-      finalY += 3;
-      autoTable(doc, {
-        startY: finalY,
-        body: data,
-        theme: 'plain',
-        styles: { fontSize: 10, cellPadding: 1.5 },
-        columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
-        margin: { left: 15, right: 15 },
+    
+    try {
+      toast.info('Sedang membuat PDF...');
+      await generateStudentPdf(santri, docSettings);
+      
+      // Log activity
+      await api.post('/admin/logs/document', {
+        action: 'download_biodata',
+        details: `Santri: ${santri.namaLengkap} (${santri.id})`
       });
-      finalY = doc.lastAutoTable.finalY + 10;
-    };
-    addSection('A. DATA PRIBADI', [
-      ['Nama Lengkap', `: ${santri.namaLengkap}`],
-      ['Nama Panggilan', `: ${santri.namaPanggilan || '-'}`],
-      ['NISN', `: ${santri.nisn || '-'}`],
-      ['Tempat, Tanggal Lahir', `: ${santri.tempatLahir}, ${formatDate(santri.tanggalLahir)}`],
-      ['Jenis Kelamin', `: ${santri.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan'}`],
-      ['Agama', `: ${santri.agama}`],
-      ['Kewarganegaraan', `: ${santri.kewarganegaraan}`],
-      ['Anak Ke', `: ${santri.anakKe || '-'}`],
-      ['Jumlah Saudara', `: ${santri.jumlahSaudara || '-'}`],
-      ['Golongan Darah', `: ${santri.golonganDarah || '-'}`],
-      ['Alamat', `: ${santri.alamat}`],
-      ['No. HP', `: ${santri.noHp || '-'}`],
-      ['Email', `: ${santri.email || '-'}`],
-    ]);
-    addSection('B. DATA KELUARGA', [
-      ['Nama Ayah', `: ${santri.namaAyah}`],
-      ['NIK Ayah', `: ${santri.nikAyah || '-'}`],
-      ['Pekerjaan Ayah', `: ${santri.pekerjaanAyah || '-'}`],
-      ['No. HP Ayah', `: ${santri.noHpAyah || '-'}`],
-      ['Nama Ibu', `: ${santri.namaIbu}`],
-      ['NIK Ibu', `: ${santri.nikIbu || '-'}`],
-      ['Pekerjaan Ibu', `: ${santri.pekerjaanIbu || '-'}`],
-      ['No. HP Ibu', `: ${santri.noHpIbu || '-'}`],
-    ]);
-    addSection('C. DATA SEKOLAH ASAL', [
-      ['Asal Sekolah', `: ${santri.asalSekolah}`],
-      ['NPSN', `: ${santri.npsnSekolah || '-'}`],
-      ['Kelas Terakhir', `: ${santri.kelasTerakhir || '-'}`],
-      ['Tahun Lulus', `: ${santri.tahunLulus || '-'}`],
-      ['No. Ijazah', `: ${santri.noIjazah || '-'}`],
-    ]);
-    if (finalY > 250) {
-      doc.addPage();
-      finalY = 40;
+
+      toast.success('PDF berhasil didownload');
+    } catch (e) {
+      console.error(e);
+      toast.error('Gagal membuat PDF');
     }
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    const today = new Date();
-    const dateStr = today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    doc.text(`Garut, ${dateStr}`, pageWidth - 50, finalY + 10, { align: 'center' });
-    doc.text('Panitia PSB', pageWidth - 50, finalY + 15, { align: 'center' });
-    doc.text('(____________________)', pageWidth - 50, finalY + 35, { align: 'center' });
-    doc.save(`Biodata_${santri.namaLengkap.replace(/\s+/g, '_')}.pdf`);
   };
+
   if (isLoading) {
     return (
       <div className="space-y-6">

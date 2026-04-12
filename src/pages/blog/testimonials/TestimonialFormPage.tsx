@@ -74,6 +74,7 @@ export default function TestimonialFormPage() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="https://..."
+                    showMediaLibrary
                   />
                   <FormMessage />
                 </FormItem>

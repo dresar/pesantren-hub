@@ -112,6 +112,7 @@ export default function GalleryFormPage() {
                   value={field.value}
                   onChange={field.onChange}
                   placeholder="https://..."
+                  showMediaLibrary
                 />
                 <FormMessage />
               </FormItem>
@@ -142,6 +143,7 @@ export default function GalleryFormPage() {
                       value={field.value}
                       onChange={field.onChange}
                       placeholder="https://..."
+                      showMediaLibrary
                     />
                     <FormMessage />
                   </FormItem>

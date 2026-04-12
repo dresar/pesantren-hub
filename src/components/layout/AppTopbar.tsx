@@ -17,12 +17,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { Bell, Menu, Moon, Search, Settings, Sun, User, LogOut, Monitor, ChevronDown, Check, Info, AlertTriangle, XCircle, CheckCircle2 } from 'lucide-react';
+import { Bell, Menu, Moon, Search, Settings, Sun, User, LogOut, Monitor, ChevronDown, Check, Info, AlertTriangle, XCircle, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import AdminThemeToggle from '@/components/shared/AdminThemeToggle';
+import { MediaLibraryModal } from '@/components/media/MediaLibraryModal';
+import { useState, useEffect } from 'react';
+import { RealtimeClient } from '@/lib/ws';
+
 export function AppTopbar() {
   const navigate = useNavigate();
+  const [showMediaLibrary, setShowMediaLibrary] = useState(false);
   const { theme, setTheme } = useTheme();
   const { sidebarCollapsed, setSidebarOpen, globalSearch, setGlobalSearch, showConfirm } = useAppStore();
   const { user, logout } = useAuthStore();
@@ -33,7 +38,7 @@ export function AppTopbar() {
       const res = await api.get('/notifications'); 
       return res.data;
     },
-    refetchInterval: 30000
+    refetchInterval: 300000 // 5 minutes
   });
   const markReadMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -66,6 +71,18 @@ export function AppTopbar() {
     });
   };
   const userInitials = user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() : 'U';
+  useEffect(() => {
+    if (!user) return;
+    const rt = new RealtimeClient();
+    rt.connect(user.id);
+    rt.onMessage((msg) => {
+      if (msg.type === 'collaboration_invite') {
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        toast.message('Undangan kolaborasi baru', { description: 'Anda diundang untuk kolaborasi' });
+      }
+    });
+    return () => rt.close();
+  }, [user]);
   return (
     <header
       className={cn(
@@ -91,7 +108,10 @@ export function AppTopbar() {
         </div>
         {}
         <div className="flex items-center gap-2">
-          {}
+          <Button variant="ghost" size="icon" onClick={() => setShowMediaLibrary(true)}>
+            <ImageIcon className="h-5 w-5" />
+          </Button>
+          <MediaLibraryModal open={showMediaLibrary} onOpenChange={setShowMediaLibrary} />
           <AdminThemeToggle />
           {}
           <DropdownMenu>
@@ -216,6 +236,11 @@ export function AppTopbar() {
           </DropdownMenu>
         </div>
       </div>
+      <MediaLibraryModal 
+        open={showMediaLibrary} 
+        onOpenChange={setShowMediaLibrary} 
+        mode="manage" 
+      />
     </header>
   );
 }

@@ -29,13 +29,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -57,6 +50,7 @@ interface DataTableProps<TData, TValue> {
   onRefresh?: () => void;
   onBulkDelete?: (ids: string[]) => void;
   filterComponent?: React.ReactNode;
+  actionElement?: React.ReactNode;
   emptyMessage?: string;
   pageSize?: number;
   hideSearch?: boolean;
@@ -70,6 +64,7 @@ export function DataTable<TData, TValue>({
   onRefresh,
   onBulkDelete,
   filterComponent,
+  actionElement,
   emptyMessage = 'Tidak ada data.',
   pageSize = 10,
   hideSearch = false,
@@ -183,6 +178,7 @@ export function DataTable<TData, TValue>({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+          {actionElement}
         </div>
       </div>
       {}
@@ -266,23 +262,17 @@ export function DataTable<TData, TValue>({
           {}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">Per halaman</span>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => {
-                table.setPageSize(Number(value));
-              }}
+            <select
+              className="h-8 w-[70px] rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
             >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((size) => (
-                  <SelectItem key={size} value={`${size}`}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {[10, 20, 30, 40, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
           </div>
           {}
           <div className="text-sm text-muted-foreground whitespace-nowrap">
@@ -356,4 +346,4 @@ export function getSelectionColumn<TData>(): ColumnDef<TData> {
     enableSorting: false,
     enableHiding: false,
   };
-}
+}

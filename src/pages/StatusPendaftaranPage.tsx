@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
-import { Check, Clock, CircleDot, CreditCard, Upload, Loader2, AlertCircle, Calendar, Trophy } from 'lucide-react';
+import { Check, Clock, CircleDot, CreditCard, Upload, Loader2, AlertCircle, Calendar, Trophy, Lock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSantriRegistrationStatus, useBankAccounts, useSubmitPayment } from '@/hooks/use-santri';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UploadField from '@/components/forms/UploadField';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { GraduationModal } from '@/components/admissions/GraduationModal';
 import { ExamScheduleModal } from '@/components/admissions/ExamScheduleModal';
 import { useQuery } from '@tanstack/react-query';
@@ -17,6 +19,13 @@ const StatusPendaftaranPage = () => {
   const submitPayment = useSubmitPayment();
   const [showExamModal, setShowExamModal] = useState(false);
   const [showGraduationModal, setShowGraduationModal] = useState(false);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+
+  useEffect(() => {
+    if (data?.status === 'rejected') {
+      setShowRejectionModal(true);
+    }
+  }, [data?.status]);
   const { data: schedules = [] } = useQuery({
     queryKey: ['my-schedules'],
     queryFn: async () => {
@@ -171,22 +180,47 @@ const StatusPendaftaranPage = () => {
         {}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {}
-            {(computedStatus === 'verified' || schedules.length > 0) && (
-                <div className="glass-card p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
-                            <Calendar className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-sm">Jadwal Ujian</p>
-                            <p className="text-xs text-muted-foreground">{schedules.length} Jadwal tersedia</p>
-                        </div>
+            {/* Exam Schedule Card */}
+            <div className={`glass-card p-4 flex items-center justify-between relative overflow-hidden ${
+                computedStatus !== 'verified' && computedStatus !== 'accepted' ? 'opacity-80 bg-muted/40' : ''
+            }`}>
+                <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${
+                        computedStatus === 'verified' || computedStatus === 'accepted' 
+                        ? 'bg-blue-100 text-blue-600' 
+                        : 'bg-gray-100 text-gray-400'
+                    }`}>
+                        {computedStatus === 'verified' || computedStatus === 'accepted' ? <Calendar className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                     </div>
+                    <div>
+                        <p className="font-semibold text-sm">Jadwal Ujian</p>
+                        {computedStatus === 'verified' || computedStatus === 'accepted' ? (
+                            <p className="text-xs text-muted-foreground">{schedules.length} Jadwal tersedia</p>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">Menunggu verifikasi berkas & pembayaran</p>
+                        )}
+                    </div>
+                </div>
+                
+                {computedStatus === 'verified' || computedStatus === 'accepted' ? (
                     <Button variant="outline" size="sm" onClick={() => setShowExamModal(true)}>
                         Lihat
                     </Button>
-                </div>
-            )}
+                ) : (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" size="sm" disabled className="opacity-50 cursor-not-allowed">
+                                    <Lock className="w-3 h-3 mr-1" /> Terkunci
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Selesaikan pembayaran dan verifikasi berkas untuk membuka jadwal ujian</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+            </div>
             {}
             {result && (
                 <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-yellow-500">
@@ -403,6 +437,30 @@ const StatusPendaftaranPage = () => {
         </div>
       </motion.div>
       {}
+      {/* Rejection Modal */}
+      <Dialog open={showRejectionModal} onOpenChange={setShowRejectionModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <DialogTitle className="text-center text-xl text-red-600">Pendaftaran Ditolak</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              Mohon maaf, pendaftaran Anda belum dapat kami terima.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-red-50 p-4 rounded-lg border border-red-100 text-sm text-red-800">
+            <p className="font-semibold mb-1">Catatan dari Panitia:</p>
+            <p>{data?.message || 'Dokumen tidak memenuhi persyaratan.'}</p>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button variant="outline" onClick={() => setShowRejectionModal(false)}>
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ExamScheduleModal 
         isOpen={showExamModal} 
         onClose={() => setShowExamModal(false)} 

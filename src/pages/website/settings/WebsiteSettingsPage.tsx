@@ -27,6 +27,7 @@ export default function WebsiteSettingsPage() {
   const [formData, setFormData] = useState({
     namaPondok: '',
     logo: '',
+    favicon: '',
     deskripsi: '',
     email: '',
     noTelepon: '',
@@ -127,6 +128,31 @@ export default function WebsiteSettingsPage() {
       }
     } catch (error) {
       toast.error('Gagal upload logo');
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error('Ukuran file maksimal 1MB');
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      const response = await api.post('/upload', uploadFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (response.data?.url) {
+        setFormData(prev => ({ ...prev, favicon: response.data.url }));
+        toast.success('Favicon berhasil diupload');
+      }
+    } catch (error) {
+      toast.error('Gagal upload favicon');
       console.error(error);
     } finally {
       setIsUploading(false);
@@ -302,6 +328,64 @@ export default function WebsiteSettingsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Format: PNG, JPG, SVG. Maksimal 2MB. Disarankan menggunakan format SVG atau PNG transparan.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Favicon Website</Label>
+            <div className="flex items-start gap-4">
+              <div className="relative w-16 h-16 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/50 overflow-hidden group">
+                {formData.favicon ? (
+                  <>
+                    <img 
+                      src={formData.favicon} 
+                      alt="Favicon Preview" 
+                      className="w-full h-full object-contain p-2"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setFormData(prev => ({ ...prev, favicon: '' }))}
+                        disabled={!isEditing}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+                )}
+                {isUploading && (
+                  <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('favicon-upload')?.click()}
+                    disabled={isUploading || !isEditing}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Favicon
+                  </Button>
+                  <input
+                    id="favicon-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFaviconUpload}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Format: PNG, ICO. Maksimal 1MB. Disarankan ukuran 32x32 atau 64x64 piksel.
                 </p>
               </div>
             </div>

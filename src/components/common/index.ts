@@ -5,4 +5,5 @@ export { StatsCard } from './StatsCard';
 export { StatusBadge } from './StatusBadge';
 export { CrudModal } from './CrudModal';
 export { EmptyState } from './EmptyState';
-export { TableSkeleton, CardSkeleton, FormSkeleton } from './LoadingSkeleton';
+export { TableSkeleton, CardSkeleton, FormSkeleton } from './LoadingSkeleton';
+export { RichTextEditor } from './RichTextEditor';

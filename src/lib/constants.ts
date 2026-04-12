@@ -24,6 +24,7 @@ export const navItems: NavItem[] = [
     children: [
       { label: 'Informasi Pendaftaran', href: '/pendaftaran' },
       { label: 'Alur Pendaftaran', href: '/alur-pendaftaran' },
+      { label: 'Daftar Jadi Penulis', href: '/publikasi/register' },
     ],
   },
   { label: 'Kontak', href: '/kontak' },

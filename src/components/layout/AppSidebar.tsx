@@ -59,7 +59,7 @@ export function AppSidebar() {
       {}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-[100] h-screen border-r bg-sidebar transition-all duration-300 ease-in-out',
+          'fixed left-0 top-0 z-[100] h-screen h-[100dvh] border-r bg-sidebar transition-all duration-300 ease-in-out',
           sidebarCollapsed ? 'w-16' : 'w-72',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0' 
@@ -99,8 +99,8 @@ export function AppSidebar() {
           </Button>
         </div>
         {}
-        <ScrollArea className="h-[calc(100vh-4rem-4rem)]">
-          <nav className="p-2 space-y-2">
+        <ScrollArea className="h-[calc(100vh-4rem-4rem)] lg:h-[calc(100vh-8rem)] h-[calc(100dvh-8rem)]">
+          <nav className="p-2 space-y-2 pb-20">
             {navigation.map((section) => (
               <NavSectionItem 
                 key={section.title} 
@@ -232,4 +232,4 @@ function NavSectionItem({ section, collapsed, currentPath }: NavSectionProps) {
       </CollapsibleContent>
     </Collapsible>
   );
-}
+}

@@ -1,12 +1,29 @@
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { AppTopbar } from './AppTopbar';
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
 import WhatsAppButton from '@/components/shared/WhatsAppButton';
 import AiAssistantButton from '@/components/shared/AiAssistantButton';
+import { useSyncStore } from '@/stores/sync-store';
+import { CACHE_EXPIRATION_TIME } from '@/lib/sync-config';
+
 export function AdminLayout() {
   const { sidebarCollapsed } = useAppStore();
+  const navigate = useNavigate();
+  const { lastSynced } = useSyncStore();
+
+  // Background Sync Check
+  useEffect(() => {
+    // If cache is expired or missing, redirect to sync
+    // But don't do this if we just came from sync (to avoid loops)
+    if (!lastSynced || (Date.now() - lastSynced > CACHE_EXPIRATION_TIME)) {
+      // console.log('Cache expired, redirecting to sync...');
+      // navigate('/admin/sync', { replace: true });
+      // Optional: Silent background sync could happen here instead of redirect
+    }
+  }, [lastSynced, navigate]);
   return (
     <div className="min-h-screen bg-background">
       {}

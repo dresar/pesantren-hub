@@ -22,6 +22,7 @@ import {
   FileCode,
   Tag,
   FolderOpen,
+  BookMarked,
   Phone,
   Share2,
   DollarSign,
@@ -136,11 +137,6 @@ export const navigationConfig: NavSection[] = [
         href: '/admin/admissions/results',
         icon: Award,
       },
-      {
-        title: 'Pengaturan Akun User',
-        href: '/admin/users',
-        icon: UserCheck,
-      },
     ],
   },
   {
@@ -156,9 +152,46 @@ export const navigationConfig: NavSection[] = [
     ],
   },
   {
+    title: 'Publikasi Ilmiah',
+    icon: BookOpen,
+    roles: ['admin', 'superadmin', 'author'],
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/admin/publication/dashboard',
+        icon: LayoutDashboard,
+      },
+      {
+        title: 'Artikel',
+        href: '/admin/publication/articles',
+        icon: BookOpen,
+      },
+      {
+        title: 'Jurnal',
+        href: '/admin/publication/journals',
+        icon: GraduationCap,
+      },
+      {
+        title: 'Kategori',
+        href: '/admin/publication/categories',
+        icon: FolderOpen,
+      },
+      {
+        title: 'Volume Jurnal',
+        href: '/admin/publication/volumes',
+        icon: BookMarked,
+      },
+      {
+        title: 'Verifikasi Penulis',
+        href: '/admin/publication/authors',
+        icon: UserCheck,
+      },
+    ],
+  },
+  {
     title: 'Konten Website',
     icon: Globe,
-    roles: ['admin', 'superadmin'],
+    roles: ['admin', 'superadmin', 'author'],
     items: [
       {
         title: 'Blog & Artikel',
@@ -208,6 +241,11 @@ export const navigationConfig: NavSection[] = [
         icon: Clock,
       },
       {
+        title: 'Formulir Pendaftaran',
+        href: '/admin/form-config',
+        icon: FileText,
+      },
+      {
         title: 'Hero Section',
         href: '/admin/hero-sections',
         icon: Sparkles,
@@ -221,6 +259,11 @@ export const navigationConfig: NavSection[] = [
         title: 'Sejarah',
         href: '/admin/history',
         icon: BookOpen,
+      },
+      {
+        title: 'Struktur Organisasi',
+        href: '/admin/organisasi',
+        icon: Users,
       },
       {
         title: 'Pendiri & Pengasuh',
@@ -297,6 +340,16 @@ export const navigationConfig: NavSection[] = [
     roles: ['admin', 'superadmin'],
     items: [
       {
+        title: 'Manajemen Media',
+        href: '/admin/media',
+        icon: ImageIcon,
+      },
+      {
+        title: 'Pengaturan Media',
+        href: '/admin/media/settings',
+        icon: Settings,
+      },
+      {
         title: 'Galeri',
         href: '/admin/gallery',
         icon: ImageIcon,
@@ -304,11 +357,6 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Dokumentasi',
         href: '/admin/documentation',
-        icon: FolderOpen,
-      },
-      {
-        title: 'File Manager',
-        href: '/admin/files',
         icon: FolderOpen,
       },
     ],
@@ -341,18 +389,6 @@ export const navigationConfig: NavSection[] = [
     ],
   },
   {
-    title: 'Dokumen',
-    icon: FileCode,
-    roles: ['admin', 'superadmin'],
-    items: [
-      {
-        title: 'Template Surat',
-        href: '/admin/document-templates',
-        icon: FileCode,
-      },
-    ],
-  },
-  {
     title: 'Sistem',
     icon: Settings,
     roles: ['admin', 'superadmin'],
@@ -372,6 +408,16 @@ export const navigationConfig: NavSection[] = [
         href: '/admin/settings',
         icon: Settings,
       },
+      {
+        title: 'Pengaturan Dokumen',
+        href: '/admin/document-settings',
+        icon: FileText,
+      },
+      {
+        title: 'Template Dokumen',
+        href: '/admin/document-templates',
+        icon: FileText,
+      },
     ],
   },
 ];
@@ -380,4 +426,4 @@ export const flattenedNav = navigationConfig.flatMap((section) =>
     ...item,
     section: section.title,
   }))
-);
+);

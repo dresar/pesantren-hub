@@ -3,9 +3,12 @@ import { ArrowUp } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import WhatsAppButton from '@/components/shared/WhatsAppButton';
+import AnnouncementPopup from '@/components/common/AnnouncementPopup';
+
 interface MainLayoutProps {
   children: ReactNode;
 }
+
 const MainLayout = ({ children }: MainLayoutProps) => {
   const [showUp, setShowUp] = useState(false);
   useEffect(() => {
@@ -14,12 +17,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 pt-16 md:pt-18">{children}</main>
       <Footer />
       <WhatsAppButton className="bottom-20 right-6" role="public" />
+      <AnnouncementPopup />
       {showUp && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -32,4 +37,5 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     </div>
   );
 };
+
 export default MainLayout;

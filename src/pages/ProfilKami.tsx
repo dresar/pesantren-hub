@@ -29,8 +29,8 @@ interface Founder {
   email?: string;
 }
 const ProfilKami = () => {
-  const { data: settings, isLoading: isLoadingSettings } = usePublicData<WebsiteSettings>(['settings'], '/public/settings');
-  const { data: founders, isLoading: isLoadingFounders } = usePublicData<Founder[]>(['founders'], '/public/founders');
+  const { data: settings, isLoading: isLoadingSettings } = usePublicData<WebsiteSettings>(['settings'], '/core/settings');
+  const { data: founders, isLoading: isLoadingFounders } = usePublicData<Founder[]>(['founders'], '/core/website/founders');
   const [selectedFounder, setSelectedFounder] = useState<Founder | null>(null);
   const isLoading = isLoadingSettings || isLoadingFounders;
   if (isLoading) {
@@ -103,7 +103,7 @@ const ProfilKami = () => {
         <SectionHeader badge="Tokoh" title="Para Pendiri & Pengasuh" subtitle="Tokoh-tokoh yang berjasa dalam merintis dan mengembangkan pesantren." />
         {}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-           {founders?.map((founder, i) => (
+           {Array.isArray(founders) && founders.map((founder, i) => (
              <motion.div 
                key={founder.id}
                initial={{ opacity: 0, y: 20 }}
@@ -135,7 +135,7 @@ const ProfilKami = () => {
                </div>
              </motion.div>
            ))}
-           {(!founders || founders.length === 0) && (
+           {(!Array.isArray(founders) || founders.length === 0) && (
              <div className="col-span-full text-center py-12 text-muted-foreground">
                Belum ada data pendiri.
              </div>

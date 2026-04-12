@@ -74,12 +74,13 @@ const HighlightTitle = ({ text }: { text: string }) => {
   return <>{text}</>;
 };
 const Home = () => {
-  const { data: settings } = usePublicData<WebsiteSettings>(['settings'], '/core/settings');
-  const { data: heroSlides = [] } = usePublicData<HeroSection[]>(['heroSections'], '/core/hero');
+  const { data: settings, isLoading: isLoadingSettings, error: settingsError } = usePublicData<WebsiteSettings>(['settings'], '/core/settings');
+  const { data: heroSlides = [], isLoading: isLoadingHero, error: heroError } = usePublicData<HeroSection[]>(['heroSections'], '/core/hero');
   const { data: programs = [] } = usePublicData<any[]>(['programs'], '/core/programs');
+  const { data: educationPrograms = [] } = usePublicData<any[]>(['education-programs'], '/core/program-pendidikan');
   const { data: statistics = [] } = usePublicData<any[]>(['statistics'], '/core/statistik');
   const { data: testimonials = [] } = usePublicData<any[]>(['testimonials'], '/blog/testimonials');
-  const { data: blogData } = usePublicData<any>(['latest-posts'], '/blog/posts?limit=4');
+  const { data: blogData } = usePublicData<any>(['latest-posts'], '/blog/posts?limit=8');
   const isMobile = useIsMobile();
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [testimonialSlides, setTestimonialSlides] = useState<any[]>([]);
@@ -118,7 +119,11 @@ const Home = () => {
       <section className="relative min-h-[90vh] md:min-h-screen flex items-center -mt-16 md:-mt-18 overflow-hidden">
         {}
         <div className="absolute inset-0">
-          {activeSlides.length > 0 ? (
+          {isLoadingHero ? (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent/20" />
+            </>
+          ) : activeSlides.length > 0 ? (
             <AnimatePresence>
               <motion.div
                 key={currentSlide}
@@ -141,7 +146,7 @@ const Home = () => {
             </AnimatePresence>
           ) : (
             <>
-              <img src={heroImage} alt="Pesantren Raudhatussalam" className="w-full h-full object-cover" />
+              <img src={(settings?.gambarProfil && !settingsError) ? settings.gambarProfil : heroImage} alt="Pesantren Raudhatussalam" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent/20" />
             </>
           )}
@@ -171,10 +176,22 @@ const Home = () => {
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 drop-shadow-sm text-white">
-                   <HighlightTitle text={activeSlides.length > 0 ? activeSlides[currentSlide].title : (settings?.heroTitle || 'Mencetak Pemimpin Umat Masa Depan')} />
+                   <HighlightTitle text={
+                     activeSlides.length > 0
+                       ? activeSlides[currentSlide].title
+                       : (!isLoadingSettings && settings?.heroTitle
+                           ? settings.heroTitle
+                           : (settingsError ? 'Mencetak Pemimpin Umat Masa Depan' : ''))
+                   } />
                 </h1>
                 <p className="text-base md:text-lg text-white/90 leading-relaxed mb-8 max-w-lg mx-auto md:mx-0 drop-shadow-sm">
-                  {activeSlides.length > 0 ? activeSlides[currentSlide].subtitle : (settings?.heroSubtitle || 'Pondok Pesantren Modern Raudhatussalam Mahato — memadukan ilmu agama dan pengetahuan umum untuk generasi unggul berakhlak mulia.')}
+                  {
+                    activeSlides.length > 0
+                      ? activeSlides[currentSlide].subtitle
+                      : (!isLoadingSettings && settings?.heroSubtitle
+                          ? settings.heroSubtitle
+                          : (settingsError ? 'Pondok Pesantren Modern Raudhatussalam Mahato — memadukan ilmu agama dan pengetahuan umum untuk generasi unggul berakhlak mulia.' : ''))
+                  }
                 </p>
               </motion.div>
             </AnimatePresence>
@@ -261,7 +278,13 @@ const Home = () => {
             />
             <div className="prose prose-lg text-muted-foreground -mt-6 mb-8">
               <p className="whitespace-pre-line leading-relaxed">
-                {settings?.profilSingkat || "Pondok Pesantren Raudhatussalam Mahato adalah lembaga pendidikan Islam modern yang memadukan ilmu agama dan pengetahuan umum. Kami berkomitmen mencetak generasi yang hafal Al-Qur'an, berakhlak mulia, dan siap bersaing di era global.\n\nBerdiri sejak tahun 2010, kami terus berkembang menyediakan fasilitas terbaik dan tenaga pengajar profesional untuk mendukung tumbuh kembang santri."}
+                {
+                  !isLoadingSettings && settings?.profilSingkat
+                    ? settings.profilSingkat
+                    : (settingsError
+                        ? "Pondok Pesantren Raudhatussalam Mahato adalah lembaga pendidikan Islam modern yang memadukan ilmu agama dan pengetahuan umum. Kami berkomitmen mencetak generasi yang hafal Al-Qur'an, berakhlak mulia, dan siap bersaing di era global.\n\nBerdiri sejak tahun 2010, kami terus berkembang menyediakan fasilitas terbaik dan tenaga pengajar profesional untuk mendukung tumbuh kembang santri."
+                        : '')
+                }
               </p>
             </div>
             <Link to="/sejarah">
@@ -291,7 +314,45 @@ const Home = () => {
           </motion.div>
         </div>
       </SectionWrapper>
-      {}
+      {/* Program Pendidikan Section */}
+      <SectionWrapper className="bg-secondary/10">
+        <SectionHeader
+          badge="Pendidikan"
+          title="Program Pendidikan"
+          subtitle="Pilihan program pendidikan berkualitas untuk masa depan putra-putri Anda."
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {educationPrograms.map((edu, i) => (
+            <motion.div
+              key={edu.id}
+              custom={i}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="glass-card p-6 hover-lift text-center relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                <GraduationCap className="w-24 h-24 text-primary" />
+              </div>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center relative z-10">
+                {edu.gambar ? (
+                  <img src={edu.gambar} alt={edu.nama} className="w-full h-full object-cover rounded-2xl" />
+                ) : (
+                  <BookOpen className="w-8 h-8 text-primary" />
+                )}
+              </div>
+              <h3 className="font-bold text-xl mb-2 relative z-10">{edu.nama}</h3>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 relative z-10">
+                <Award className="w-3 h-3 text-primary" />
+                <span className="text-xs font-medium text-primary">Akreditasi {edu.akreditasi}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </SectionWrapper>
+
+      {/* Program Unggulan Section */}
       <SectionWrapper>
         <SectionHeader
           badge="Program Unggulan"
@@ -433,7 +494,7 @@ const Home = () => {
       <SectionWrapper className="!px-2 md:!px-4">
         <SectionHeader badge="Blog" title="Berita Terbaru" subtitle="Kabar terkini seputar kegiatan dan prestasi pesantren." />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
-          {blogPosts.map((post, i) => (
+          {blogPosts.slice(0, 4).map((post, i) => (
             <motion.div key={post.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <Link to={`/blog/${post.slug}`} className="block group">
                 <div className="glass-card overflow-hidden hover-lift h-full flex flex-col">
@@ -461,6 +522,31 @@ const Home = () => {
           <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
             Semua Artikel <ChevronRight className="w-4 h-4" />
           </Link>
+        </div>
+      </SectionWrapper>
+
+      {/* Article Preview Section (2 Grid) */}
+      <SectionWrapper className="bg-secondary/5">
+        <SectionHeader badge="Artikel" title="Bacaan Pilihan" subtitle="Artikel menarik lainnya untuk Anda." />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {blogPosts.slice(4, 8).map((post, i) => (
+            <motion.div key={post.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+              <Link to={`/blog/${post.slug}`} className="block group">
+                <div className="glass-card overflow-hidden hover-lift h-full flex flex-row items-center gap-4 p-4">
+                  <div className="w-1/3 aspect-square bg-muted relative overflow-hidden rounded-lg shrink-0">
+                    {post.featuredImage && (
+                        <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <span className="text-xs font-medium text-primary line-clamp-1">{post.category?.name}</span>
+                    <h3 className="text-lg font-semibold mt-1 line-clamp-2 group-hover:text-primary transition-colors leading-tight">{post.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
         </div>
       </SectionWrapper>
       {}

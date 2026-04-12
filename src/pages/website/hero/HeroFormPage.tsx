@@ -69,6 +69,7 @@ export default function HeroFormPage() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="https://..."
+                    showMediaLibrary
                   />
                   <FormMessage />
                 </FormItem>

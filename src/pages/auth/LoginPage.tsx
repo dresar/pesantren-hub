@@ -29,11 +29,18 @@ export default function LoginPage() {
   useEffect(() => {
     if (useAuthStore.getState().isAuthenticated) {
       const user = useAuthStore.getState().user;
+      
+      // Publication Author Redirect
+      if (user?.publicationStatus && user?.publicationStatus !== 'none') {
+        navigate('/author/dashboard', { replace: true });
+        return;
+      }
+
       if (user?.role === 'santri' || user?.role === 'user') {
         const identifier = user.username || user.id;
         navigate(`/santri/dashboard/${identifier}`, { replace: true });
       } else {
-        navigate('/admin/dashboard', { replace: true });
+        navigate('/admin/sync', { replace: true });
       }
     }
   }, [navigate]);
@@ -44,14 +51,20 @@ export default function LoginPage() {
       const response = await api.post('/auth/login', { username, password });
       const { user, token } = response.data;
       setAuth(user, token);
-      toast.success(`Selamat datang kembali, ${user.first_name || user.username}!`);
-      await new Promise((r) => setTimeout(r, 2000));
+      toast.success(`Selamat datang kembali, ${user.firstName || user.username}!`);
+      await new Promise((r) => setTimeout(r, 1000));
       const from = (location.state as any)?.from?.pathname;
       if (from) {
         navigate(from, { replace: true });
       } else {
+        // Publication Author Redirect (Priority)
+        if ((user.publicationStatus && user.publicationStatus !== 'none') || user.role === 'author') {
+            navigate('/author/dashboard', { replace: true });
+            return;
+        }
+
         if (['superadmin', 'admin', 'staff', 'petugaspendaftaran'].includes(user.role)) {
-          navigate('/admin/dashboard', { replace: true });
+          navigate('/admin/sync', { replace: true });
         } else if (user.role === 'santri' || user.role === 'user') {
           const identifier = user.username || user.id;
           navigate(`/santri/dashboard/${identifier}`, { replace: true });

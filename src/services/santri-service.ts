@@ -56,24 +56,38 @@ export const santriService = {
     const response = await api.get('/santri/registration-status');
     return response.data;
   },
-  submitRegistration: async (data: SantriRegistrationData) => {
+  submitRegistration: async (data: any, isDraft = false) => {
     const formData = new FormData();
-    Object.entries(data.santri).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    Object.entries(data.orangTua).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    Object.entries(data.pendidikan).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    Object.entries(data.tambahan).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    if (data.dokumen.akteLahir) formData.append('fotoAkta', data.dokumen.akteLahir);
-    if (data.dokumen.kartuKeluarga) formData.append('fotoKk', data.dokumen.kartuKeluarga);
-    if (data.dokumen.pasFoto) formData.append('fotoSantri', data.dokumen.pasFoto);
-    if (data.dokumen.ijazah) formData.append('fotoIjazah', data.dokumen.ijazah);
+    formData.append('isDraft', isDraft ? 'true' : 'false');
+    
+    if (data.santri) {
+        Object.entries(data.santri).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) formData.append(key, value as string);
+        });
+    }
+    if (data.orangTua) {
+        Object.entries(data.orangTua).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) formData.append(key, value as string);
+        });
+    }
+    if (data.pendidikan) {
+        Object.entries(data.pendidikan).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) formData.append(key, value as string);
+        });
+    }
+    if (data.tambahan) {
+        Object.entries(data.tambahan).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) formData.append(key, value as string);
+        });
+    }
+
+    if (data.dokumen) {
+        if (data.dokumen.akteLahir) formData.append('fotoAkta', data.dokumen.akteLahir);
+        if (data.dokumen.kartuKeluarga) formData.append('fotoKk', data.dokumen.kartuKeluarga);
+        if (data.dokumen.pasFoto) formData.append('fotoSantri', data.dokumen.pasFoto);
+        if (data.dokumen.ijazah) formData.append('fotoIjazah', data.dokumen.ijazah);
+    }
+    
     const response = await api.post('/santri/registration', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

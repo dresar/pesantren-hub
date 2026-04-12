@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Trophy, XCircle, AlertCircle, CheckCircle2, Download } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -65,9 +65,9 @@ export function GraduationModal({ isOpen, onClose, status, santriName, nisn, sco
                      isRejected ? <XCircle className="w-12 h-12 text-white" /> :
                      <AlertCircle className="w-12 h-12 text-white" />}
                 </motion.div>
-                <h2 className="text-3xl font-bold mb-2">
+                <DialogTitle className="text-3xl font-bold mb-2">
                     {isPassed ? 'SELAMAT!' : isRejected ? 'MOHON MAAF' : 'PENGUMUMAN'}
-                </h2>
+                </DialogTitle>
                 <p className="text-white/90 font-medium text-lg">
                     {isPassed ? 'Anda Dinyatakan LULUS' : 
                      isRejected ? 'Anda Belum Berhasil' : 
