@@ -20,7 +20,6 @@ import { FileEdit, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DualImageInput } from '@/components/forms/DualImageInput';
 import { api } from '@/lib/api';
-import { RealtimeClient } from '@/lib/ws';
 import { useAuthStore } from '@/stores/auth-store';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -53,9 +52,6 @@ export default function AuthorArticleFormPage() {
   const isEdit = !!id;
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
-  const [activeUsers, setActiveUsers] = useState<number[]>([]);
-  const [rt] = useState(() => new RealtimeClient());
-  const [isRemoteUpdate, setIsRemoteUpdate] = useState(false);
 
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(articleSchema),
@@ -131,25 +127,6 @@ export default function AuthorArticleFormPage() {
       });
     }
   }, [article, form]);
-
-  useEffect(() => {
-    if (!id || !currentUser) return;
-    rt.connect(currentUser.id);
-    rt.onMessage((msg) => {
-      if (msg.type === 'presence_update' && msg.scope === 'article' && msg.id === Number(id)) {
-        setActiveUsers(msg.users || []);
-      } else if (msg.type === 'article_content' && msg.articleId === Number(id)) {
-        setIsRemoteUpdate(true);
-        form.setValue('content', msg.content);
-        setTimeout(() => setIsRemoteUpdate(false), 50);
-      }
-    });
-    rt.joinArticle(Number(id));
-    return () => {
-      rt.leaveArticle(Number(id));
-      rt.close();
-    };
-  }, [id, currentUser]);
 
   const mutation = useMutation({
     mutationFn: async (values: ArticleFormValues) => {
@@ -257,12 +234,7 @@ export default function AuthorArticleFormPage() {
                                     <FormControl>
                                         <RichTextEditor 
                                             value={field.value} 
-                                            onChange={(v) => {
-                                              field.onChange(v);
-                                              if (id && !isRemoteUpdate) {
-                                                rt.broadcastArticleContent(Number(id), v);
-                                              }
-                                            }}
+                                            onChange={(v) => field.onChange(v)}
                                             placeholder="Tulis konten lengkap artikel Anda di sini..."
                                             disabled={!canEdit}
                                         />
@@ -449,11 +421,6 @@ export default function AuthorArticleFormPage() {
                             <Save className="mr-2 h-4 w-4" />
                             {isEdit ? 'Simpan Perubahan' : 'Kirim Artikel'}
                         </Button>
-                        {id && (
-                          <div className="mt-4 text-sm text-muted-foreground">
-                            Editor aktif: {activeUsers.length} pengguna
-                          </div>
-                        )}
                     </CardContent>
                 </Card>
                 {id && (
