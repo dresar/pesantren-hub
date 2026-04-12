@@ -5,6 +5,8 @@ export interface AuthUser {
   id: number;
   username: string;
   role: string;
+  email: string;
+  isSuperuser?: boolean;
 }
 declare module 'hono' {
   interface ContextVariableMap {

@@ -439,7 +439,7 @@ export class MediaService {
         if (!file) throw new Error("File not found");
 
         // Delete from Primary
-        const [account] = await db.select().from(mediaAccounts).where(eq(mediaAccounts.id, file.accountId));
+        const [account] = await db.select().from(mediaAccounts).where(eq(mediaAccounts.id, file.accountId as number));
         if (account) {
             try {
                 const provider = this.getProviderInstance(account);
@@ -470,7 +470,7 @@ export class MediaService {
         await db.delete(mediaFiles).where(eq(mediaFiles.id, id));
 
         await this.logActivity({
-            accountId: file.accountId,
+            accountId: file.accountId ?? undefined,
             fileId: id,
             action: 'DELETE',
             status: 'success',

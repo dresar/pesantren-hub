@@ -100,7 +100,7 @@ export class PublicationController {
   }
 
   static async updateArticle(c: Context) {
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const user = c.get('user');
     const body = await c.req.json();
     const validation = updateArticleSchema.safeParse(body);
@@ -118,7 +118,7 @@ export class PublicationController {
   }
 
   static async approveArticle(c: Context) {
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const user = c.get('user');
     
     try {
@@ -131,7 +131,7 @@ export class PublicationController {
   }
 
   static async rejectArticle(c: Context) {
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const body = await c.req.json();
     const validation = approvalSchema.safeParse(body);
 
@@ -209,7 +209,7 @@ export class PublicationController {
   static async getArticleBySlug(c: Context) {
     const slug = c.req.param('slug');
     try {
-      const article = await PublicationService.getArticleBySlug(slug);
+      const article = await PublicationService.getArticleBySlug(slug as string);
       if (!article) return c.json({ error: 'Artikel tidak ditemukan' }, 404);
       return c.json({ data: article });
     } catch (e) {
@@ -218,7 +218,7 @@ export class PublicationController {
   }
 
   static async getArticleById(c: Context) {
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     try {
       const article = await PublicationService.getArticleById(id);
       if (!article) return c.json({ error: 'Artikel tidak ditemukan' }, 404);
@@ -229,7 +229,7 @@ export class PublicationController {
   }
 
   static async deleteArticle(c: Context) {
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     try {
         await PublicationService.deleteArticle(id);
         return c.json({ message: 'Artikel berhasil dihapus' });
@@ -275,7 +275,7 @@ export class PublicationController {
   }
 
   static async updateCategory(c: Context) {
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const body = await c.req.json();
     const validation = updateCategorySchema.safeParse(body);
     if (!validation.success) {
@@ -290,7 +290,7 @@ export class PublicationController {
   }
 
   static async deleteCategory(c: Context) {
-      const id = Number(c.req.param('id'));
+      const id = Number((c.req.param('id') as string));
       try {
           await PublicationService.deleteCategory(id);
           return c.json({ message: 'Kategori berhasil dihapus' });
@@ -326,7 +326,7 @@ export class PublicationController {
   }
 
   static async deleteVolume(c: Context) {
-      const id = Number(c.req.param('id'));
+      const id = Number((c.req.param('id') as string));
       try {
           await PublicationService.deleteVolume(id);
           return c.json({ message: 'Volume berhasil dihapus' });
@@ -337,7 +337,7 @@ export class PublicationController {
 
   // Author Verification
   static async verifyAuthor(c: Context) {
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const body = await c.req.json();
     const { status, reason } = body; // status: 'approved' | 'rejected' | 'pending'
 
@@ -421,7 +421,7 @@ export class PublicationController {
     if (!user?.id) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     if (!Number.isFinite(id)) {
       return c.json({ error: 'ID kolaborasi tidak valid' }, 400);
     }
@@ -442,7 +442,7 @@ export class PublicationController {
 
   static async updateCollaboration(c: Context) {
     const user = c.get('user');
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const body = await c.req.json();
     const validation = updateCollaborationSchema.safeParse(body);
     if (!validation.success) {
@@ -461,7 +461,7 @@ export class PublicationController {
     if (!user?.id) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     if (!Number.isFinite(id)) {
       return c.json({ error: 'ID kolaborasi tidak valid' }, 400);
     }
@@ -479,7 +479,7 @@ export class PublicationController {
 
   static async addCollaborationMember(c: Context) {
     const user = c.get('user');
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const body = await c.req.json();
     const validation = addCollaborationMemberSchema.safeParse(body);
 
@@ -497,7 +497,7 @@ export class PublicationController {
 
   static async inviteCollaborator(c: Context) {
     const user = c.get('user');
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const body = await c.req.json();
     const validation = inviteCollaborationSchema.safeParse(body);
     if (!validation.success) {
@@ -527,7 +527,7 @@ export class PublicationController {
 
   static async respondInvite(c: Context) {
     const user = c.get('user');
-    const id = Number(c.req.param('id'));
+    const id = Number((c.req.param('id') as string));
     const inviteId = Number(c.req.param('inviteId'));
     const body = await c.req.json();
     const validation = respondInviteSchema.safeParse(body);
@@ -544,7 +544,7 @@ export class PublicationController {
 
   static async removeCollaborationMember(c: Context) {
     const user = c.get('user');
-    const id = Number(c.req.param('id')); // Collaboration ID
+    const id = Number((c.req.param('id') as string)); // Collaboration ID
     const memberId = Number(c.req.param('memberId')); // Member User ID
 
     try {

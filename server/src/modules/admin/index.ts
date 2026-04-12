@@ -63,7 +63,7 @@ const createCrudHandlers = (path: string, table: any) => {
     });
 
     admin.put(`${path}/:id`, async (c) => {
-        const id = Number(c.req.param('id'));
+        const id = Number((c.req.param('id') as string));
         try {
             const body = await c.req.json();
             const cleanBody: any = { ...body };
@@ -79,7 +79,7 @@ const createCrudHandlers = (path: string, table: any) => {
     });
 
     admin.delete(`${path}/:id`, async (c) => {
-        const id = Number(c.req.param('id'));
+        const id = Number((c.req.param('id') as string));
         try {
             await db.delete(table).where(eq(table.id, id));
             return c.json({ message: 'Deleted' });
@@ -275,7 +275,7 @@ admin.get('/users', zValidator('query', searchFilterSchema), async (c) => {
   });
 });
 admin.get('/users/:id', async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const userResult = await db.select({
     id: users.id,
     username: users.username,
@@ -340,9 +340,9 @@ admin.post('/users', zValidator('json', createUserSchema), async (c) => {
     isActive: data.isActive,
     isStaff: ['superadmin', 'admin', 'staff'].includes(data.role),
     isSuperuser: data.role === 'superadmin',
-    dateJoined: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    dateJoined: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     ...(isAuthor && {
       publicationRole: 'author',
       publicationStatus: 'approved',
@@ -360,11 +360,11 @@ admin.post('/users', zValidator('json', createUserSchema), async (c) => {
   return c.json({ message: 'User created', data: newUser }, 201);
 });
 admin.put('/users/:id', zValidator('json', updateUserSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const data = c.req.valid('json');
   const updateData: any = {
     ...data,
-    updatedAt: new Date(),
+    updatedAt: new Date().toISOString(),
   };
   if (data.password) {
     updateData.password = await bcrypt.hash(data.password, 10);
@@ -382,7 +382,7 @@ admin.put('/users/:id', zValidator('json', updateUserSchema), async (c) => {
   return c.json({ message: 'User updated', data: updatedUser[0] });
 });
 admin.delete('/users/:id', async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   try {
     await db.transaction(async (tx) => {
       // Hapus riwayat login & notifikasi
@@ -479,7 +479,7 @@ admin.get('/santri', zValidator('query', searchFilterSchema), async (c) => {
   });
 });
 admin.get('/santri/:id', async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const result = await db.select()
     .from(santri)
     .leftJoin(payments, eq(santri.id, payments.santriId))
@@ -495,10 +495,14 @@ admin.get('/santri/:id', async (c) => {
 });
 admin.post('/santri', zValidator('json', santriRegistrationSchema), async (c) => {
   const data = c.req.valid('json');
-  const [newSantri] = await db.insert(santri).values({
+  const [newSantri] = await db.insert(santri).values(({
     ...data,
+    email: data.email || "-",
+    noHp: data.noHp || "-",
+    nisn: data.nisn || "-",
+    asalSekolah: data.asalSekolah || "-",
     status: 'pending',
-    tanggalLahir: new Date(data.tanggalLahir),
+    tanggalLahir: data.tanggalLahir ? new Date(data.tanggalLahir).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     agamaAyah: data.agamaAyah || 'Islam',
     agamaIbu: data.agamaIbu || 'Islam',
     kewarganegaraanAyah: data.kewarganegaraanAyah || 'WNI',
@@ -513,20 +517,20 @@ admin.post('/santri', zValidator('json', santriRegistrationSchema), async (c) =>
     fotoIjazahApproved: false,
     fotoKkApproved: false,
     suratSehatApproved: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }).returning();
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as any)).returning();
   return c.json(newSantri, 201);
 });
 admin.put('/santri/:id', zValidator('json', santriRegistrationSchema.partial()), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const data = c.req.valid('json');
   const updateData: any = { ...data };
   if (data.tanggalLahir) {
-    updateData.tanggalLahir = new Date(data.tanggalLahir);
+    updateData.tanggalLahir = new Date(data.tanggalLahir).toISOString().split('T')[0];
   }
   await db.update(santri)
-    .set({ ...updateData, updatedAt: new Date() })
+    .set({ ...updateData, updatedAt: new Date().toISOString() })
     .where(eq(santri.id, id));
   const updatedSantri = await db.select().from(santri).where(eq(santri.id, id));
   if (updatedSantri.length === 0) {
@@ -535,7 +539,7 @@ admin.put('/santri/:id', zValidator('json', santriRegistrationSchema.partial()),
   return c.json(updatedSantri[0]);
 });
 admin.delete('/santri/:id', async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const existing = await db.select().from(santri).where(eq(santri.id, id));
   if (existing.length === 0) return c.json({ error: 'Santri not found' }, 404);
   await db.delete(payments).where(eq(payments.santriId, id));
@@ -553,7 +557,7 @@ admin.post('/santri/bulk-action', zValidator('json', bulkActionSchema), async (c
     return c.json({ message: `Deleted santri` });
   } else if (action === 'accept') {
     await db.update(santri)
-      .set({ status: 'accepted', updatedAt: new Date() })
+      .set({ status: 'accepted', updatedAt: new Date().toISOString() })
       .where(inArray(santri.id, ids));
     for (const sid of ids) {
       const s = await db.query.santri.findFirst({ where: eq(santri.id, sid) });
@@ -580,7 +584,7 @@ admin.post('/santri/bulk-action', zValidator('json', bulkActionSchema), async (c
     await db.update(santri)
       .set({ 
         status: 'rejected', 
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
         catatan: reason
       })
       .where(inArray(santri.id, ids));
@@ -632,7 +636,7 @@ admin.post('/santri/import', async (c) => {
           namaLengkap: item.namaLengkap,
           nisn: item.nisn,
           tempatLahir: item.tempatLahir || '-',
-          tanggalLahir: item.tanggalLahir ? new Date(item.tanggalLahir) : new Date(),
+          tanggalLahir: item.tanggalLahir ? new Date(item.tanggalLahir).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           jenisKelamin: item.jenisKelamin || 'L',
           agama: item.agama || 'Islam',
           golonganDarah: item.golonganDarah || '-',
@@ -681,8 +685,8 @@ admin.post('/santri/import', async (c) => {
           tempatLahirAyah: '-',
           tempatLahirIbu: '-',
           tinggalDengan: 'Orang Tua',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
         results.success++;
       } catch (err) {
@@ -753,7 +757,7 @@ admin.get('/payments', zValidator('query', searchFilterSchema), async (c) => {
   });
 });
 admin.get('/payments/:id', async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const result = await db.select()
     .from(payments)
     .leftJoin(santri, eq(payments.santriId, santri.id))

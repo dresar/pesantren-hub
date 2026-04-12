@@ -171,7 +171,7 @@ admissions.put('/schedules/:id', zValidator('json', scheduleSchema.partial()), a
   if (!['superadmin', 'admin', 'petugaspendaftaran'].includes(user.role) && !user.isSuperuser) {
     return c.json({ error: 'Unauthorized' }, 403);
   }
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const data = c.req.valid('json');
   await db.update(examSchedules).set({
     ...data,
@@ -185,7 +185,7 @@ admissions.delete('/schedules/:id', async (c) => {
     if (!['superadmin', 'admin', 'petugaspendaftaran'].includes(user.role) && !user.isSuperuser) {
       return c.json({ error: 'Unauthorized' }, 403);
     }
-    const id = parseInt(c.req.param('id'));
+    const id = parseInt((c.req.param('id') as string));
     await db.delete(examSchedules).where(eq(examSchedules.id, id));
     return c.json({ success: true });
 });

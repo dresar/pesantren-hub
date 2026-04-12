@@ -182,7 +182,7 @@ blog.post('/posts', adminMiddleware, zValidator('json', createPostSchema), async
   return c.json(insertedPost, 201);
 });
 blog.put('/posts/:id', adminMiddleware, zValidator('json', updatePostSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const data = c.req.valid('json');
   await db.update(posts)
     .set({
@@ -207,7 +207,7 @@ blog.put('/posts/:id', adminMiddleware, zValidator('json', updatePostSchema), as
   return c.json(updatedPost[0]);
 });
 blog.delete('/posts/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   await db.delete(postTags).where(eq(postTags.blogpostId, id));
   await db.delete(posts).where(eq(posts.id, id));
   return c.json({ message: 'Post deleted successfully' });
@@ -294,7 +294,7 @@ blog.get('/admin/announcements', adminMiddleware, async (c) => {
 
 // Admin: Get single announcement by ID
 blog.get('/admin/announcements/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const [item] = await db.select().from(blogAnnouncements).where(eq(blogAnnouncements.id, id));
   if (!item) return c.json({ error: 'Not found' }, 404);
   return c.json(item);
@@ -320,7 +320,7 @@ blog.post('/admin/announcements', adminMiddleware, zValidator('json', announceme
 
 // Admin: Update announcement
 blog.put('/admin/announcements/:id', adminMiddleware, zValidator('json', announcementSchema.partial()), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   const data = c.req.valid('json');
   await db.update(blogAnnouncements).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(blogAnnouncements.id, id));
   const [updated] = await db.select().from(blogAnnouncements).where(eq(blogAnnouncements.id, id));
@@ -329,7 +329,7 @@ blog.put('/admin/announcements/:id', adminMiddleware, zValidator('json', announc
 
 // Admin: Delete announcement
 blog.delete('/admin/announcements/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt((c.req.param('id') as string));
   await db.delete(blogAnnouncements).where(eq(blogAnnouncements.id, id));
   return c.json({ message: 'Deleted' });
 });

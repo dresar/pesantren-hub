@@ -143,14 +143,14 @@ core.post('/faq', adminMiddleware, zValidator('json', createFaqSchema), async (c
   return c.json(item);
 });
 core.put('/faq/:id', adminMiddleware, zValidator('json', updateFaqSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = c.req.valid('json');
   await db.update(faq).set(data).where(eq(faq.id, id));
   const [item] = await db.select().from(faq).where(eq(faq.id, id));
   return c.json(item);
 });
 core.delete('/faq/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   await db.delete(faq).where(eq(faq.id, id));
   return c.json({ message: 'Deleted' });
 });
@@ -199,7 +199,7 @@ core.post('/programs', adminMiddleware, zValidator('json', createProgramSchema),
   return c.json(item);
 });
 core.put('/programs/:id', adminMiddleware, zValidator('json', updateProgramSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = c.req.valid('json');
    const formattedData = {
     ...data,
@@ -212,7 +212,7 @@ core.put('/programs/:id', adminMiddleware, zValidator('json', updateProgramSchem
   return c.json(item);
 });
 core.delete('/programs/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   await db.delete(programs).where(eq(programs.id, id));
   return c.json({ message: 'Deleted' });
 });
@@ -233,7 +233,7 @@ core.get('/contact', adminMiddleware, async (c) => {
   return c.json(data);
 });
 core.put('/contact/:id/reply', adminMiddleware, zValidator('json', replyKontakSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = c.req.valid('json');
   await db.update(kontak).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(kontak.id, id));
   const [item] = await db.select().from(kontak).where(eq(kontak.id, id));
@@ -269,14 +269,14 @@ core.post('/hero', adminMiddleware, zValidator('json', createHeroSectionSchema),
   return c.json(item);
 });
 core.put('/hero/:id', adminMiddleware, zValidator('json', updateHeroSectionSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = c.req.valid('json');
   await db.update(heroSection).set(data).where(eq(heroSection.id, id));
   const [item] = await db.select().from(heroSection).where(eq(heroSection.id, id));
   return c.json(item);
 });
 core.get('/hero/:id', async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const item = await db.select().from(heroSection).where(eq(heroSection.id, id));
   if (item.length === 0) {
     return c.json({ error: 'Not found' }, 404);
@@ -284,7 +284,7 @@ core.get('/hero/:id', async (c) => {
   return c.json(item[0]);
 });
 core.delete('/hero/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   await db.delete(heroSection).where(eq(heroSection.id, id));
   return c.json({ message: 'Deleted' });
 });
@@ -303,14 +303,14 @@ core.post('/whatsapp-templates', adminMiddleware, zValidator('json', createWhats
   return c.json(insertedTemplate);
 });
 core.put('/whatsapp-templates/:id', adminMiddleware, zValidator('json', updateWhatsAppTemplateSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = c.req.valid('json');
   await db.update(whatsappTemplates).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(whatsappTemplates.id, id));
   const [item] = await db.select().from(whatsappTemplates).where(eq(whatsappTemplates.id, id));
   return c.json(item);
 });
 core.delete('/whatsapp-templates/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   await db.delete(whatsappTemplates).where(eq(whatsappTemplates.id, id));
   return c.json({ message: 'Deleted' });
 });
@@ -356,7 +356,7 @@ core.post('/tenaga-pengajar', adminMiddleware, zValidator('json', createTenagaPe
   return c.json(insertedTeacher);
 });
 core.put('/tenaga-pengajar/:id', adminMiddleware, zValidator('json', updateTenagaPengajarSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = c.req.valid('json');
   // @ts-ignore
   await db.update(tenagaPengajar).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(tenagaPengajar.id, id));
@@ -364,7 +364,7 @@ core.put('/tenaga-pengajar/:id', adminMiddleware, zValidator('json', updateTenag
   return c.json(item);
 });
 core.delete('/tenaga-pengajar/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   await db.delete(tenagaPengajar).where(eq(tenagaPengajar.id, id));
   return c.json({ message: 'Deleted' });
 });
@@ -383,7 +383,7 @@ const createSimpleCrud = (path: string, table: any, createSchema: any, updateSch
     }
   });
   core.get(`/${path}/:id`, async (c) => {
-    const id = parseInt(c.req.param('id'));
+    const id = parseInt(c.req.param('id') as string);
     try {
       const data = await db.select().from(table).where(eq(table.id, id));
       if (data.length === 0) {
@@ -444,17 +444,18 @@ const createSimpleCrud = (path: string, table: any, createSchema: any, updateSch
     return c.json(inserted);
   });
   core.put(`/${path}/:id`, adminMiddleware, zValidator('json', updateSchema), async (c) => {
-    const id = parseInt(c.req.param('id'));
+    const id = parseInt(c.req.param('id') as string);
     const data = c.req.valid('json');
     const updateData = { ...data };
     if ('updatedAt' in table) {
       updateData.updatedAt = new Date().toISOString();
     }
-    const [updated] = await db.update(table).set(updateData as any).where(eq(table.id, id)).returning();
+    const updatedRes = await db.update(table).set(updateData as any).where(eq(table.id, id)).returning();
+    const updated = Array.isArray(updatedRes) ? updatedRes[0] : (updatedRes as any).rows[0];
     return c.json(updated);
   });
   core.delete(`/${path}/:id`, adminMiddleware, async (c) => {
-    const id = parseInt(c.req.param('id'));
+    const id = parseInt(c.req.param('id') as string);
     await db.delete(table).where(eq(table.id, id));
     return c.json({ message: 'Deleted' });
   });
@@ -506,7 +507,7 @@ core.post('/sejarah-timeline', adminMiddleware, zValidator('json', createSejarah
   return c.json(item);
 });
 core.put('/sejarah-timeline/:id', adminMiddleware, zValidator('json', updateSejarahTimelineSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = c.req.valid('json');
   const { images, ...timelineData } = data;
   await db.update(sejarahTimeline).set(timelineData).where(eq(sejarahTimeline.id, id));
@@ -531,7 +532,7 @@ core.put('/sejarah-timeline/:id', adminMiddleware, zValidator('json', updateSeja
   return c.json(item);
 });
 core.delete('/sejarah-timeline/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   await db.delete(sejarahTimelineImages).where(eq(sejarahTimelineImages.timelineId, id));
   await db.delete(sejarahTimeline).where(eq(sejarahTimeline.id, id));
   return c.json({ message: 'Deleted' });
@@ -582,7 +583,7 @@ core.post('/dokumentasi', adminMiddleware, zValidator('json', createDokumentasiS
   return c.json(item);
 });
 core.put('/dokumentasi/:id', adminMiddleware, zValidator('json', updateDokumentasiSchema), async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = c.req.valid('json');
   const { images, ...docData } = data;
   // @ts-ignore
@@ -609,7 +610,7 @@ core.put('/dokumentasi/:id', adminMiddleware, zValidator('json', updateDokumenta
   return c.json(item);
 });
 core.delete('/dokumentasi/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   await db.delete(dokumentasiImages).where(eq(dokumentasiImages.dokumentasiId, id));
   await db.delete(dokumentasi).where(eq(dokumentasi.id, id));
   return c.json({ message: 'Deleted' });
@@ -631,7 +632,8 @@ const createSingletonCrud = (path: string, table: any, updateSchema: any, defaul
       if (data.length === 0) {
         try {
           const insertData = { ...defaultValues, updatedAt: new Date().toISOString() };
-          const [newItem] = await db.insert(table).values(insertData as any).returning();
+          const newItemRes = await db.insert(table).values(insertData as any).returning();
+          const [newItem] = Array.isArray(newItemRes) ? newItemRes : (newItemRes as any).rows;
           return c.json(newItem);
         } catch (e) {
           console.error(`Error initializing ${path}:`, e);
@@ -648,7 +650,8 @@ const createSingletonCrud = (path: string, table: any, updateSchema: any, defaul
     const data = c.req.valid('json');
     const existing = await db.select().from(table).limit(1);
     if (existing.length === 0) {
-      const [newItem] = await db.insert(table).values({ ...defaultValues, ...data, updatedAt: new Date().toISOString() } as any).returning();
+      const newItemRes2 = await db.insert(table).values({ ...defaultValues, ...data, updatedAt: new Date().toISOString() } as any).returning();
+      const [newItem] = Array.isArray(newItemRes2) ? newItemRes2 : (newItemRes2 as any).rows;
       return c.json(newItem);
     } else {
       await db.update(table)
@@ -681,7 +684,7 @@ core.get('/founders', async (c) => {
   return c.json(publicData);
 });
 core.get('/founders/:id', async (c) => {
-    const id = parseInt(c.req.param('id'));
+    const id = parseInt(c.req.param('id') as string);
     const [item] = await db.select().from(founders).where(eq(founders.id, id));
     if (!item || item.isDeleted) return c.json({ error: 'Not found' }, 404);
     return c.json({
@@ -700,7 +703,7 @@ core.get('/admin/founders', adminMiddleware, async (c) => {
     return c.json(fullData);
 });
 core.get('/admin/founders/:id', adminMiddleware, async (c) => {
-    const id = parseInt(c.req.param('id'));
+    const id = parseInt(c.req.param('id') as string);
     const [item] = await db.select().from(founders).where(eq(founders.id, id));
     if (!item) return c.json({ error: 'Not found' }, 404);
     return c.json({
@@ -739,7 +742,7 @@ core.post('/admin/founders', adminMiddleware, zValidator('json', createFounderSc
     });
 });
 core.put('/admin/founders/:id', adminMiddleware, zValidator('json', updateFounderSchema), async (c) => {
-    const id = parseInt(c.req.param('id'));
+    const id = parseInt(c.req.param('id') as string);
     const user = c.get('user');
     const data = c.req.valid('json');
     const [existing] = await db.select().from(founders).where(eq(founders.id, id));
@@ -764,7 +767,7 @@ core.put('/admin/founders/:id', adminMiddleware, zValidator('json', updateFounde
     });
 });
 core.delete('/admin/founders/:id', adminMiddleware, async (c) => {
-    const id = parseInt(c.req.param('id'));
+    const id = parseInt(c.req.param('id') as string);
     const user = c.get('user');
     await db.update(founders).set({
         isDeleted: true,
@@ -791,7 +794,7 @@ core.get('/admin/struktur-organisasi', adminMiddleware, async (c) => {
   return c.json(data);
 });
 core.get('/admin/struktur-organisasi/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const [item] = await db.select().from(strukturOrganisasi).where(eq(strukturOrganisasi.id, id));
   if (!item) return c.json({ error: 'Not found' }, 404);
   return c.json(item);
@@ -812,13 +815,13 @@ core.post('/admin/struktur-organisasi', adminMiddleware, async (c) => {
   return c.json(item, 201);
 });
 core.put('/admin/struktur-organisasi/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   const data = await c.req.json();
   const [updated] = await db.update(strukturOrganisasi).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(strukturOrganisasi.id, id)).returning();
   return c.json(updated);
 });
 core.delete('/admin/struktur-organisasi/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id'));
+  const id = parseInt(c.req.param('id') as string);
   await db.delete(strukturOrganisasi).where(eq(strukturOrganisasi.id, id));
   return c.json({ message: 'Deleted' });
 });
