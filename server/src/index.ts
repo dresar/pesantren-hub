@@ -5,7 +5,6 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { prettyJSON } from 'hono/pretty-json';
-import { createAdaptorServer } from '@hono/node-server';
 import auth from './modules/auth';
 import admin from './modules/admin';
 import users from './modules/users';
@@ -80,6 +79,7 @@ app.route('/api/publication', publication);
 
 // ── Local Dev Server (tidak jalan di Vercel Serverless) ──────────────────────
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  const { createAdaptorServer } = await import('@hono/node-server');
   const port = parseInt(process.env.PORT || '3008', 10);
   const server = createAdaptorServer({ fetch: app.fetch });
 
