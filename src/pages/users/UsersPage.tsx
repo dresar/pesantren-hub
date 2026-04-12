@@ -21,12 +21,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 const roleLabels: Record<string, string> = {
   superadmin: 'Super Admin',
+  admin: 'Admin',
   bendahara: 'Bendahara',
   petugaspendaftaran: 'Petugas Pendaftaran',
   author: 'Editor Berita',
   // Role lain yang ditampilkan sebagai "User" biasa di tabel
   user: 'User',
-  santri: 'User',
+  santri: 'Santri',
 };
 const roleColors: Record<string, string> = {
   superadmin: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
@@ -44,9 +45,12 @@ const roleColors: Record<string, string> = {
 // - author (role berita)
 const roleOptions: Array<{ value: UserRole; label: string }> = [
   { value: 'superadmin', label: 'Super Admin' },
+  { value: 'admin', label: 'Admin' },
   { value: 'bendahara', label: 'Bendahara' },
   { value: 'petugaspendaftaran', label: 'Petugas Pendaftaran' },
   { value: 'author', label: 'Editor Berita' },
+  { value: 'santri', label: 'Santri' },
+  { value: 'user', label: 'User' },
 ];
 export default function UsersPage() {
   const queryClient = useQueryClient();
@@ -334,17 +338,15 @@ export default function UsersPage() {
               ))}
             </select>
           </div>
-          {!editingUser && (
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Password</Label>
-                <Input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Password"
-                />
-              </div>
-          )}
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Password</Label>
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder={editingUser ? "Kosongkan jika tidak ingin mengubah password" : "Password (minimal 6 karakter)"}
+            />
+          </div>
         </div>
       </CrudModal>
       {}

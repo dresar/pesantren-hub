@@ -22,7 +22,7 @@ export const createUserSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().optional(),
   phone: z.string().optional(),
-  role: z.enum(['superadmin', 'bendahara', 'petugaspendaftaran', 'user', 'author']),
+  role: z.enum(['superadmin', 'admin', 'bendahara', 'petugaspendaftaran', 'user', 'author', 'santri']),
   isActive: z.boolean().default(true),
 });
 export const updateUserSchema = z.object({
@@ -30,7 +30,7 @@ export const updateUserSchema = z.object({
   lastName: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
-  role: z.enum(['superadmin', 'bendahara', 'petugaspendaftaran', 'user', 'author']).optional(),
+  role: z.enum(['superadmin', 'admin', 'bendahara', 'petugaspendaftaran', 'user', 'author', 'santri']).optional(),
   isActive: z.boolean().optional(),
   password: z.string().min(6).optional(), // Admin bisa reset sandi tanpa verifikasi (min 6 untuk format rds+angka)
 });
