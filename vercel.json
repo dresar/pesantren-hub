@@ -2,7 +2,7 @@
   "functions": {
     "api/**/*": {
       "memory": 1024,
-      "maxDuration": 15
+      "maxDuration": 10
     }
   },
   "rewrites": [

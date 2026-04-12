@@ -2,40 +2,39 @@ import { Hono } from 'hono';
 import { authMiddleware } from '../../middleware/auth';
 import { mediaService } from '../media/media.service';
 
-// Simple in-memory rate limiter
-const rateLimiter = new Map<string, { count: number, lastReset: number }>();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_UPLOADS_PER_WINDOW = 20; // 20 uploads per minute
+// ──────────────────────────────────────────────────────────────────────────────
+// RATE LIMITING REMOVED — In-memory Map() is an anti-pattern in serverless:
+//   - State resets on every cold start
+//   - Each Vercel instance has its own isolated memory (no shared state)
+//   - Causes memory leaks with long-running warm instances
+//
+// TODO: Implement proper distributed rate limiting via:
+//   - Vercel KV (built-in): https://vercel.com/docs/storage/vercel-kv
+//   - Upstash Redis (free tier available): https://upstash.com
+//   - Example: const ratelimit = new Ratelimit({ redis: kv, limiter: Ratelimit.slidingWindow(20, '60 s') })
+// ──────────────────────────────────────────────────────────────────────────────
 
 const upload = new Hono();
 
 upload.post('/', authMiddleware, async (c) => {
   try {
     const user = c.get('user');
-    const userId = user.id;
-    const userKey = `user:${userId}`;
-
-    // Rate Limiting Logic
-    const now = Date.now();
-    const record = rateLimiter.get(userKey) || { count: 0, lastReset: now };
-
-    if (now - record.lastReset > RATE_LIMIT_WINDOW) {
-      record.count = 0;
-      record.lastReset = now;
-    }
-
-    if (record.count >= MAX_UPLOADS_PER_WINDOW) {
-      return c.json({ error: 'Rate limit exceeded. Please try again later.' }, 429);
-    }
-
-    record.count++;
-    rateLimiter.set(userKey, record);
 
     const body = await c.req.parseBody();
     const file = body['file'];
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: 'No file uploaded or invalid format' }, 400);
+    }
+
+    // ── Vercel Free Tier: 4.5MB request body limit ──
+    // Reject early if file exceeds the limit to avoid wasting execution time
+    const MAX_VERCEL_BODY_SIZE = 4.5 * 1024 * 1024; // 4.5MB
+    if (file.size > MAX_VERCEL_BODY_SIZE) {
+      return c.json({ 
+        error: `File too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Vercel limit is 4.5MB.`,
+        suggestion: 'Use presigned URL uploads for large files.' 
+      }, 413);
     }
 
     const buffer = await file.arrayBuffer();
@@ -53,7 +52,7 @@ upload.post('/', authMiddleware, async (c) => {
     const result = await mediaService.processUpload(fileBuffer, metadata, {
       category: 'general',
       folder: '/',
-      userId: c.get('user').id
+      userId: user.id
     });
 
     return c.json({
@@ -67,5 +66,22 @@ upload.post('/', authMiddleware, async (c) => {
     return c.json({ error: 'Failed to upload file' }, 500);
   }
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// PRESIGNED URL STRATEGY (Recommended for production):
+//
+// For files > 4.5MB, implement direct client-to-cloud uploads:
+//
+// 1. Client requests a presigned URL from this API:
+//    POST /api/upload/presign → { url, fields, fileId }
+//
+// 2. Client uploads directly to cloud storage (S3/Cloudinary/ImageKit)
+//    using the presigned URL — bypasses Vercel entirely.
+//
+// 3. Client notifies this API of completion:
+//    POST /api/upload/confirm → { fileId, status }
+//
+// This eliminates the 4.5MB body limit and reduces serverless execution time.
+// ──────────────────────────────────────────────────────────────────────────────
 
 export default upload;

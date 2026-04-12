@@ -293,37 +293,16 @@ export class MediaService {
         let filename = metadata.filename;
         let mimetype = metadata.mimetype;
 
-        // 2. Process Image (WebP Conversion & Resize)
-        if (mimetype.startsWith('image/') && (settings as any).enableWebPConversion) {
-            try {
-                // Dynamic import for sharp to prevent initialization issues in serverless
-                const { default: sharp } = await import('sharp');
-                const image = sharp(fileBuffer);
-                // Convert to WebP
-                bufferToUpload = await image
-                    .webp({ quality: settings.compressionQuality || 80 }) 
-                    .toBuffer();
-                
-                filename = filename.replace(/\.[^/.]+$/, "") + ".webp";
-                mimetype = "image/webp";
-
-                // Check size again after conversion
-                if (bufferToUpload.length > MAX_SIZE) {
-                    // Resize if still too big
-                     bufferToUpload = await sharp(bufferToUpload)
-                        .resize({ width: 1920, fit: 'inside', withoutEnlargement: true })
-                        .webp({ quality: Math.max((settings.compressionQuality || 80) - 10, 50) })
-                        .toBuffer();
-                }
-
-            } catch (error) {
-                console.error("Image processing failed:", error);
-                // Fallback to original file if processing fails, but check size
-                if (fileBuffer.length > MAX_SIZE) {
-                    throw new Error(`File size ${fileBuffer.length} exceeds ${MAX_SIZE} limit and processing failed.`);
-                }
-            }
-        }
+        // ──────────────────────────────────────────────────────────────────────
+        // SHARP REMOVED — C++ native binaries (libvips) crash in Vercel's
+        // serverless Node.js environment. Images are uploaded as-is.
+        //
+        // For server-side image processing, consider:
+        //   1. Cloudinary transformations (already in your stack)
+        //   2. ImageKit URL-based transformations
+        //   3. A dedicated image processing microservice (e.g., AWS Lambda with sharp layer)
+        //   4. Client-side compression before upload (browser-image-compression npm package)
+        // ──────────────────────────────────────────────────────────────────────
 
         // 3. Select Accounts (Dual Upload Strategy)
         const accounts = await this.getAvailableAccounts(bufferToUpload.length);

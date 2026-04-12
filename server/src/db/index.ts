@@ -1,5 +1,5 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { neon, type NeonQueryFunction } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
 
 if (!process.env.DATABASE_URL) {
@@ -7,20 +7,10 @@ if (!process.env.DATABASE_URL) {
   console.info('Wait... proceeding initialization anyway (this might be a build process or environment delay).');
 }
 
-// Optimization for serverless: force fetch for connection
-neonConfig.fetchConnectionCache = true;
+// Use stateless HTTP driver for Vercel Serverless compatibility.
+// Unlike Pool, neon() is fully stateless — each query is an independent HTTP request
+// to Neon's SQL-over-HTTP endpoint. No persistent TCP connections, no WebSocket upgrades,
+// no connection pool state to leak across cold starts.
+const sql = neon(process.env.DATABASE_URL || '');
 
-const client = new Pool({
-  connectionString: process.env.DATABASE_URL || '', // Fallback to empty string to avoid crash during export
-  ssl: {
-    rejectUnauthorized: false
-  },
-  // Serverless: gunakan pool kecil. Scaling horizontal terjadi di level function,
-  // bukan di level koneksi. max: 5 sudah lebih dari cukup per instance.
-  max: 5,
-  // Timeout untuk menghindari hanging connection di cold start
-  connectionTimeoutMillis: 10_000,
-  idleTimeoutMillis: 30_000,
-});
-
-export const db = drizzle(client, { schema });
+export const db = drizzle(sql as NeonQueryFunction<boolean, boolean>, { schema });
