@@ -25,8 +25,6 @@ publication.post('/author/articles', PublicationController.createArticle);
 publication.put('/author/articles/:id', PublicationController.updateArticle);
 publication.get('/author/articles/:id', PublicationController.getArticleById);
 publication.delete('/author/articles/:id', PublicationController.deleteArticle);
-publication.get('/author/articles/:id/discussions', PublicationController.getArticleDiscussions);
-publication.post('/author/articles/:id/discussions', PublicationController.postArticleDiscussion);
 publication.get('/author/dashboard-stats', PublicationController.getAuthorStats); 
 
 // Collaboration Routes

@@ -1041,57 +1041,5 @@ export class PublicationService {
       .returning();
   }
 
-  static async getArticleDiscussions(articleId: number, userId: number) {
-    const article = await db.query.publicationArticles.findFirst({
-      where: eq(publicationArticles.id, articleId),
-    });
-    if (!article) throw new Error('Artikel tidak ditemukan');
-    if (article.collaborationId) {
-      const membership = await db.query.publicationCollaborationMembers.findFirst({
-        where: and(
-          eq(publicationCollaborationMembers.collaborationId, article.collaborationId),
-          eq(publicationCollaborationMembers.userId, userId)
-        )
-      });
-      if (!membership && article.authorId !== userId) {
-        throw new Error('Unauthorized to view discussion');
-      }
-    }
-    return await db.query.publicationDiscussions.findMany({
-      where: eq(publicationDiscussions.articleId, articleId),
-      with: {
-        user: {
-          columns: { id: true, username: true, firstName: true, lastName: true, avatar: true }
-        }
-      },
-      orderBy: desc(publicationDiscussions.createdAt),
-    });
-  }
-
-  static async postArticleDiscussion(articleId: number, userId: number, content: string, parentId?: number) {
-    const article = await db.query.publicationArticles.findFirst({
-      where: eq(publicationArticles.id, articleId),
-    });
-    if (!article) throw new Error('Artikel tidak ditemukan');
-    let canComment = article.authorId === userId;
-    if (article.collaborationId && !canComment) {
-      const membership = await db.query.publicationCollaborationMembers.findFirst({
-        where: and(
-          eq(publicationCollaborationMembers.collaborationId, article.collaborationId),
-          eq(publicationCollaborationMembers.userId, userId)
-        )
-      });
-      if (membership) canComment = true;
-    }
-    if (!canComment) throw new Error('Unauthorized to comment');
-    const [item] = await db.insert(publicationDiscussions).values({
-      articleId,
-      userId,
-      content,
-      parentId: parentId || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }).returning();
-    return item;
-  }
+  // Discussions removed context here since table was removed
 }

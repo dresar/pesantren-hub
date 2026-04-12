@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { db } from '../../db';
-import { eq, asc, desc, sql } from 'drizzle-orm';
+import { eq, asc, desc, sql, and, count } from 'drizzle-orm';
 import { 
   websiteSettings, faq, programs, whatsappTemplates, whatsappTemplateCategories, 
   kontak, heroSection, sejarahTimeline, sejarahTimelineImages, visiMisi, 

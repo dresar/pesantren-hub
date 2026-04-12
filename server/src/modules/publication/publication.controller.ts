@@ -555,26 +555,5 @@ export class PublicationController {
     }
   }
 
-  static async getArticleDiscussions(c: Context) {
-    const user = c.get('user');
-    const articleId = Number(c.req.param('id'));
-    try {
-      const data = await PublicationService.getArticleDiscussions(articleId, user.id);
-      return c.json({ data });
-    } catch (e: any) {
-      return c.json({ error: e.message || 'Gagal mengambil diskusi' }, 500);
-    }
-  }
-
-  static async postArticleDiscussion(c: Context) {
-    const user = c.get('user');
-    const articleId = Number(c.req.param('id'));
-    const body = await c.req.json();
-    try {
-      const item = await PublicationService.postArticleDiscussion(articleId, user.id, body.content, body.parentId);
-      return c.json({ data: item, message: 'Komentar ditambahkan' }, 201);
-    } catch (e: any) {
-      return c.json({ error: e.message || 'Gagal menambahkan komentar' }, 500);
-    }
-  }
+  // Discussions endpoints removed
 }
