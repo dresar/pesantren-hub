@@ -9,11 +9,14 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required');
 }
 
-// neonConfig.fetchConnectionCache is now true by default in the latest version
+// Optimization for serverless: force fetch for connection
+neonConfig.fetchConnectionCache = true;
 
 const client = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: true,
+  ssl: {
+    rejectUnauthorized: false // Required for some Neon connections on certain platforms
+  },
   // Serverless: gunakan pool kecil. Scaling horizontal terjadi di level function,
   // bukan di level koneksi. max: 5 sudah lebih dari cukup per instance.
   max: 5,

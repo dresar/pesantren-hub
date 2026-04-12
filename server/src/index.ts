@@ -29,12 +29,22 @@ app.use('*', prettyJSON());
 
 // ── Global Error Handler ──────────────────────────────────────────────────────
 app.onError((err, c) => {
-  console.error('Unhandled Error:', err);
+  console.error('[API ERROR]:', err);
+  
+  // Check for common DB errors
+  const isDbError = err?.name === 'NeonDbError' || err?.message?.toLowerCase().includes('database') || (err as any)?.code?.startsWith('57');
+  
+  if (isDbError) {
+    console.error('CRITICAL: Database connection issue detected.');
+  }
+
   return c.json({
     error: err?.message || 'Internal Server Error',
+    message: (err as any)?.code ? `Code: ${(err as any).code}` : undefined,
     name: err?.name,
     stack: process.env.NODE_ENV !== 'production' ? err?.stack : undefined,
     path: c.req.path,
+    timestamp: new Date().toISOString(),
   }, 500);
 });
 
