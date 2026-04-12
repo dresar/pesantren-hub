@@ -51,9 +51,9 @@ paymentsModule.put('/:id', adminMiddleware, async (c) => {
     .set({
       status,
       catatan,
-      verifiedAt: status === 'verified' ? new Date() : null,
+      verifiedAt: status === 'verified' ? new Date().toISOString() : null,
       verifiedById: status === 'verified' ? user.id : null,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     })
     .where(eq(payments.id, id));
   const payment = await db.query.payments.findFirst({ where: eq(payments.id, id) });
@@ -61,7 +61,7 @@ paymentsModule.put('/:id', adminMiddleware, async (c) => {
     await db.update(santri)
       .set({
         status: status === 'verified' ? 'verified' : status === 'rejected' ? 'submitted' : 'pending',
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(santri.id, payment.santriId));
     const santriRecord = await db.query.santri.findFirst({ where: eq(santri.id, payment.santriId) });
@@ -110,12 +110,12 @@ paymentsModule.post('/:id/cancel', adminMiddleware, async (c) => {
       status: 'pending',
       verifiedAt: null,
       verifiedById: null,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
       catatan: 'Verifikasi dibatalkan',
     })
     .where(eq(payments.id, id));
   await db.update(santri)
-    .set({ status: 'submitted', updatedAt: new Date() })
+    .set({ status: 'submitted', updatedAt: new Date().toISOString() })
     .where(eq(santri.id, payment.santriId));
   const santriRecord = await db.query.santri.findFirst({ where: eq(santri.id, payment.santriId) });
   if (santriRecord) {

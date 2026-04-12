@@ -5,10 +5,8 @@ import { mediaAccounts, mediaFiles, mediaLogs } from '../../db/schema';
 // --- Media Account Schemas ---
 
 export const insertMediaAccountSchema = createInsertSchema(mediaAccounts, {
-  quotaLimit: z.number().min(0),
-  quotaUsed: z.number().min(0).default(0),
   isActive: z.boolean().default(true),
-  isPrimary: z.boolean().default(false),
+  isDefault: z.boolean().default(false),
 }).omit({
   id: true,
   createdAt: true,
@@ -24,13 +22,9 @@ export const mediaAccountResponseSchema = createSelectSchema(mediaAccounts);
 
 export const insertMediaFileSchema = createInsertSchema(mediaFiles, {
   size: z.number().min(0),
-  width: z.number().optional(),
-  height: z.number().optional(),
-  uploadedBy: z.number(),
 }).omit({
   id: true,
   createdAt: true,
-  updatedAt: true,
 });
 
 export const updateMediaFileSchema = insertMediaFileSchema.partial();

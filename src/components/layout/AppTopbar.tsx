@@ -23,7 +23,6 @@ import { toast } from 'sonner';
 import AdminThemeToggle from '@/components/shared/AdminThemeToggle';
 import { MediaLibraryModal } from '@/components/media/MediaLibraryModal';
 import { useState, useEffect } from 'react';
-import { RealtimeClient } from '@/lib/ws';
 
 export function AppTopbar() {
   const navigate = useNavigate();
@@ -71,18 +70,7 @@ export function AppTopbar() {
     });
   };
   const userInitials = user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() : 'U';
-  useEffect(() => {
-    if (!user) return;
-    const rt = new RealtimeClient();
-    rt.connect(user.id);
-    rt.onMessage((msg) => {
-      if (msg.type === 'collaboration_invite') {
-        queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        toast.message('Undangan kolaborasi baru', { description: 'Anda diundang untuk kolaborasi' });
-      }
-    });
-    return () => rt.close();
-  }, [user]);
+
   return (
     <header
       className={cn(

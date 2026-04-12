@@ -111,7 +111,7 @@ blog.get('/posts/:slug', async (c) => {
   const tagsResult = await db.select()
     .from(postTags)
     .innerJoin(tags, eq(postTags.tagId, tags.id))
-    .where(eq(postTags.postId, post.id));
+    .where(eq(postTags.blogpostId, post.id));
   post.tags = tagsResult.map(t => ({ tag: t.blog_tag })); 
   return c.json(post);
 });
@@ -147,6 +147,7 @@ blog.post('/posts', adminMiddleware, zValidator('json', createPostSchema), async
   if (existing.length > 0) {
     return c.json({ error: 'Slug already exists' }, 400);
   }
+  // @ts-ignore
   const [insertedPost] = await db.insert(posts).values({
     title: data.title,
     slug: generatedSlug,
@@ -163,10 +164,10 @@ blog.post('/posts', adminMiddleware, zValidator('json', createPostSchema), async
     likesCount: 0,
     sharesCount: 0,
     isFeatured: data.isFeatured || false,
-    publishedAt: data.publishedAt ? new Date(data.publishedAt) : (data.status === 'published' ? new Date() : null),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }).returning();
+    publishedAt: data.publishedAt ? new Date(data.publishedAt).toISOString() : (data.status === 'published' ? new Date().toISOString() : null),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as any).returning();
   
   if (!insertedPost) return c.json({ error: 'Failed to create post' }, 500);
 
@@ -186,9 +187,9 @@ blog.put('/posts/:id', adminMiddleware, zValidator('json', updatePostSchema), as
   await db.update(posts)
     .set({
       ...data,
-      updatedAt: new Date(),
-      publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,
-    })
+      updatedAt: new Date().toISOString(),
+      publishedAt: data.publishedAt ? new Date(data.publishedAt).toISOString() : undefined,
+    } as any)
     .where(eq(posts.id, id));
   const updatedPost = await db.select().from(posts).where(eq(posts.id, id));
   if (updatedPost.length === 0) return c.json({ error: 'Post not found' }, 404);
@@ -218,8 +219,8 @@ blog.post('/categories', adminMiddleware, zValidator('json', createCategorySchem
     name: data.name,
     slug: generatedSlug,
     order: data.order,
-    createdAt: new Date(),
-  }).returning();
+    createdAt: new Date().toISOString(),
+  } as any).returning();
   return c.json(newCategory, 201);
 });
 blog.post('/tags', adminMiddleware, zValidator('json', createTagSchema), async (c) => {
@@ -229,8 +230,8 @@ blog.post('/tags', adminMiddleware, zValidator('json', createTagSchema), async (
     name: data.name,
     slug: generatedSlug,
     order: data.order,
-    createdAt: new Date(),
-  }).returning();
+    createdAt: new Date().toISOString(),
+  } as any).returning();
   return c.json(newTag, 201);
 });
 
@@ -305,6 +306,7 @@ blog.post('/admin/announcements', adminMiddleware, zValidator('json', announceme
   let slug = slugifyAnn(data.judul);
   const existing = await db.select({ id: blogAnnouncements.id }).from(blogAnnouncements).where(eq(blogAnnouncements.slug, slug));
   if (existing.length > 0) slug = `${slug}-${Date.now()}`;
+  // @ts-ignore
   const [item] = await db.insert(blogAnnouncements).values({
     ...data,
     slug,
@@ -312,7 +314,7 @@ blog.post('/admin/announcements', adminMiddleware, zValidator('json', announceme
     metaDescription: data.metaDescription || '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  }).returning();
+  } as any).returning();
   return c.json(item, 201);
 });
 

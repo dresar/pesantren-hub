@@ -15,7 +15,7 @@ auth.post('/register', zValidator('json', registerSchema), async (c) => {
     return c.json({ error: 'Username or email already exists' }, 400);
   }
   const hashedPassword = await bcrypt.hash(data.password, 10);
-  const now = new Date();
+  const now = new Date().toISOString();
   const [user] = await db.insert(users).values({
     username: data.username,
     email: data.email,
@@ -30,7 +30,7 @@ auth.post('/register', zValidator('json', registerSchema), async (c) => {
     dateJoined: now,
     createdAt: now,
     updatedAt: now,
-  }).returning();
+  } as any).returning();
   if (!user) {
     return c.json({ error: 'Failed to create user' }, 500);
   }
@@ -44,7 +44,7 @@ auth.post('/register', zValidator('json', registerSchema), async (c) => {
     status: 'success',
     errorMessage: '',
     createdAt: now,
-  });
+  } as any);
   return c.json({
     message: 'Registration successful',
     user: {
@@ -78,8 +78,8 @@ auth.post('/login', zValidator('json', loginSchema), async (c) => {
       userAgent: c.req.header('user-agent') || 'unknown',
       status: 'failed',
       errorMessage: 'User not found',
-      createdAt: new Date(),
-    });
+      createdAt: new Date().toISOString(),
+    } as any);
     return c.json({ error: 'Username atau password salah' }, 401);
   }
   const user = userResult[0];
@@ -91,8 +91,8 @@ auth.post('/login', zValidator('json', loginSchema), async (c) => {
       userAgent: c.req.header('user-agent') || 'unknown',
       status: 'failed',
       errorMessage: 'Account inactive',
-      createdAt: new Date(),
-    });
+      createdAt: new Date().toISOString(),
+    } as any);
     return c.json({ error: 'Akun nonaktif. Hubungi administrator.' }, 403);
   }
   const validPassword = await bcrypt.compare(data.password, user.password);
@@ -104,8 +104,8 @@ auth.post('/login', zValidator('json', loginSchema), async (c) => {
       userAgent: c.req.header('user-agent') || 'unknown',
       status: 'failed',
       errorMessage: 'Invalid password',
-      createdAt: new Date(),
-    });
+      createdAt: new Date().toISOString(),
+    } as any);
     return c.json({ error: 'Username atau password salah' }, 401);
   }
   const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, getJwtSecret(), { expiresIn: '1d' });
@@ -117,8 +117,8 @@ auth.post('/login', zValidator('json', loginSchema), async (c) => {
     userAgent: c.req.header('user-agent') || 'unknown',
     status: 'success',
     errorMessage: '',
-    createdAt: new Date(),
-  });
+    createdAt: new Date().toISOString(),
+  } as any);
   return c.json({
     message: 'Login successful',
     user: {

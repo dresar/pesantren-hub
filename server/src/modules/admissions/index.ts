@@ -60,9 +60,9 @@ admissions.post('/register', zValidator('json', santriRegistrationSchema), async
     fotoIjazahApproved: false,
     fotoKkApproved: false,
     suratSehatApproved: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }).returning();
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as any).returning();
   return c.json({
     message: 'Santri registration successful',
     santri: newSantri,
@@ -143,10 +143,10 @@ admissions.post('/schedules', zValidator('json', scheduleSchema), async (c) => {
 
   const [newSchedule] = await db.insert(examSchedules).values({
     ...data,
-    scheduledDate: new Date(data.scheduledDate),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }).returning();
+    scheduledDate: new Date(data.scheduledDate).toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as any).returning();
 
   // Send Notification
   const targetUser = await db.query.users.findFirst({
@@ -160,8 +160,8 @@ admissions.post('/schedules', zValidator('json', scheduleSchema), async (c) => {
       message: `Jadwal ujian ${data.type} telah ditetapkan pada ${new Date(data.scheduledDate).toLocaleString()}`,
       type: 'info',
       isRead: false,
-      createdAt: new Date(),
-    });
+      createdAt: new Date().toISOString(),
+    } as any);
   }
 
   return c.json(newSchedule, 201);
@@ -175,9 +175,9 @@ admissions.put('/schedules/:id', zValidator('json', scheduleSchema.partial()), a
   const data = c.req.valid('json');
   await db.update(examSchedules).set({
     ...data,
-    scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
-    updatedAt: new Date(),
-  }).where(eq(examSchedules.id, id));
+    scheduledDate: data.scheduledDate ? new Date(data.scheduledDate).toISOString() : undefined,
+    updatedAt: new Date().toISOString(),
+  } as any).where(eq(examSchedules.id, id));
   return c.json({ success: true });
 });
 admissions.delete('/schedules/:id', async (c) => {
@@ -251,17 +251,17 @@ admissions.post('/results', zValidator('json', resultSchema), async (c) => {
   if (existing) {
     await db.update(examResults).set({
       ...data,
-      decisionDate: data.status !== 'pending' ? new Date() : undefined,
-      updatedAt: new Date(),
-    }).where(eq(examResults.id, existing.id));
+      decisionDate: data.status !== 'pending' ? new Date().toISOString() : undefined,
+      updatedAt: new Date().toISOString(),
+    } as any).where(eq(examResults.id, existing.id));
     return c.json({ message: 'Result updated' });
   } else {
     const [inserted] = await db.insert(examResults).values({
       ...data,
-      decisionDate: data.status !== 'pending' ? new Date() : undefined,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
+      decisionDate: data.status !== 'pending' ? new Date().toISOString() : undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as any).returning();
     return c.json({ message: 'Result created', id: inserted.id });
   }
 });

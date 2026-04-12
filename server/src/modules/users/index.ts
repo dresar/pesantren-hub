@@ -40,7 +40,7 @@ usersModule.put('/me/password', async (c) => {
   }
   const hashedPassword = await bcrypt.hash(newPassword, 10);
   await db.update(users)
-    .set({ password: hashedPassword, updatedAt: new Date() })
+    .set({ password: hashedPassword, updatedAt: new Date().toISOString() })
     .where(eq(users.id, currentUser.id));
   return c.json({ message: 'Password berhasil diperbarui' });
 });

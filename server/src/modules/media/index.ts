@@ -106,7 +106,7 @@ media.post('/files/bulk-delete', authMiddleware, async (c) => {
 media.post('/accounts', authMiddleware, zValidator('json', insertMediaAccountSchema), async (c) => {
     const data = c.req.valid('json');
     try {
-        const account = await mediaService.createAccount(data);
+        const account = await mediaService.createAccount(data as any);
         return c.json(account, 201);
     } catch (error) {
         const err: any = error;
@@ -114,7 +114,7 @@ media.post('/accounts', authMiddleware, zValidator('json', insertMediaAccountSch
         if (err?.code === '42703' || (err?.code === '23502' && String(err?.detail || '').includes('cloud_name'))) {
             await mediaService.ensureMediaAccountsSchema();
             try {
-                const retry = await mediaService.createAccount(data);
+                const retry = await mediaService.createAccount(data as any);
                 return c.json(retry, 201);
             } catch (e2) {
                 console.error('Retry create account error:', e2);

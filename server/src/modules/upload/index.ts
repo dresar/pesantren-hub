@@ -59,7 +59,7 @@ upload.post('/', authMiddleware, async (c) => {
     return c.json({
       message: 'File uploaded successfully',
       url: result.url, // Return cloud URL
-      filename: result.originalName,
+      filename: result.name,
       fileId: result.id
     });
   } catch (error) {

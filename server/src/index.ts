@@ -16,12 +16,18 @@ import notifications from './modules/notifications';
 import santri from './modules/santri';
 import media from './modules/media';
 import { publication } from './modules/publication';
-import { startWsServer } from './ws';
 
 const app = new Hono();
+
+// ── Middlewares ───────────────────────────────────────────────────────────────
 app.use('*', logger());
-app.use('*', cors());
+app.use('*', cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true,
+}));
 app.use('*', prettyJSON());
+
+// ── Global Error Handler ──────────────────────────────────────────────────────
 app.onError((err, c) => {
   console.error('Unhandled Error:', err);
   return c.json({
@@ -32,14 +38,21 @@ app.onError((err, c) => {
   }, 500);
 });
 
+// ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/', (c) => {
   return c.json({
     message: 'Pesantren Hub API is running',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
   });
 });
 
+app.get('/health', (c) => {
+  return c.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// ── API Routes ────────────────────────────────────────────────────────────────
 app.route('/api/auth', auth);
 app.route('/api/admin', admin);
 app.route('/api/users', users);
@@ -53,11 +66,11 @@ app.route('/api/notifications', notifications);
 app.route('/api/santri', santri);
 app.route('/api/publication', publication);
 
-const port = parseInt(process.env.PORT || '3008', 10);
-
+// ── Local Dev Server (tidak jalan di Vercel Serverless) ──────────────────────
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  const port = parseInt(process.env.PORT || '3008', 10);
   const server = createAdaptorServer({ fetch: app.fetch });
-  startWsServer(server);
+
   server.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
       console.error(`\n[ERROR] Port ${port} sudah dipakai.`);
@@ -67,8 +80,10 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     }
     throw err;
   });
+
   server.listen(port, () => {
-    console.log(`Pesantren Hub unified server listening on ${port}`);
+    console.log(`✅ Pesantren Hub API berjalan di port ${port}`);
+    console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 

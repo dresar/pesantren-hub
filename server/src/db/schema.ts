@@ -371,6 +371,7 @@ export const santriRelations = relations(santri, ({ one, many }) => ({
   }),
   examSchedules: many(examSchedules),
   examResult: one(examResults),
+  parents: many(santriParents),
 }));
 
 export const examSchedules = pgTable('admissions_exam_schedules', {
@@ -1191,5 +1192,65 @@ export const mediaFilesRelations = relations(mediaFiles, ({ one }) => ({
   uploader: one(users, {
     fields: [mediaFiles.userId],
     references: [users.id],
+  }),
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PARENTS / WALI SANTRI — Data Orang Tua yang Ternormalisasi
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const admissionsParents = pgTable('admissions_parents', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+
+  // Identitas
+  nik: varchar('nik', { length: 16 }).notNull().unique(),
+  namaLengkap: varchar('nama_lengkap', { length: 200 }).notNull(),
+
+  // Kontak
+  noHp: varchar('no_hp', { length: 20 }).notNull(),
+  email: varchar('email', { length: 254 }),
+  alamat: text('alamat').notNull(),
+
+  // Data Pribadi
+  tempatLahir: varchar('tempat_lahir', { length: 100 }),
+  tanggalLahir: date('tanggal_lahir', { mode: 'string' }),
+  status: varchar('status', { length: 20 }).notNull().default('Hidup'), // Hidup, Meninggal, Bercerai
+  agama: varchar('agama', { length: 20 }),
+  kewarganegaraan: varchar('kewarganegaraan', { length: 20 }).default('WNI'),
+
+  // Sosial Ekonomi
+  pendidikanTerakhir: varchar('pendidikan_terakhir', { length: 50 }),
+  pekerjaan: varchar('pekerjaan', { length: 100 }),
+  penghasilan: varchar('penghasilan', { length: 50 }),
+
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).notNull().defaultNow(),
+});
+
+// Junction table: menghubungkan Santri dengan Orang Tua / Wali
+export const santriParents = pgTable('admissions_santri_parents', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  santriId: integer('santri_id').notNull().references(() => santri.id, { onDelete: 'cascade' }),
+  parentId: integer('parent_id').notNull().references(() => admissionsParents.id, { onDelete: 'cascade' }),
+
+  // Hubungan: 'Ayah Kandung', 'Ibu Kandung', 'Wali', 'Ayah Tiri', 'Ibu Tiri', dll.
+  hubungan: varchar('hubungan', { length: 50 }).notNull(),
+
+  // Apakah ini kontak utama yang dihubungi?
+  isPrimaryContact: boolean('is_primary_contact').default(false).notNull(),
+});
+
+export const admissionsParentsRelations = relations(admissionsParents, ({ many }) => ({
+  children: many(santriParents),
+}));
+
+export const santriParentsRelations = relations(santriParents, ({ one }) => ({
+  santri: one(santri, {
+    fields: [santriParents.santriId],
+    references: [santri.id],
+  }),
+  parent: one(admissionsParents, {
+    fields: [santriParents.parentId],
+    references: [admissionsParents.id],
   }),
 }));
