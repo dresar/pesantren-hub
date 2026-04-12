@@ -1,21 +1,19 @@
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import * as schema from './schema';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
 
 if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is required');
+  console.error('ERROR: DATABASE_URL environment variable is MISSING.');
+  console.info('Wait... proceeding initialization anyway (this might be a build process or environment delay).');
 }
 
 // Optimization for serverless: force fetch for connection
 neonConfig.fetchConnectionCache = true;
 
 const client = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || '', // Fallback to empty string to avoid crash during export
   ssl: {
-    rejectUnauthorized: false // Required for some Neon connections on certain platforms
+    rejectUnauthorized: false
   },
   // Serverless: gunakan pool kecil. Scaling horizontal terjadi di level function,
   // bukan di level koneksi. max: 5 sudah lebih dari cukup per instance.

@@ -1,7 +1,7 @@
 import { db } from '../../db';
 import { mediaAccounts, mediaFiles, mediaLogs } from '../../db/schema';
 import { eq, and, desc, sql, like, or, gte, between } from 'drizzle-orm';
-import sharp from 'sharp';
+// import sharp from 'sharp'; // Moved to dynamic import in processUpload to avoid cold start crashes
 import { ImageKitProvider } from './providers/imagekit';
 import { CloudinaryProvider } from './providers/cloudinary';
 import { MockProvider } from './providers/mock';
@@ -296,6 +296,8 @@ export class MediaService {
         // 2. Process Image (WebP Conversion & Resize)
         if (mimetype.startsWith('image/') && (settings as any).enableWebPConversion) {
             try {
+                // Dynamic import for sharp to prevent initialization issues in serverless
+                const { default: sharp } = await import('sharp');
                 const image = sharp(fileBuffer);
                 // Convert to WebP
                 bufferToUpload = await image

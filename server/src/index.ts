@@ -1,4 +1,6 @@
-import 'dotenv/config';
+if (!process.env.VERCEL) {
+  await import('dotenv/config');
+}
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
