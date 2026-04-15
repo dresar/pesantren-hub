@@ -4,7 +4,7 @@ import { relations } from 'drizzle-orm';
 // ... (existing tables)
 
 export const users = pgTable('users_user', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   password: varchar('password', { length: 128 }).notNull(),
   lastLogin: timestamp('last_login', { mode: 'string' }),
   isSuperuser: boolean('is_superuser').notNull(),
@@ -32,7 +32,7 @@ export const users = pgTable('users_user', {
 });
 
 export const publicationProfiles = pgTable('publication_profiles', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id),
   bio: text('bio'),
   institution: varchar('institution', { length: 200 }),
@@ -43,7 +43,7 @@ export const publicationProfiles = pgTable('publication_profiles', {
 });
 
 export const publicationCategories = pgTable('publication_categories', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   type: varchar('type', { length: 20 }).notNull(), // 'article', 'journal'
@@ -54,7 +54,7 @@ export const publicationCategories = pgTable('publication_categories', {
 });
 
 export const publicationVolumes = pgTable('publication_volumes', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(), // "Vol 1 No 1"
   year: integer('year').notNull(),
   description: text('description'),
@@ -65,7 +65,7 @@ export const publicationVolumes = pgTable('publication_volumes', {
 });
 
 export const publicationArticles = pgTable('publication_articles', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
   content: text('content').notNull(),
@@ -90,7 +90,7 @@ export const publicationArticles = pgTable('publication_articles', {
 });
 
 export const publicationCollaborations = pgTable('publication_collaborations', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   ownerId: integer('owner_id').notNull().references(() => users.id),
@@ -100,7 +100,7 @@ export const publicationCollaborations = pgTable('publication_collaborations', {
 });
 
 export const publicationCollaborationMembers = pgTable('publication_collaboration_members', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   collaborationId: integer('collaboration_id').notNull().references(() => publicationCollaborations.id),
   userId: integer('user_id').notNull().references(() => users.id),
   role: varchar('role', { length: 50 }).notNull(), // 'owner', 'editor', 'viewer'
@@ -108,7 +108,7 @@ export const publicationCollaborationMembers = pgTable('publication_collaboratio
 });
 
 export const publicationCollaborationInvites = pgTable('publication_collaboration_invites', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   collaborationId: integer('collaboration_id').notNull().references(() => publicationCollaborations.id),
   inviterId: integer('inviter_id').notNull().references(() => users.id),
   inviteeId: integer('invitee_id').notNull().references(() => users.id),
@@ -119,7 +119,7 @@ export const publicationCollaborationInvites = pgTable('publication_collaboratio
 });
 
 export const publicationDiscussions = pgTable('publication_discussions', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   articleId: integer('article_id').references(() => publicationArticles.id), // Optional, can be general discussion
   userId: integer('user_id').notNull().references(() => users.id),
   content: text('content').notNull(),
@@ -225,7 +225,7 @@ export const publicationCollaborationInvitesRelations = relations(publicationCol
 }));
 
 export const publicationArticleAudits = pgTable('publication_article_audits', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   articleId: integer('article_id').notNull().references(() => publicationArticles.id),
   userId: integer('user_id').notNull().references(() => users.id),
   changeSummary: text('change_summary').notNull(),
@@ -255,7 +255,7 @@ export const publicationDiscussionsRelations = relations(publicationDiscussions,
 }));
 
 export const loginHistory = pgTable('users_loginhistory', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   username: varchar('username', { length: 150 }).notNull(),
   ipAddress: varchar('ip_address', { length: 39 }),
   userAgent: text('user_agent').notNull(),
@@ -273,7 +273,7 @@ export const loginHistoryRelations = relations(loginHistory, ({ one }) => ({
 }));
 
 export const notifications = pgTable('notifications', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id),
   title: varchar('title', { length: 200 }).notNull(),
   message: text('message').notNull(),
@@ -291,7 +291,7 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 }));
 
 export const santri = pgTable('admissions_santri', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   namaLengkap: varchar('nama_lengkap', { length: 200 }).notNull(),
   nisn: varchar('nisn', { length: 10 }).notNull().unique(),
   tempatLahir: varchar('tempat_lahir', { length: 100 }).notNull(),
@@ -375,7 +375,7 @@ export const santriRelations = relations(santri, ({ one, many }) => ({
 }));
 
 export const examSchedules = pgTable('admissions_exam_schedules', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   santriId: integer('santri_id').notNull().references(() => santri.id),
   type: varchar('type', { length: 20 }).notNull(),
   scheduledDate: timestamp('scheduled_date', { mode: 'string' }).notNull(),
@@ -395,7 +395,7 @@ export const examSchedulesRelations = relations(examSchedules, ({ one }) => ({
 }));
 
 export const examResults = pgTable('admissions_exam_results', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   santriId: integer('santri_id').notNull().references(() => santri.id),
   writtenTestScore: decimal('written_test_score', { precision: 5, scale: 2 }),
   interviewScore: decimal('interview_test_score', { precision: 5, scale: 2 }),
@@ -417,7 +417,7 @@ export const examResultsRelations = relations(examResults, ({ one }) => ({
 }));
 
 export const bankAccounts = pgTable('payments_bankaccount', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   namaBank: varchar('nama_bank', { length: 100 }).notNull(),
   namaBankCustom: varchar('nama_bank_custom', { length: 100 }).notNull(),
   logo: text('logo'),
@@ -432,7 +432,7 @@ export const bankAccounts = pgTable('payments_bankaccount', {
 });
 
 export const payments = pgTable('payments_payment', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   bankPengirim: varchar('bank_pengirim', { length: 50 }).notNull(),
   noRekeningPengirim: varchar('no_rekening_pengirim', { length: 50 }).notNull(),
   namaPemilikRekening: varchar('nama_pemilik_rekening', { length: 200 }).notNull(),
@@ -460,7 +460,7 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 }));
 
 export const blogCategories = pgTable('blog_category', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull().unique(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   order: integer('order').notNull(),
@@ -472,7 +472,7 @@ export const blogCategoriesRelations = relations(blogCategories, ({ many }) => (
 }));
 
 export const blogTags = pgTable('blog_tag', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 50 }).notNull().unique(),
   slug: varchar('slug', { length: 50 }).notNull().unique(),
   order: integer('order').notNull(),
@@ -484,7 +484,7 @@ export const blogTagsRelations = relations(blogTags, ({ many }) => ({
 }));
 
 export const blogPosts = pgTable('blog_blogpost', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 200 }).notNull(),
   slug: varchar('slug', { length: 200 }).notNull().unique(),
   content: text('content').notNull(),
@@ -521,7 +521,7 @@ export const blogPostsRelations = relations(blogPosts, ({ one, many }) => ({
 }));
 
 export const blogPostTags = pgTable('blog_blogpost_tags', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   blogpostId: integer('blogpost_id').notNull().references(() => blogPosts.id),
   tagId: integer('tag_id').notNull().references(() => blogTags.id),
 });
@@ -538,7 +538,7 @@ export const blogPostTagsRelations = relations(blogPostTags, ({ one }) => ({
 }));
 
 export const blogAnnouncements = pgTable('blog_pengumuman', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   judul: varchar('judul', { length: 200 }).notNull(),
   slug: varchar('slug', { length: 200 }).notNull().unique(),
   konten: text('konten').notNull(),
@@ -559,7 +559,7 @@ export const blogAnnouncements = pgTable('blog_pengumuman', {
 
 // Struktur Organisasi
 export const strukturOrganisasi = pgTable('core_struktur_organisasi', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   jabatan: varchar('jabatan', { length: 200 }).notNull(),
   foto: text('foto'),
@@ -573,7 +573,7 @@ export const strukturOrganisasi = pgTable('core_struktur_organisasi', {
 
 // Konfigurasi Isi Formulir
 export const formConfig = pgTable('core_form_config', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   formName: varchar('form_name', { length: 100 }).notNull(), // 'pendaftaran'
   fieldKey: varchar('field_key', { length: 100 }).notNull(),
   fieldLabel: varchar('field_label', { length: 200 }).notNull(),
@@ -582,7 +582,7 @@ export const formConfig = pgTable('core_form_config', {
 });
 
 export const blogTestimonials = pgTable('blog_testimoni', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   foto: text('foto'),
   jabatan: varchar('jabatan', { length: 200 }).notNull(),
@@ -594,7 +594,7 @@ export const blogTestimonials = pgTable('blog_testimoni', {
 });
 
 export const websiteRegistrationFlow = pgTable('core_registration_flow', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 200 }).notNull(),
   description: text('description').notNull(),
   icon: text('icon').notNull(),
@@ -605,7 +605,7 @@ export const websiteRegistrationFlow = pgTable('core_registration_flow', {
 });
 
 export const websiteSettings = pgTable('core_websitesettings', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   namaPondok: varchar('nama_pondok', { length: 200 }).notNull(),
   arabicName: varchar('arabic_name', { length: 500 }).notNull(),
   alamat: text('alamat').notNull(),
@@ -653,7 +653,7 @@ export const websiteSettings = pgTable('core_websitesettings', {
 });
 
 export const founders = pgTable('core_founders', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   namaLengkap: varchar('nama_lengkap', { length: 100 }).notNull(),
   tanggalLahir: date('tanggal_lahir', { mode: 'string' }).notNull(),
   jabatan: varchar('jabatan', { length: 50 }).notNull(),
@@ -683,7 +683,7 @@ export const foundersRelations = relations(founders, ({ one }) => ({
 }));
 
 export const faq = pgTable('core_faq', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   pertanyaan: varchar('pertanyaan', { length: 500 }).notNull(),
   jawaban: text('jawaban').notNull(),
   kategori: varchar('kategori', { length: 100 }).notNull(),
@@ -693,7 +693,7 @@ export const faq = pgTable('core_faq', {
 });
 
 export const programs = pgTable('core_program', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   slug: varchar('slug', { length: 200 }).notNull().unique(),
   deskripsi: text('deskripsi').notNull(),
@@ -710,7 +710,7 @@ export const programs = pgTable('core_program', {
 });
 
 export const whatsappTemplateCategories = pgTable('core_whatsapptemplatekategori', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 100 }).notNull().unique(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   deskripsi: text('deskripsi').notNull(),
@@ -725,7 +725,7 @@ export const whatsappTemplateCategoriesRelations = relations(whatsappTemplateCat
 }));
 
 export const whatsappTemplates = pgTable('core_whatsapptemplate', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   tipe: varchar('tipe', { length: 20 }).notNull(),
   pesan: text('pesan').notNull(),
@@ -744,7 +744,7 @@ export const whatsappTemplatesRelations = relations(whatsappTemplates, ({ one })
 }));
 
 export const kontak = pgTable('core_kontak', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   email: varchar('email', { length: 254 }).notNull(),
   noHp: varchar('no_hp', { length: 20 }).notNull(),
@@ -757,7 +757,7 @@ export const kontak = pgTable('core_kontak', {
 });
 
 export const heroSection = pgTable('core_herosection', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 200 }).notNull(),
   subtitle: varchar('subtitle', { length: 200 }).notNull(),
   image: text('image'),
@@ -767,7 +767,7 @@ export const heroSection = pgTable('core_herosection', {
 });
 
 export const sejarahTimeline = pgTable('core_sejarahtimeline', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   judul: varchar('judul', { length: 200 }).notNull(),
   icon: text('icon').notNull(),
   deskripsi: text('deskripsi').notNull(),
@@ -780,7 +780,7 @@ export const sejarahTimelineRelations = relations(sejarahTimeline, ({ many }) =>
 }));
 
 export const sejarahTimelineImages = pgTable('core_sejarahtimelineimage', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   gambar: text('gambar').notNull(),
   order: integer('order').notNull(),
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
@@ -795,14 +795,14 @@ export const sejarahTimelineImagesRelations = relations(sejarahTimelineImages, (
 }));
 
 export const visiMisi = pgTable('core_visimisi', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   visi: text('visi').notNull(),
   misi: text('misi').notNull(),
   updatedAt: timestamp('updated_at', { mode: 'string' }).notNull(),
 });
 
 export const programPendidikan = pgTable('core_programpendidikan', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   akreditasi: varchar('akreditasi', { length: 50 }).notNull(),
   icon: text('icon').notNull(),
@@ -816,7 +816,7 @@ export const programPendidikanRelations = relations(programPendidikan, ({ many }
 }));
 
 export const programPendidikanImages = pgTable('core_programpendidikanimage', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   gambar: text('gambar').notNull(),
   altText: varchar('alt_text', { length: 200 }).notNull(),
   order: integer('order').notNull(),
@@ -832,7 +832,7 @@ export const programPendidikanImagesRelations = relations(programPendidikanImage
 }));
 
 export const fasilitas = pgTable('core_fasilitas', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   icon: text('icon').notNull(),
   gambar: text('gambar'),
@@ -841,7 +841,7 @@ export const fasilitas = pgTable('core_fasilitas', {
 });
 
 export const ekstrakurikuler = pgTable('core_ekstrakurikuler', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   icon: text('icon').notNull(),
   gambar: text('gambar'),
@@ -854,7 +854,7 @@ export const ekstrakurikulerRelations = relations(ekstrakurikuler, ({ many }) =>
 }));
 
 export const ekstrakurikulerImages = pgTable('core_ekstrakurikulerimage', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   gambar: text('gambar').notNull(),
   altText: varchar('alt_text', { length: 200 }).notNull(),
   order: integer('order').notNull(),
@@ -870,7 +870,7 @@ export const ekstrakurikulerImagesRelations = relations(ekstrakurikulerImages, (
 }));
 
 export const dokumentasi = pgTable('core_dokumentasi', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   judul: varchar('judul', { length: 200 }).notNull(),
   deskripsi: text('deskripsi').notNull(),
   kategori: varchar('kategori', { length: 50 }).notNull(),
@@ -887,7 +887,7 @@ export const dokumentasiRelations = relations(dokumentasi, ({ many }) => ({
 }));
 
 export const dokumentasiImages = pgTable('core_dokumentasiimage', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   gambar: text('gambar').notNull(),
   altText: varchar('alt_text', { length: 200 }).notNull(),
   order: integer('order').notNull(),
@@ -903,7 +903,7 @@ export const dokumentasiImagesRelations = relations(dokumentasiImages, ({ one })
 }));
 
 export const jadwalHarian = pgTable('core_jadwalharian', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   waktu: varchar('waktu', { length: 50 }).notNull(),
   judul: varchar('judul', { length: 200 }).notNull(),
   deskripsi: text('deskripsi').notNull(),
@@ -914,14 +914,14 @@ export const jadwalHarian = pgTable('core_jadwalharian', {
 });
 
 export const persyaratan = pgTable('core_persyaratan', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   persyaratanSantri: text('persyaratan_santri').notNull(),
   persyaratanSantriwati: text('persyaratan_santriwati').notNull(),
   updatedAt: timestamp('updated_at', { mode: 'string' }).notNull(),
 });
 
 export const alurPendaftaran = pgTable('core_alurpendaftaran', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   gambarUtama: text('gambar_utama'),
   alurPendaftaran: text('alur_pendaftaran').notNull(),
   tahapanTes: text('tahapan_tes').notNull(),
@@ -929,7 +929,7 @@ export const alurPendaftaran = pgTable('core_alurpendaftaran', {
 });
 
 export const biayaPendidikan = pgTable('core_biayapendidikan', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   tipe: varchar('tipe', { length: 50 }).notNull(),
   nama: varchar('nama', { length: 200 }).notNull(),
   jumlah: decimal('jumlah', { precision: 12, scale: 0 }).notNull(),
@@ -939,7 +939,7 @@ export const biayaPendidikan = pgTable('core_biayapendidikan', {
 });
 
 export const contactPersons = pgTable('core_contactperson', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull(),
   foto: text('foto'),
   noHp: varchar('no_hp', { length: 20 }).notNull(),
@@ -949,7 +949,7 @@ export const contactPersons = pgTable('core_contactperson', {
 });
 
 export const socialMedia = pgTable('core_socialmedia', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   platform: varchar('platform', { length: 50 }).notNull(),
   username: varchar('username', { length: 200 }).notNull(),
   url: varchar('url', { length: 200 }).notNull(),
@@ -959,7 +959,7 @@ export const socialMedia = pgTable('core_socialmedia', {
 });
 
 export const seragam = pgTable('core_seragam', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   hari: varchar('hari', { length: 50 }).notNull(),
   seragamPutra: varchar('seragam_putra', { length: 200 }),
   gambarPutra: text('gambar_putra'),
@@ -970,14 +970,14 @@ export const seragam = pgTable('core_seragam', {
 });
 
 export const kmi = pgTable('core_kmi', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   visiKmi: text('visi_kmi').notNull(),
   profilKmi: text('profil_kmi').notNull(),
   updatedAt: timestamp('updated_at', { mode: 'string' }).notNull(),
 });
 
 export const statistik = pgTable('core_statistik', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   judul: varchar('judul', { length: 200 }).notNull(),
   nilai: varchar('nilai', { length: 100 }).notNull(),
   icon: text('icon').notNull(),
@@ -989,7 +989,7 @@ export const statistik = pgTable('core_statistik', {
 });
 
 export const media = pgTable('core_media', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   tipe: varchar('tipe', { length: 10 }).notNull(),
   judul: varchar('judul', { length: 200 }).notNull(),
   subJudul: varchar('sub_judul', { length: 300 }).notNull(),
@@ -1003,7 +1003,7 @@ export const media = pgTable('core_media', {
 });
 
 export const bagianJabatan = pgTable('core_bagianjabatan', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   nama: varchar('nama', { length: 200 }).notNull().unique(),
   deskripsi: text('deskripsi').notNull(),
   order: integer('order').notNull(),
@@ -1017,7 +1017,7 @@ export const bagianJabatanRelations = relations(bagianJabatan, ({ many }) => ({
 }));
 
 export const tenagaPengajar = pgTable('core_tenagapengajar', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   namaLengkap: varchar('nama_lengkap', { length: 200 }).notNull(),
   namaPanggilan: varchar('nama_panggilan', { length: 100 }),
   jenisKelamin: varchar('jenis_kelamin', { length: 1 }).notNull(),
@@ -1062,7 +1062,7 @@ export const tenagaPengajarRelations = relations(tenagaPengajar, ({ one }) => ({
 }));
 
 export const informasiTambahan = pgTable('core_informasitambahan', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   judul: varchar('judul', { length: 200 }).notNull(),
   deskripsi: text('deskripsi').notNull(),
   icon: text('icon').notNull(),
@@ -1074,7 +1074,7 @@ export const informasiTambahan = pgTable('core_informasitambahan', {
 });
 
 export const adminBugnotes = pgTable('admin_panel_bugnote', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 200 }).notNull(),
   description: text('description').notNull(),
   pageUrl: varchar('page_url', { length: 200 }).notNull(),
@@ -1084,7 +1084,7 @@ export const adminBugnotes = pgTable('admin_panel_bugnote', {
 });
 
 export const adminConvertedImages = pgTable('admin_panel_convertedimage', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   originalFilename: varchar('original_filename', { length: 255 }).notNull(),
   webpImage: varchar('webp_image', { length: 100 }).notNull(),
   originalSize: integer('original_size').notNull(),
@@ -1099,7 +1099,7 @@ export const adminConvertedImages = pgTable('admin_panel_convertedimage', {
 });
 
 export const systemSettings = pgTable('system_settings', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   maintenanceMode: boolean('maintenance_mode').default(false).notNull(),
   allowRegistration: boolean('allow_registration').default(true).notNull(),
   debugMode: boolean('debug_mode').default(false).notNull(),
@@ -1111,7 +1111,7 @@ export const systemSettings = pgTable('system_settings', {
 });
 
 export const documentSettings = pgTable('document_settings', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   kopSuratImage: text('kop_surat_image'),
   kopSuratHeight: integer('kop_surat_height').default(30).notNull(),
   kopSuratOpacity: integer('kop_surat_opacity').default(100).notNull(),
@@ -1128,7 +1128,7 @@ export const documentSettings = pgTable('document_settings', {
 });
 
 export const documentLogs = pgTable('document_logs', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id),
   action: varchar('action', { length: 50 }).notNull(),
   details: text('details'),
@@ -1137,7 +1137,7 @@ export const documentLogs = pgTable('document_logs', {
 });
 
 export const documentTemplates = pgTable('document_templates', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 200 }).notNull(),
   type: varchar('type', { length: 50 }).notNull(), // 'biodata', 'kuitansi', 'surat_keterangan', 'custom'
   content: text('content').notNull(),
@@ -1148,7 +1148,7 @@ export const documentTemplates = pgTable('document_templates', {
 });
 
 export const mediaAccounts = pgTable('media_accounts', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
   provider: varchar('provider', { length: 50 }).notNull(), // 'imagekit', 'cloudinary', 'local'
   config: json('config').notNull(), // API keys, secrets, etc.
@@ -1159,7 +1159,7 @@ export const mediaAccounts = pgTable('media_accounts', {
 });
 
 export const mediaFiles = pgTable('media_files', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   filename: varchar('filename', { length: 255 }).notNull(),
   originalName: varchar('original_name', { length: 255 }).notNull(),
   mimetype: varchar('mimetype', { length: 100 }).notNull(),
@@ -1176,7 +1176,7 @@ export const mediaFiles = pgTable('media_files', {
 });
 
 export const mediaLogs = pgTable('media_logs', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   action: varchar('action', { length: 50 }).notNull(), // 'upload', 'delete', 'move'
   fileId: integer('file_id').references(() => mediaFiles.id),
   userId: integer('user_id').references(() => users.id),
@@ -1200,7 +1200,7 @@ export const mediaFilesRelations = relations(mediaFiles, ({ one }) => ({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const admissionsParents = pgTable('admissions_parents', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
 
   // Identitas
   nik: varchar('nik', { length: 16 }).notNull().unique(),
@@ -1229,7 +1229,7 @@ export const admissionsParents = pgTable('admissions_parents', {
 
 // Junction table: menghubungkan Santri dengan Orang Tua / Wali
 export const santriParents = pgTable('admissions_santri_parents', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  id: serial('id').primaryKey(),
   santriId: integer('santri_id').notNull().references(() => santri.id, { onDelete: 'cascade' }),
   parentId: integer('parent_id').notNull().references(() => admissionsParents.id, { onDelete: 'cascade' }),
 

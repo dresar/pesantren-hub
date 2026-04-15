@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run cleanup && concurrently -n api,web -c blue,green \"npm run dev:api\" \"vite\"",
-    "dev:api": "tsx watch server/src/index.ts",
+    "dev:api": "npx -y @hono/node-server --port 3008 --watch server/src/index.ts",
     "cleanup": "npx kill-port 3008 8080",
     "start:api": "tsx server/src/index.ts",
     "build": "vite build",
@@ -24,7 +24,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@faker-js/faker": "^10.3.0",
-    "@hono/node-server": "^1.11.2",
     "@hono/zod-validator": "^0.2.0",
     "@hookform/resolvers": "^3.10.0",
     "@neondatabase/serverless": "^1.0.2",
@@ -97,7 +96,6 @@
     "react-router-dom": "^6.30.1",
     "react-use": "^17.6.0",
     "recharts": "^2.15.4",
-    "sharp": "^0.34.5",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
@@ -109,7 +107,9 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@hono/node-server": "^1.10.0",
     "@eslint/js": "^9.32.0",
+
     "@faker-js/faker": "^10.3.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
@@ -122,6 +122,7 @@
     "@types/react-dom": "^18.3.7",
     "@types/sharp": "^0.31.1",
     "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.2.1",

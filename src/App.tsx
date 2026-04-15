@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { lazy, Suspense, useEffect } from "react";
 import { AdminLayout } from "@/components/layout";
 import { ConfirmDialog, TableSkeleton } from "@/components/common";
+import SkeletonPage from "@/components/common/SkeletonPage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import SantriProtectedRoute from "@/components/auth/SantriProtectedRoute";
 import AuthorProtectedRoute from "@/components/auth/AuthorProtectedRoute";
@@ -133,10 +134,14 @@ const AdminVolumePage = lazy(() => import("./pages/admin/publication/AdminVolume
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60000,
-      gcTime: 1000 * 60 * 60 * 24, 
-      retry: 2,
+      // 5min stale — data feels fresh without constant refetches
+      staleTime: 1000 * 60 * 5,
+      // Keep in memory for 24h — navigating back is instant
+      gcTime: 1000 * 60 * 60 * 24,
+      retry: 1,
       refetchOnWindowFocus: false,
+      // Show cached data immediately while revalidating silently
+      placeholderData: (prev: unknown) => prev,
     },
   },
 });
@@ -182,11 +187,8 @@ const SantriRedirect = () => {
   }
   return <Navigate to={targetPath} replace />;
 };
-const PageLoader = () => (
-  <div className="p-6 min-h-screen flex items-center justify-center">
-    <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-  </div>
-);
+// Non-blocking skeleton fallback — no spinners allowed (Pillar 1 compliance)
+const PageLoader = () => <SkeletonPage />;
 import { AnimatePresence, motion } from "framer-motion";
 import PublicPreloader from "@/components/common/PublicPreloader";
 import { useState } from "react";
@@ -227,7 +229,7 @@ const App = () => {
                   }}
                 >
                   <DataPrefetcher />
-                  <Suspense fallback={<PageLoader />}>
+                  <Suspense fallback={<SkeletonPage />}>
                     <Routes>
               {}
               <Route path="/" element={<MainLayout><Home /></MainLayout>} />

@@ -1,6 +1,4 @@
-if (!process.env.VERCEL) {
-  await import('dotenv/config');
-}
+import 'dotenv/config';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
@@ -77,26 +75,5 @@ app.route('/api/notifications', notifications);
 app.route('/api/santri', santri);
 app.route('/api/publication', publication);
 
-// ── Local Dev Server (tidak jalan di Vercel Serverless) ──────────────────────
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  const { createAdaptorServer } = await import('@hono/node-server');
-  const port = parseInt(process.env.PORT || '3008', 10);
-  const server = createAdaptorServer({ fetch: app.fetch });
-
-  server.on('error', (err: NodeJS.ErrnoException) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`\n[ERROR] Port ${port} sudah dipakai.`);
-      console.error('Tutup proses lain yang memakai port ini, atau ubah PORT di file .env (misal 3009).');
-      console.error('Windows: netstat -ano | findstr :' + port);
-      process.exit(1);
-    }
-    throw err;
-  });
-
-  server.listen(port, () => {
-    console.log(`✅ Pesantren Hub API berjalan di port ${port}`);
-    console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
-}
-
+// Export for serverless handle
 export default app;

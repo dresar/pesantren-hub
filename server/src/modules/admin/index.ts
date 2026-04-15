@@ -438,8 +438,13 @@ admin.delete('/users/:id', async (c) => {
 admin.get('/santri', zValidator('query', searchFilterSchema), async (c) => {
   const query = c.req.valid('query');
   const page = query.page || 1;
-  const limit = query.limit ? Math.min(query.limit, 1000) : 20;
+  // Enforce sane max — keeps serverless functions fast
+  const limit = query.limit ? Math.min(query.limit, 100) : 12;
   const offset = (page - 1) * limit;
+
+  // Read extra query params not in the schema
+  const jenisKelamin = c.req.query('jenisKelamin');
+
   let whereClause = undefined;
   if (query.search) {
     whereClause = or(
@@ -453,6 +458,11 @@ admin.get('/santri', zValidator('query', searchFilterSchema), async (c) => {
     const statusCondition = eq(santri.status, query.status);
     whereClause = whereClause ? and(whereClause, statusCondition) : statusCondition;
   }
+  if (jenisKelamin && (jenisKelamin === 'L' || jenisKelamin === 'P')) {
+    const genderCondition = eq(santri.jenisKelamin, jenisKelamin);
+    whereClause = whereClause ? and(whereClause, genderCondition) : genderCondition;
+  }
+
   const santriListRaw = await db.select()
     .from(santri)
     .leftJoin(payments, eq(santri.id, payments.santriId))
@@ -478,6 +488,7 @@ admin.get('/santri', zValidator('query', searchFilterSchema), async (c) => {
     },
   });
 });
+
 admin.get('/santri/:id', async (c) => {
   const id = parseInt((c.req.param('id') as string));
   const result = await db.select()
