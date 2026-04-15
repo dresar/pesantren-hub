@@ -116,7 +116,7 @@ export default function JournalListPage() {
                          </Badge>
                        )}
                     </div>
-                    <Link to={`/jurnal/${journal.id}`} className="hover:underline">
+                    <Link to={`/jurnal/${journal.slug}`} className="hover:underline">
                       <h3 className="text-xl font-bold mb-2 text-primary">{journal.title}</h3>
                     </Link>
                     <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
@@ -135,7 +135,7 @@ export default function JournalListPage() {
                   </div>
                   <div className="flex justify-end mt-4 md:mt-0 gap-2">
                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/jurnal/${journal.id}`}>
+                        <Link to={`/jurnal/${journal.slug}`}>
                            Lihat Detail
                         </Link>
                      </Button>

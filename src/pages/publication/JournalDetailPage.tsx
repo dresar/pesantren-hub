@@ -8,16 +8,16 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
 export default function JournalDetailPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['public-journal', id],
+    queryKey: ['public-journal', slug],
     queryFn: async () => {
-      const response = await api.get(`/publication/articles/id/${id}`);
+      const response = await api.get(`/publication/articles/${slug}`);
       return response.data.data;
     },
-    enabled: !!id,
+    enabled: !!slug,
   });
 
   if (isLoading) {

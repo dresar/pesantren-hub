@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { eq, like, or, and, desc, asc, inArray, sql, getTableColumns } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { db } from '../../db';
-import { santri, payments, users, loginHistory, notifications, websiteSettings, tenagaPengajar, fasilitas, blogCategories, blogTags, blogTestimonials, blogAnnouncements, blogPosts, systemSettings, founders, programPendidikan, sejarahTimeline, heroSection, whatsappTemplates, media, statistik, documentLogs, documentTemplates, publicationArticles, publicationProfiles, publicationCollaborations, publicationCollaborationMembers, publicationCollaborationInvites, publicationDiscussions, mediaFiles, mediaLogs, blogPostTags } from '../../db/schema';
+import { santri, payments, users, loginHistory, notifications, websiteSettings, tenagaPengajar, fasilitas, blogCategories, blogTags, blogTestimonials, blogAnnouncements, blogPosts, systemSettings, founders, programPendidikan, sejarahTimeline, heroSection, whatsappTemplates, media, statistik, documentLogs, documentTemplates, publicationArticles, publicationProfiles, publicationCollaborations, publicationCollaborationMembers, publicationCollaborationInvites, publicationDiscussions, mediaFiles, mediaLogs, blogPostTags, formConfig, strukturOrganisasi } from '../../db/schema';
 import { 
   bulkActionSchema, 
   searchFilterSchema, 
@@ -114,6 +114,35 @@ admin.put('/website-settings', async (c) => {
     }
 });
 
+admin.get('/form-config', async (c) => {
+    try {
+        const formName = c.req.query('form') || 'pendaftaran';
+        const data = await db.select().from(formConfig).where(eq(formConfig.formName, formName));
+        return c.json(data);
+    } catch (error: any) {
+        return c.json({ error: error.message }, 500);
+    }
+});
+
+admin.put('/form-config', async (c) => {
+    try {
+        const { formName, fields } = await c.req.json() as { formName: string; fields: Array<{ fieldKey: string; fieldLabel: string; fieldValue: string }> };
+        for (const field of fields) {
+            const existing = await db.select().from(formConfig)
+                .where(and(eq(formConfig.formName, formName), eq(formConfig.fieldKey, field.fieldKey)));
+            if (existing.length > 0) {
+                await db.update(formConfig).set({ fieldValue: field.fieldValue, fieldLabel: field.fieldLabel, updatedAt: new Date().toISOString() })
+                    .where(eq(formConfig.id, existing[0].id));
+            } else {
+                await db.insert(formConfig).values({ formName, fieldKey: field.fieldKey, fieldLabel: field.fieldLabel, fieldValue: field.fieldValue, updatedAt: new Date().toISOString() } as any);
+            }
+        }
+        return c.json({ message: 'Saved' });
+    } catch (error: any) {
+        return c.json({ error: error.message }, 500);
+    }
+});
+
 createCrudHandlers('/document-templates', documentTemplates);
 createCrudHandlers('/teachers', tenagaPengajar);
 createCrudHandlers('/facilities', fasilitas);
@@ -133,6 +162,7 @@ createCrudHandlers('/blog/posts', blogPosts);
 
 createCrudHandlers('/gallery', media); // Mapping /gallery to media table
 createCrudHandlers('/statistics', statistik);
+createCrudHandlers('/struktur-organisasi', strukturOrganisasi);
 
 // Singleton handler for system-settings (mapped to /admin/settings for compatibility)
 admin.get('/settings', async (c) => {
@@ -210,6 +240,34 @@ admin.get('/stats', async (c) => {
       ...row.payments_payment,
       santri: row.admissions_santri
     }));
+    const verifiedPaymentsSum = await db.select({ total: sql<number>`sum(cast(jumlah_transfer as numeric))` })
+      .from(payments)
+      .where(eq(payments.status, 'verified'))
+      .then(res => res[0].total || 0);
+
+    const pendingPaymentsSum = await db.select({ total: sql<number>`sum(cast(jumlah_transfer as numeric))` })
+      .from(payments)
+      .where(eq(payments.status, 'pending'))
+      .then(res => res[0].total || 0);
+
+    const allPaymentDates = await db.select({ amount: payments.jumlahTransfer, date: payments.createdAt, status: payments.status }).from(payments);
+    
+    const financialStats = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(currentMonth - i);
+      const monthIdx = d.getMonth();
+      const year = d.getFullYear();
+      const monthName = months[monthIdx];
+      
+      const monthlyTotal = allPaymentDates.filter(p => {
+        const pd = new Date(p.date);
+        return pd.getMonth() === monthIdx && pd.getFullYear() === year && p.status === 'verified';
+      }).reduce((acc, curr) => acc + Number(curr.amount), 0);
+      
+      financialStats.push({ name: monthName, total: monthlyTotal });
+    }
+
     return c.json({
       totalSantri,
       pendingPayments,
@@ -220,6 +278,9 @@ admin.get('/stats', async (c) => {
       pendingVerifications,
       genderDistribution,
       registrationStats: stats,
+      totalRevenue: verifiedPaymentsSum,
+      pendingRevenue: pendingPaymentsSum,
+      financialStats: financialStats,
     });
   } catch (error: any) {
     console.error('Stats Error:', error);

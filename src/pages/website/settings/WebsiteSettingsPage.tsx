@@ -721,6 +721,74 @@ export default function WebsiteSettingsPage() {
       </Card>
       <Card>
         <CardHeader>
+          <CardTitle>Tombol Aksi (Global Hero CTA)</CardTitle>
+          <CardDescription>Pengaturan tombol utama yang muncul di bagian Hero Section (Slide)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+               <h4 className="text-sm font-bold text-primary flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-primary" />
+                 Tombol Utama (Primary)
+               </h4>
+               <div className="space-y-2">
+                 <Label htmlFor="heroCtaPrimaryText">Teks Tombol</Label>
+                 <Input
+                   id="heroCtaPrimaryText"
+                   name="heroCtaPrimaryText"
+                   value={formData.heroCtaPrimaryText}
+                   onChange={handleChange}
+                   placeholder="Contoh: Daftar Sekarang"
+                   disabled={!isEditing}
+                 />
+               </div>
+               <div className="space-y-2">
+                 <Label htmlFor="heroCtaPrimaryLink">Link Tujuan</Label>
+                 <Input
+                   id="heroCtaPrimaryLink"
+                   name="heroCtaPrimaryLink"
+                   value={formData.heroCtaPrimaryLink}
+                   onChange={handleChange}
+                   placeholder="Contoh: /pendaftaran"
+                   disabled={!isEditing}
+                 />
+               </div>
+            </div>
+
+            <div className="space-y-4">
+               <h4 className="text-sm font-bold text-muted-foreground flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                 Tombol Kedua (Secondary)
+               </h4>
+               <div className="space-y-2">
+                 <Label htmlFor="heroCtaSecondaryText">Teks Tombol</Label>
+                 <Input
+                   id="heroCtaSecondaryText"
+                   name="heroCtaSecondaryText"
+                   value={formData.heroCtaSecondaryText}
+                   onChange={handleChange}
+                   placeholder="Contoh: Kenali Kami"
+                   disabled={!isEditing}
+                 />
+               </div>
+               <div className="space-y-2">
+                 <Label htmlFor="heroCtaSecondaryLink">Link Tujuan</Label>
+                 <Input
+                   id="heroCtaSecondaryLink"
+                   name="heroCtaSecondaryLink"
+                   value={formData.heroCtaSecondaryLink}
+                   onChange={handleChange}
+                   placeholder="Contoh: /profil"
+                   disabled={!isEditing}
+                 />
+               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Sosial Media</CardTitle>
           <CardDescription>Link ke akun sosial media pesantren</CardDescription>
         </CardHeader>

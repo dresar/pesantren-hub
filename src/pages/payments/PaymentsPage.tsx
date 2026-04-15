@@ -163,6 +163,7 @@ export default function PaymentsPage() {
   // --- Helpers ---
 
   const filteredPayments = useMemo(() => {
+    if (!Array.isArray(payments)) return [];
     if (statusFilter === 'all') return payments;
     return payments.filter((p: Payment) => p.status === statusFilter);
   }, [payments, statusFilter]);
@@ -379,12 +380,15 @@ export default function PaymentsPage() {
     },
   ];
 
-  const stats = {
-    total: payments.length,
-    pending: payments.filter((p: Payment) => p.status === 'pending').length,
-    verified: payments.filter((p: Payment) => p.status === 'verified').length,
-    rejected: payments.filter((p: Payment) => p.status === 'rejected').length,
-  };
+  const stats = useMemo(() => {
+    const list = Array.isArray(payments) ? payments : [];
+    return {
+      total: list.length,
+      pending: list.filter((p: Payment) => p.status === 'pending').length,
+      verified: list.filter((p: Payment) => p.status === 'verified').length,
+      rejected: list.filter((p: Payment) => p.status === 'rejected').length,
+    };
+  }, [payments]);
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">

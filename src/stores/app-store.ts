@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
 interface AppState {
   theme: 'light' | 'dark' | 'system';
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
@@ -28,7 +29,10 @@ interface AppState {
   clearSelectedItems: () => void;
   globalSearch: string;
   setGlobalSearch: (search: string) => void;
+  isAdminSyncing: boolean;
+  setIsAdminSyncing: (syncing: boolean) => void;
 }
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -75,6 +79,8 @@ export const useAppStore = create<AppState>()(
       clearSelectedItems: () => set({ selectedItems: [] }),
       globalSearch: '',
       setGlobalSearch: (search) => set({ globalSearch: search }),
+      isAdminSyncing: false,
+      setIsAdminSyncing: (syncing) => set({ isAdminSyncing: syncing }),
     }),
     {
       name: 'pesantren-admin-storage',
@@ -85,18 +91,23 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
 if (typeof window !== 'undefined') {
   const stored = localStorage.getItem('pesantren-admin-storage');
   if (stored) {
-    const { state } = JSON.parse(stored);
-    const theme = state?.theme || 'system';
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
+    try {
+      const { state } = JSON.parse(stored);
+      const theme = state?.theme || 'system';
+      const root = document.documentElement;
+      root.classList.remove('light', 'dark');
+      if (theme === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+      } else {
+        root.classList.add(theme);
+      }
+    } catch (e) {
+      console.error('Failed to parse app storage', e);
     }
   }
-}
+}

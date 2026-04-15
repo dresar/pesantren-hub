@@ -77,8 +77,12 @@ adminGeneric.get('/:resource/:id', async (c) => {
     }
     
     if (resource === 'statistik') {
+      const existing = await db.select({ count: sql<number>`count(*)` }).from(schema.statistik);
+      if (Number(existing[0]?.count) >= 4) {
+        return c.json({ error: 'Maksimal 4 entri statistik diperbolehkan' }, 400);
+      }
       body.createdAt = body.createdAt || new Date().toISOString();
-      body.isPublished = body.isPublished ?? true;
+      body.isPublished = body.isPublished ?? body.isActive ?? true;
       body.order = body.order ?? 0;
     }
     

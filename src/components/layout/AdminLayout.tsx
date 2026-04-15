@@ -8,27 +8,24 @@ import WhatsAppButton from '@/components/shared/WhatsAppButton';
 import AiAssistantButton from '@/components/shared/AiAssistantButton';
 import { useSyncStore } from '@/stores/sync-store';
 import { CACHE_EXPIRATION_TIME } from '@/lib/sync-config';
+import { useAdminPrefetch } from '@/hooks/use-admin-prefetch';
 
 export function AdminLayout() {
+  useAdminPrefetch();
   const { sidebarCollapsed } = useAppStore();
   const navigate = useNavigate();
   const { lastSynced } = useSyncStore();
 
   // Background Sync Check
   useEffect(() => {
-    // If cache is expired or missing, redirect to sync
-    // But don't do this if we just came from sync (to avoid loops)
     if (!lastSynced || (Date.now() - lastSynced > CACHE_EXPIRATION_TIME)) {
-      // console.log('Cache expired, redirecting to sync...');
-      // navigate('/admin/sync', { replace: true });
-      // Optional: Silent background sync could happen here instead of redirect
+      // Optional: Silent background sync logic here
     }
   }, [lastSynced, navigate]);
+
   return (
     <div className="min-h-screen bg-background">
-      {}
       <AppSidebar />
-      {}
       <div
         className={cn(
           'transition-all duration-300 min-h-screen',
@@ -37,9 +34,7 @@ export function AdminLayout() {
           'pl-0' 
         )}
       >
-        {}
         <AppTopbar />
-        {}
         <main className="min-h-[calc(100vh-4rem)] pt-16">
           <div className="container py-8 lg:py-10 max-w-7xl mx-auto px-6 lg:px-10">
             <Outlet />
@@ -50,4 +45,4 @@ export function AdminLayout() {
       </div>
     </div>
   );
-}
+}

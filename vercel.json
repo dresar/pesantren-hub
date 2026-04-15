@@ -1,10 +1,22 @@
 {
+  "version": 2,
   "functions": {
-    "api/**/*": {
+    "api/**/*.ts": {
       "memory": 1024,
       "maxDuration": 10
     }
   },
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+      }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

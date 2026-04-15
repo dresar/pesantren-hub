@@ -79,17 +79,16 @@ export default function DashboardPage() {
   const totalSantri = stats?.totalSantri || 0;
   const pendingPayments = stats?.pendingPayments || 0;
   const verifiedPayments = stats?.verifiedPayments || 0;
+  const totalRevenue = stats?.totalRevenue || 0;
   const pendingVerifications = stats?.pendingVerifications || [];
   const genderDistribution = stats?.genderDistribution || [];
   const registrationStats = stats?.registrationStats || [];
-  const financialTrend = [
-    { name: 'Jan', income: 12500000, expense: 8000000 },
-    { name: 'Feb', income: 15000000, expense: 9500000 },
-    { name: 'Mar', income: 18200000, expense: 10000000 },
-    { name: 'Apr', income: 14000000, expense: 11000000 },
-    { name: 'May', income: 21000000, expense: 12000000 },
-    { name: 'Jun', income: 25000000, expense: 14000000 },
-  ];
+  const financialTrend = stats?.financialStats?.map((item: any) => ({
+    name: item.name,
+    income: item.total,
+    expense: 0,
+  })) || [];
+
   return (
     <div className="space-y-8 animate-fade-in pb-10">
       {}
@@ -127,7 +126,7 @@ export default function DashboardPage() {
         />
         <StatsCardPro
           title="Keuangan Masuk"
-          value={`Rp ${verifiedPayments.toLocaleString()}`} 
+          value={`Rp ${totalRevenue.toLocaleString()}`} 
           icon={Wallet}
           trend="+8.2%"
           trendUp={true}

@@ -31,14 +31,19 @@ export default function FinancialDashboard() {
       return response.data;
     },
   });
-  const mockMonthlyData = [
-    { name: 'Jan', income: 4000000, expense: 2400000 },
-    { name: 'Feb', income: 3000000, expense: 1398000 },
-    { name: 'Mar', income: 2000000, expense: 9800000 },
-    { name: 'Apr', income: 2780000, expense: 3908000 },
-    { name: 'May', income: 1890000, expense: 4800000 },
-    { name: 'Jun', income: 2390000, expense: 3800000 },
-  ];
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const chartData = stats?.financialStats?.map((item: any) => ({
+    name: item.name,
+    income: Number(item.total),
+    expense: 0,
+  })) || [];
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
@@ -54,12 +59,11 @@ export default function FinancialDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rp 45.231.899</div>
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <span className="text-emerald-500 flex items-center mr-1">
-                <ArrowUpRight className="h-3 w-3" /> +20.1%
-              </span>
-              dari bulan lalu
+            <div className="text-2xl font-bold">
+              {isLoading ? '...' : formatCurrency(stats?.totalRevenue || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Pemasukan terverifikasi
             </p>
           </CardContent>
         </Card>
@@ -93,9 +97,9 @@ export default function FinancialDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">128</div>
+            <div className="text-2xl font-bold">{stats?.acceptedSantri || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Telah melunasi biaya masuk
+              Santri yang telah diterima
             </p>
           </CardContent>
         </Card>
@@ -109,7 +113,7 @@ export default function FinancialDashboard() {
           <CardContent className="pl-2">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockMonthlyData}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis 
                     dataKey="name" 
@@ -123,15 +127,14 @@ export default function FinancialDashboard() {
                     fontSize={12} 
                     tickLine={false} 
                     axisLine={false} 
-                    tickFormatter={(value) => `Rp${value / 1000000}M`} 
+                    tickFormatter={(value) => `Rp${value / 1000000}jt`} 
                   />
                   <Tooltip 
-                    formatter={(value: number) => [`Rp ${value.toLocaleString('id-ID')}`, '']}
+                    formatter={(value: number) => [formatCurrency(value), '']}
                     cursor={{ fill: 'transparent' }}
                   />
                   <Legend />
                   <Bar dataKey="income" name="Pemasukan" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expense" name="Pengeluaran" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

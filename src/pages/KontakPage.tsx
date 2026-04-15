@@ -8,6 +8,7 @@ import SectionWrapper from '@/components/shared/SectionWrapper';
 import { usePublicData } from '@/hooks/use-public-data';
 import { api } from '@/lib/api';
 import { WebsiteSettings, FaqItem } from '@/types';
+import SEOHead, { SITE_URL } from '@/components/SEOHead';
 import {
   Accordion,
   AccordionContent,
@@ -40,6 +41,27 @@ const KontakPage = () => {
   };
   return (
     <>
+      <SEOHead
+        title="Hubungi Kami"
+        description="Hubungi Pondok Pesantren Modern Raudhatussalam Mahato. Kami siap menjawab pertanyaan seputar pendaftaran, program pendidikan, fasilitas, dan informasi umum pesantren."
+        path="/kontak"
+        keywords="kontak pesantren raudhatussalam, alamat pesantren mahato, nomor telepon pesantren rokan hulu, email pesantren riau"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'LocalBusiness',
+          name: 'Pondok Pesantren Modern Raudhatussalam Mahato',
+          url: SITE_URL,
+          telephone: settings?.noTelepon,
+          email: settings?.email,
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: settings?.alamat || 'Desa Mahato, Kec. Tambusai Utara',
+            addressLocality: 'Rokan Hulu',
+            addressRegion: 'Riau',
+            addressCountry: 'ID',
+          },
+        }}
+      />
       <PageHeader title="Hubungi Kami" subtitle="Kami siap menjawab pertanyaan Anda seputar pesantren." breadcrumbs={[{ label: 'Kontak' }]} />
       <SectionWrapper>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

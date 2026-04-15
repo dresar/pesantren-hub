@@ -23,11 +23,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 export function AppSidebar() {
   const location = useLocation();
-  const { sidebarCollapsed, setSidebarCollapsed, sidebarOpen, setSidebarOpen } = useAppStore();
+  const { sidebarCollapsed, setSidebarCollapsed, sidebarOpen, setSidebarOpen, isAdminSyncing } = useAppStore();
   const { user } = useAuthStore();
   useEffect(() => {
     if (window.innerWidth < 1024) {
@@ -111,8 +111,18 @@ export function AppSidebar() {
             ))}
           </nav>
         </ScrollArea>
-        {}
-        <div className="absolute bottom-0 left-0 right-0 h-16 border-t border-sidebar-border bg-sidebar">
+        <div className="absolute bottom-0 left-0 right-0 h-16 border-t border-sidebar-border bg-sidebar flex flex-col justify-center">
+          {isAdminSyncing && !sidebarCollapsed && (
+            <div className="flex items-center gap-2 px-4 mb-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <Loader2 className="h-3 w-3 animate-spin text-primary" />
+              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Background Syncing...</span>
+            </div>
+          )}
+          {isAdminSyncing && sidebarCollapsed && (
+            <div className="flex justify-center mb-1">
+              <Loader2 className="h-3 w-3 animate-spin text-primary" />
+            </div>
+          )}
           <div className="flex h-full items-center justify-center px-4">
             <Button
               variant="ghost"

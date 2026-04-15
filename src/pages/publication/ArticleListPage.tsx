@@ -1,15 +1,83 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { PageHeader } from '@/components/common';
-import { BookOpen, Search, Calendar, User, Eye, ArrowRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { BookOpen, Search, Calendar, User, Eye, ArrowRight, PenSquare, GraduationCap, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { motion } from 'framer-motion';
+import SectionWrapper from '@/components/shared/SectionWrapper';
+import SEOHead from '@/components/SEOHead';
+
+const ArticleCard = ({ article, index }: { article: any; index: number }) => {
+  const authorName = [article.author?.firstName, article.author?.lastName].filter(Boolean).join(' ') || 'Penulis';
+  const initials = authorName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+    >
+      <Link to={`/artikel/${article.slug}`} className="block group h-full">
+        <div className="h-full glass-card border border-border/40 rounded-xl overflow-hidden hover-lift flex flex-col">
+          {/* Colored top accent bar by category */}
+          <div className="h-1 bg-gradient-to-r from-primary to-primary/40" />
+
+          <div className="p-5 flex flex-col flex-1">
+            {/* Category badge */}
+            {article.category && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 border border-primary/20 rounded-full px-2.5 py-0.5 mb-3 w-fit">
+                <BookOpen className="w-3 h-3" /> {article.category.name}
+              </span>
+            )}
+
+            <h3 className="font-bold text-base leading-snug line-clamp-2 group-hover:text-primary transition-colors mb-2">
+              {article.title}
+            </h3>
+
+            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-1">
+              {article.excerpt || article.content?.replace(/<[^>]+>/g, '').substring(0, 180)}
+            </p>
+
+            {/* Keywords */}
+            {article.keywords && (
+              <div className="flex flex-wrap gap-1 mt-3">
+                {article.keywords.split(',').slice(0, 3).map((kw: string, i: number) => (
+                  <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border/50">
+                    {kw.trim()}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/40">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[11px] font-bold text-primary flex-shrink-0">
+                  {initials}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold leading-none">{authorName}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                    <Calendar className="w-2.5 h-2.5" />
+                    {format(new Date(article.createdAt), 'dd MMM yyyy', { locale: idLocale })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1"><Eye className="w-3 h-3" /> {article.viewsCount}</div>
+                <div className="flex items-center gap-0.5 text-primary font-semibold group-hover:gap-1 transition-all">
+                  Baca <ArrowRight className="w-3 h-3" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+};
 
 export default function ArticleListPage() {
   const [search, setSearch] = useState('');
@@ -18,144 +86,134 @@ export default function ArticleListPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['public-articles', page, search],
     queryFn: async () => {
-      const params = {
-        type: 'article',
-        status: 'approved',
-        page,
-        limit: 9,
-        search,
-      };
-      const response = await api.get('/publication/articles', { params });
+      const response = await api.get('/publication/articles', {
+        params: { type: 'article', status: 'approved', page, limit: 9, search },
+      });
       return response.data;
     },
   });
 
   return (
-    <div className="container py-10 space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <PageHeader
-          title="Artikel & Berita"
-          description="Tulisan terbaru dari para santri dan asatidz"
-          icon={BookOpen}
-        />
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari artikel..."
-            className="pl-8"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
+    <>
+      <SEOHead
+        title="Bacaan Pilihan - Artikel Ilmiah"
+        description="Kumpulan artikel ilmiah dan kajian mendalam dari para penulis aktif Pondok Pesantren Modern Raudhatussalam Mahato tentang pendidikan Islam, bahasa Arab, fikih, dan akhlak."
+        path="/artikel"
+        keywords="artikel ilmiah pesantren, kajian Islam raudhatussalam, jurnal pendidikan Islam riau, artikel bahasa Arab pesantren"
+      />
+
+      {/* ── Header Khusus Artikel (beda dari Blog) ── */}
+      <div className="border-b border-border/60 bg-gradient-to-br from-primary/5 via-background to-background">
+        <div className="container mx-auto max-w-7xl px-4 py-6 md:py-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <PenSquare className="w-4 h-4 text-primary" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest text-primary">Karya Penulis</span>
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold">Bacaan Pilihan</h1>
+              <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+                Artikel ilmiah dan kajian mendalam dari para penulis aktif — asatidz, santri, dan alumni Raudhatussalam
+              </p>
+              <div className="flex items-center gap-3 mt-3">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary border border-border/60 rounded-full px-3 py-1">
+                  <GraduationCap className="w-3 h-3 text-primary" />
+                  <span>Artikel Ilmiah</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary border border-border/60 rounded-full px-3 py-1">
+                  <User className="w-3 h-3 text-primary" />
+                  <span>Penulis Terverifikasi</span>
+                </div>
+              </div>
+            </div>
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Cari artikel..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="w-full pl-9 pr-4 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-96 rounded-lg bg-muted animate-pulse" />
-          ))}
-        </div>
-      ) : isError ? (
-        <div className="text-center py-20 text-muted-foreground">
-          Gagal memuat artikel. Silakan coba lagi nanti.
-        </div>
-      ) : data?.data?.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          Belum ada artikel yang ditemukan.
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.data.map((article: any) => (
-              <Card key={article.id} className="flex flex-col hover:shadow-lg transition-shadow duration-200 group">
-                <div className="aspect-video relative overflow-hidden rounded-t-lg bg-muted">
-                  {article.featuredImage ? (
-                    <img
-                      src={article.featuredImage}
-                      alt={article.title}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
-                      <BookOpen className="h-12 w-12 opacity-20" />
-                    </div>
-                  )}
-                  {article.category && (
-                    <Badge className="absolute top-2 right-2 bg-background/80 hover:bg-background/90 text-foreground backdrop-blur-sm" variant="secondary">
-                      {article.category.name}
-                    </Badge>
-                  )}
-                </div>
-                <CardHeader className="space-y-2">
-                  <div className="text-xs text-muted-foreground flex items-center gap-2">
-                    <Calendar className="h-3 w-3" />
-                    <span>
-                      {format(new Date(article.createdAt), 'dd MMMM yyyy', { locale: idLocale })}
-                    </span>
-                  </div>
-                  <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors text-lg">
-                    <Link to={`/artikel/${article.slug}`}>{article.title}</Link>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <p className="text-muted-foreground line-clamp-3 text-sm">
-                    {article.excerpt || article.content.replace(/<[^>]+>/g, '').substring(0, 150) + '...'}
-                  </p>
-                </CardContent>
-                <CardFooter className="border-t pt-4 flex justify-between items-center text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    {article.author?.avatar ? (
-                       <img src={article.author.avatar} alt={article.author.firstName} className="w-6 h-6 rounded-full object-cover" />
-                    ) : (
-                       <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                          <User className="h-3 w-3" />
-                       </div>
-                    )}
-                    <span className="text-xs font-medium">{article.author?.firstName} {article.author?.lastName}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 text-xs">
-                      <Eye className="h-3 w-3" />
-                      <span>{article.viewsCount}</span>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
-                      <Link to={`/artikel/${article.slug}`}>
-                        Baca <ArrowRight className="ml-1 h-3 w-3" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardFooter>
-              </Card>
-            ))}
+      {/* Perbedaan jelas dari Blog: tidak ada "tab berita/pengumuman", ini murni karya ilmiah */}
+      <SectionWrapper>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-72 rounded-xl bg-muted animate-pulse" />)}
           </div>
-
-          {/* Pagination */}
-          {data?.pagination?.totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
-              <Button
-                variant="outline"
-                disabled={page === 1}
-                onClick={() => setPage(p => p - 1)}
-              >
-                Previous
-              </Button>
-              <div className="flex items-center px-4 text-sm font-medium">
-                Halaman {page} dari {data.pagination.totalPages}
+        ) : isError ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-20" />
+            <p>Gagal memuat artikel. Silakan coba lagi.</p>
+          </div>
+        ) : data?.data?.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <Search className="w-10 h-10 mx-auto mb-3 opacity-20" />
+            <p>Belum ada artikel yang ditemukan.</p>
+          </div>
+        ) : (
+          <>
+            {/* Stats bar */}
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/40">
+              <p className="text-sm text-muted-foreground">
+                Menampilkan <span className="font-semibold text-foreground">{data.data.length}</span> artikel
+              </p>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <BookOpen className="w-3.5 h-3.5 text-primary" />
+                <span>Direview oleh tim editorial pesantren</span>
               </div>
-              <Button
-                variant="outline"
-                disabled={page === data.pagination.totalPages}
-                onClick={() => setPage(p => p + 1)}
-              >
-                Next
-              </Button>
             </div>
-          )}
-        </>
-      )}
-    </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {data.data.map((article: any, i: number) => (
+                <ArticleCard key={article.id} article={article} index={i} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {data?.pagination?.totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-8">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                  className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  &larr; Sebelumnya
+                </button>
+                <span className="flex items-center px-4 text-sm font-medium">
+                  {page} / {data.pagination.totalPages}
+                </span>
+                <button
+                  disabled={page === data.pagination.totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                  className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                >
+                  Berikutnya <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* CTA untuk penulis */}
+            <div className="mt-10 p-6 rounded-2xl bg-primary/5 border border-primary/15 text-center">
+              <PenSquare className="w-8 h-8 text-primary mx-auto mb-3" />
+              <h3 className="font-bold text-base mb-1">Ingin Berbagi Tulisan?</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Daftarkan diri sebagai penulis aktif dan bagikan karya ilmiah Anda kepada komunitas pesantren.
+              </p>
+              <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+                Mulai Menulis <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </>
+        )}
+      </SectionWrapper>
+    </>
   );
 }

@@ -7,6 +7,7 @@ export const navItems: NavItem[] = [
       { label: 'Sejarah', href: '/profil/sejarah' },
       { label: 'Visi & Misi', href: '/profil/visi-misi' },
       { label: 'Struktur Organisasi', href: '/profil/organisasi' },
+      { label: 'Tenaga Pengajar', href: '/profil/pengajar' },
     ],
   },
   { label: 'Program', href: '/program' },
@@ -18,7 +19,13 @@ export const navItems: NavItem[] = [
       { label: 'Galeri', href: '/galeri' },
     ],
   },
-  { label: 'Blog', href: '/blog' },
+  { 
+    label: 'Publikasi', href: '#',
+    children: [
+      { label: 'Berita Terbaru', href: '/blog' },
+      { label: 'Publikasi Ilmiah', href: '/publikasi' },
+    ]
+  },
   {
     label: 'Pendaftaran', href: '/pendaftaran',
     children: [

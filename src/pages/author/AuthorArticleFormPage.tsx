@@ -39,6 +39,9 @@ const articleSchema = z.object({
   pdf_file: z.string().optional(),
   volume_id: z.string().optional(),
   collaboration_id: z.string().optional(),
+  keywords: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
 });
 
 type ArticleFormValues = z.infer<typeof articleSchema>;
@@ -64,6 +67,9 @@ export default function AuthorArticleFormPage() {
       featured_image: '',
       pdf_file: '',
       volume_id: VOLUME_NONE_VALUE,
+      keywords: '',
+      metaTitle: '',
+      metaDescription: '',
       collaboration_id: defaultCollaborationId || COLLAB_NONE_VALUE,
     },
   });
@@ -124,6 +130,9 @@ export default function AuthorArticleFormPage() {
         pdf_file: article.pdfFile || '',
         volume_id: article.volumeId ? String(article.volumeId) : VOLUME_NONE_VALUE,
         collaboration_id: article.collaborationId ? String(article.collaborationId) : COLLAB_NONE_VALUE,
+        keywords: article.keywords || '',
+        metaTitle: article.metaTitle || '',
+        metaDescription: article.metaDescription || '',
       });
     }
   }, [article, form]);
@@ -216,9 +225,9 @@ export default function AuthorArticleFormPage() {
                             name="excerpt"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Ringkasan (Excerpt)</FormLabel>
+                                    <FormLabel>{form.watch('type') === 'journal' ? 'Abstrak Jurnal' : 'Ringkasan (Excerpt)'}</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Ringkasan singkat..." rows={3} {...field} />
+                                        <Textarea placeholder={form.watch('type') === 'journal' ? 'Tulis abstrak jurnal...' : 'Ringkasan singkat...'} rows={3} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -230,14 +239,56 @@ export default function AuthorArticleFormPage() {
                             name="content"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Konten Lengkap</FormLabel>
+                                    <FormLabel>{form.watch('type') === 'journal' ? 'Konten Jurnal / Pendahuluan s/d Penutup' : 'Konten Lengkap'}</FormLabel>
                                     <FormControl>
                                         <RichTextEditor 
                                             value={field.value} 
                                             onChange={(v) => field.onChange(v)}
-                                            placeholder="Tulis konten lengkap artikel Anda di sini..."
+                                            placeholder="Tulis konten lengkap di sini..."
                                             disabled={!canEdit}
                                         />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                             <FormField
+                                control={form.control}
+                                name="keywords"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Keywords / Kata Kunci</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="pendidikan, pesantren, kurikulum..." {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="metaTitle"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>SEO Meta Title</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Judul untuk Google..." {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="metaDescription"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>SEO Meta Description</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Deskripsi untuk penelusuran Google..." rows={2} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

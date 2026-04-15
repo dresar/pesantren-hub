@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { usePublicData } from '@/hooks/use-public-data';
-import { motion } from 'framer-motion';
-import SectionWrapper, { SectionHeader } from '@/components/shared/SectionWrapper';
-import { Users, Crown, Briefcase, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import SectionWrapper from '@/components/shared/SectionWrapper';
+import { Users, Crown, Briefcase, User, X, ChevronRight } from 'lucide-react';
+import SEOHead from '@/components/SEOHead';
 
 interface OrgMember {
   id: number;
@@ -14,55 +16,13 @@ interface OrgMember {
 }
 
 const levelColors = [
-  'from-emerald-600 to-teal-700',
-  'from-blue-600 to-indigo-700',
-  'from-purple-600 to-violet-700',
-  'from-orange-500 to-amber-600',
+  'from-yellow-500 to-amber-600',   // Level 0 (Pimpinan)
+  'from-emerald-600 to-teal-700', // Level 1 (Kepala)
+  'from-blue-600 to-indigo-700',  // Level 2 (Managerial)
+  'from-purple-600 to-violet-700',// Level 3 (Koordinator)
 ];
 
 const levelIcons = [Crown, Briefcase, Users, User];
-
-const MemberCard = ({ member, index }: { member: OrgMember; index: number }) => {
-  const Icon = levelIcons[Math.min(member.level, 3)];
-  const gradient = levelColors[Math.min(member.level, 3)];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.08, duration: 0.45 }}
-      className="flex flex-col items-center group"
-    >
-      <div className="relative">
-        <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br ${gradient} p-0.5 shadow-lg group-hover:scale-105 transition-transform duration-300`}>
-          <div className="w-full h-full rounded-full overflow-hidden bg-background flex items-center justify-center">
-            {member.foto ? (
-              <img src={member.foto} alt={member.nama} className="w-full h-full object-cover" />
-            ) : (
-              <Icon className="w-8 h-8 text-muted-foreground" />
-            )}
-          </div>
-        </div>
-        {member.level === 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
-            ⭐
-          </span>
-        )}
-      </div>
-      <div className="mt-3 text-center max-w-[130px]">
-        <p className="font-semibold text-sm leading-snug">{member.nama}</p>
-        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{member.jabatan}</p>
-      </div>
-    </motion.div>
-  );
-};
-
-const ConnectorLine = () => (
-  <div className="flex flex-col items-center my-1">
-    <div className="w-px h-8 bg-border" />
-  </div>
-);
 
 const Organisasi = () => {
   const { data: members = [], isLoading } = usePublicData<OrgMember[]>(
@@ -70,24 +30,86 @@ const Organisasi = () => {
     '/core/struktur-organisasi'
   );
 
+  const [selectedMember, setSelectedMember] = useState<OrgMember | null>(null);
+
   const level0 = members.filter(m => m.level === 0).sort((a, b) => a.order - b.order);
   const level1 = members.filter(m => m.level === 1).sort((a, b) => a.order - b.order);
   const level2 = members.filter(m => m.level === 2).sort((a, b) => a.order - b.order);
   const level3 = members.filter(m => m.level === 3).sort((a, b) => a.order - b.order);
 
+  // Card component
+  const MemberCard = ({ member, index }: { member: OrgMember; index: number }) => {
+    const Icon = levelIcons[Math.min(member.level, 3)];
+    const gradient = levelColors[Math.min(member.level, 3)];
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: index * 0.05, duration: 0.4 }}
+        onClick={() => setSelectedMember(member)}
+        className="glass-card hover-lift cursor-pointer flex flex-col md:flex-row items-center md:items-start gap-4 p-4 md:p-5 w-full md:w-[280px] lg:w-[320px] rounded-2xl text-center md:text-left border border-border/50 group"
+      >
+        <div className={`w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded-2xl bg-gradient-to-br ${gradient} p-0.5 shadow-md group-hover:scale-105 transition-transform duration-300`}>
+          <div className="w-full h-full rounded-[14px] overflow-hidden bg-background flex items-center justify-center">
+            {member.foto ? (
+              <img src={member.foto} alt={member.nama} className="w-full h-full object-cover" />
+            ) : (
+              <Icon className="w-8 h-8 text-muted-foreground/50" />
+            )}
+          </div>
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col justify-center h-full">
+          {member.level === 0 && (
+            <span className="inline-flex max-w-fit items-center gap-1 text-[10px] uppercase font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-full mb-1">
+              Top Management
+            </span>
+          )}
+          <h3 className="font-bold text-sm md:text-base leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-2">
+            {member.nama}
+          </h3>
+          <p className="text-xs text-muted-foreground leading-snug break-words">
+            {member.jabatan}
+          </p>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const RenderLevel = ({ title, data }: { title?: string, data: OrgMember[] }) => {
+    if (!data || data.length === 0) return null;
+    return (
+      <div className="flex flex-col items-center mb-12 last:mb-0 w-full relative">
+        {title && (
+          <div className="w-full flex items-center gap-4 mb-6">
+            <div className="h-px bg-border flex-1" />
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</span>
+            <div className="h-px bg-border flex-1" />
+          </div>
+        )}
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6 w-full max-w-5xl">
+          {data.map((m, i) => <MemberCard key={m.id} member={m} index={i} />)}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
+      <SEOHead title="Struktur Organisasi" description="Struktur kepengurusan dan manajemen di Pondok Pesantren Raudhatussalam Mahato." path="/profil/organisasi" />
+
       {/* Hero */}
       <section className="relative py-20 md:py-32 overflow-hidden bg-gradient-to-b from-primary/10 to-background">
         <div className="absolute inset-0 opacity-5 islamic-pattern pointer-events-none" />
         <div className="container mx-auto max-w-4xl px-4 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <span className="inline-block mb-4 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase rounded-full bg-primary/10 text-primary border border-primary/20">
-              Pesantren
+              Profil Pesantren
             </span>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">Struktur Organisasi</h1>
-            <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
-              Susunan kepemimpinan dan tim manajemen Pondok Pesantren
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4">Struktur Organisasi</h1>
+            <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
+              Sistem manajemen berbasis kepemimpinan kolektif yang profesional demi keberlangsungan pendidikan santri.
             </p>
           </motion.div>
         </div>
@@ -99,75 +121,82 @@ const Organisasi = () => {
             <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           </div>
         ) : members.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
+          <div className="text-center py-20 text-muted-foreground bg-secondary/30 rounded-2xl border border-dashed border-border/50">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p>Struktur organisasi belum tersedia.</p>
+            <p>Data struktur organisasi belum tersedia.</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-0">
-
-            {/* Level 0 — Pimpinan Tertinggi */}
-            {level0.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-8 md:gap-16">
-                {level0.map((m, i) => <MemberCard key={m.id} member={m} index={i} />)}
-              </div>
-            )}
-
-            {level1.length > 0 && <ConnectorLine />}
-
-            {/* Level 1 — Kepala Bidang */}
-            {level1.length > 0 && (
-              <>
-                {/* Horizontal connector line */}
-                {level1.length > 1 && (
-                  <div className="w-full max-w-3xl h-px bg-border mx-auto mb-0" />
-                )}
-                <div className="flex flex-wrap justify-center gap-6 md:gap-10 mt-4">
-                  {level1.map((m, i) => <MemberCard key={m.id} member={m} index={i} />)}
-                </div>
-              </>
-            )}
-
-            {level2.length > 0 && <ConnectorLine />}
-
-            {/* Level 2 — Staff */}
-            {level2.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-5 md:gap-8 mt-2">
-                {level2.map((m, i) => <MemberCard key={m.id} member={m} index={i} />)}
-              </div>
-            )}
-
-            {level3.length > 0 && <ConnectorLine />}
-
-            {/* Level 3 — Anggota */}
-            {level3.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-2">
-                {level3.map((m, i) => <MemberCard key={m.id} member={m} index={i} />)}
-              </div>
-            )}
-
+          <div className="flex flex-col items-center">
+            <RenderLevel data={level0} />
+            <RenderLevel title="Jajaran Kepengurusan Dewan" data={level1} />
+            <RenderLevel title="Kepala Unit & Manajerial" data={level2} />
+            <RenderLevel title="Koordinator Divisi" data={level3} />
           </div>
         )}
       </SectionWrapper>
 
-      {/* Legend */}
-      {members.length > 0 && (
-        <SectionWrapper className="bg-secondary/20 !py-8">
-          <div className="flex flex-wrap justify-center gap-6">
-            {[
-              { label: 'Pimpinan', color: 'from-emerald-600 to-teal-700' },
-              { label: 'Kepala Bidang', color: 'from-blue-600 to-indigo-700' },
-              { label: 'Staff', color: 'from-purple-600 to-violet-700' },
-              { label: 'Anggota', color: 'from-orange-500 to-amber-600' },
-            ].map(item => (
-              <div key={item.label} className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${item.color}`} />
-                <span className="text-sm text-muted-foreground">{item.label}</span>
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {selectedMember && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedMember(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+             <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-background rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
+            >
+              <div className="relative aspect-video bg-muted overflow-hidden">
+                {selectedMember.foto ? (
+                  <img 
+                    src={selectedMember.foto} 
+                    alt={selectedMember.nama} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary">
+                    <User className="w-16 h-16 opacity-20" />
+                  </div>
+                )}
+                
+                {/* Overlay Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                <button
+                  onClick={() => setSelectedMember(null)}
+                  className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors z-20"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="absolute bottom-5 left-6 right-6 z-10">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary/90 text-white border border-white/20 rounded-md font-bold text-[10px] uppercase mb-2 backdrop-blur-sm">
+                    {selectedMember.jabatan}
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight drop-shadow-md">
+                    {selectedMember.nama}
+                  </h2>
+                </div>
               </div>
-            ))}
-          </div>
-        </SectionWrapper>
-      )}
+
+              <div className="px-6 py-8 text-left">
+                <div className="text-sm text-foreground/80 leading-relaxed space-y-4">
+                   <p>Beliau menjabat sebagai <strong>{selectedMember.jabatan}</strong> di ranah struktural Pondok Pesantren Modern Raudhatussalam Mahato.</p>
+                   <div className="p-4 bg-secondary/40 rounded-xl border border-border/50">
+                    <p className="text-xs italic text-muted-foreground">"Dedikasi penuh menjaga visi dan misi pesantren tetap berjalan lancar dan berkesinambungan bagi seluruh santri dan jajaran tenaga pengajar."</p>
+                   </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

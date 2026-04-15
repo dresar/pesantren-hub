@@ -66,7 +66,7 @@ core.get('/settings', async (c) => {
       try {
         const [newSettings] = await db.insert(websiteSettings).values({
           namaPondok: 'Pondok Pesantren',
-          arabicName: 'المعهد الإسلامي',
+          arabicName: 'Ø§Ù„Ù…Ø¹Ù‡Ø¯ Ø§Ù„Ø¥Ø³Ù„Ø§Ù…ÙŠ',
           alamat: 'Jl. Contoh No. 123',
           noTelepon: '08123456789',
           email: 'admin@pesantren.com',
@@ -347,8 +347,41 @@ core.put('/visi-misi', adminMiddleware, zValidator('json', updateVisiMisiSchema)
   }
 });
 core.get('/tenaga-pengajar', async (c) => {
-  const data = await db.select().from(tenagaPengajar).orderBy(asc(tenagaPengajar.order));
-  return c.json(data);
+  const search = c.req.query('search');
+  const page = parseInt(c.req.query('page') || '1');
+  const limit = parseInt(c.req.query('limit') || '12');
+  const isPublished = c.req.query('isPublished') === 'true';
+  const offset = (page - 1) * limit;
+
+  let whereClause = undefined;
+  if (search) {
+    whereClause = ilike(tenagaPengajar.namaLengkap, `%${search}%`);
+  }
+  
+  if (isPublished) {
+    whereClause = whereClause ? and(whereClause, eq(tenagaPengajar.isPublished, true)) : eq(tenagaPengajar.isPublished, true);
+  }
+
+  const query = db.select().from(tenagaPengajar);
+  if (whereClause) query.where(whereClause);
+  
+  const totalResult = await db.select({ count: sql<number>`count(*)` }).from(tenagaPengajar).where(whereClause || sql`true`);
+  const total = Number(totalResult[0].count);
+
+  const data = await query
+    .orderBy(asc(tenagaPengajar.order))
+    .limit(limit)
+    .offset(offset);
+
+  return c.json({
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 core.post('/tenaga-pengajar', adminMiddleware, zValidator('json', createTenagaPengajarSchema), async (c) => {
   const data = c.req.valid('json');
@@ -460,7 +493,55 @@ const createSimpleCrud = (path: string, table: any, createSchema: any, updateSch
     return c.json({ message: 'Deleted' });
   });
 };
-createSimpleCrud('program-pendidikan', programPendidikan, createProgramPendidikanSchema, updateProgramPendidikanSchema, programPendidikan.order);
+// program-pendidikan: custom GET with images, keep CRUD from createSimpleCrud except GET
+core.get('/program-pendidikan', async (c) => {
+  try {
+    const items = await db.select().from(programPendidikan).orderBy(asc(programPendidikan.order));
+    const images = await db.select().from(programPendidikanImages).orderBy(asc(programPendidikanImages.order));
+    const result = items.map(item => ({
+      ...item,
+      images: images.filter(img => img.programId === item.id).slice(0, 3),
+    }));
+    return c.json(result);
+  } catch (e) {
+    console.error('Core /program-pendidikan error:', e);
+    return c.json([]);
+  }
+});
+core.get('/program-pendidikan/:id', async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  try {
+    const [item] = await db.select().from(programPendidikan).where(eq(programPendidikan.id, id));
+    if (!item) return c.json({ error: 'Not found' }, 404);
+    const images = await db.select().from(programPendidikanImages)
+      .where(eq(programPendidikanImages.programId, id))
+      .orderBy(asc(programPendidikanImages.order));
+    return c.json({ ...item, images: images.slice(0, 3) });
+  } catch (e) {
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+core.post('/program-pendidikan', adminMiddleware, zValidator('json', createProgramPendidikanSchema), async (c) => {
+  const data = c.req.valid('json');
+  const insertData: any = { ...data, createdAt: new Date().toISOString() };
+  if (!insertData.akreditasi) insertData.akreditasi = 'Belum Terakreditasi';
+  if (insertData.order === undefined) insertData.order = 0;
+  const [inserted] = await db.insert(programPendidikan).values(insertData).returning();
+  return c.json(inserted);
+});
+core.put('/program-pendidikan/:id', adminMiddleware, zValidator('json', updateProgramPendidikanSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  const [updated] = await db.update(programPendidikan).set(data as any).where(eq(programPendidikan.id, id)).returning();
+  return c.json(updated);
+});
+core.delete('/program-pendidikan/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(programPendidikanImages).where(eq(programPendidikanImages.programId, id));
+  await db.delete(programPendidikan).where(eq(programPendidikan.id, id));
+  return c.json({ message: 'Deleted' });
+});
+// programs (jenjang) GET also includes gambar field
 createSimpleCrud('fasilitas', fasilitas, createFasilitasSchema, updateFasilitasSchema, fasilitas.order);
 core.get('/sejarah-timeline', async (c) => {
   try {
@@ -537,7 +618,125 @@ core.delete('/sejarah-timeline/:id', adminMiddleware, async (c) => {
   await db.delete(sejarahTimeline).where(eq(sejarahTimeline.id, id));
   return c.json({ message: 'Deleted' });
 });
-createSimpleCrud('ekstrakurikuler', ekstrakurikuler, createEkstrakurikulerSchema, updateEkstrakurikulerSchema, ekstrakurikuler.order);
+// ===== EKSTRAKURIKULER: Custom CRUD with pagination and images =====
+core.get('/ekstrakurikuler', async (c) => {
+  const page = parseInt(c.req.query('page') || '1');
+  const limit = parseInt(c.req.query('limit') || '20');
+  const offset = (page - 1) * limit;
+
+  try {
+    const totalResult = await db.select({ count: sql<number>`count(*)` }).from(ekstrakurikuler);
+    const total = Number(totalResult[0].count);
+
+    const items = await db.select().from(ekstrakurikuler)
+      .orderBy(asc(ekstrakurikuler.order))
+      .limit(limit)
+      .offset(offset);
+
+    const images = await db.select().from(ekstrakurikulerImages)
+      .orderBy(asc(ekstrakurikulerImages.order));
+
+    const result = items.map(item => ({
+      ...item,
+      images: images.filter(img => img.ekstrakurikulerId === item.id)
+    }));
+
+    return c.json({
+      data: result,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (e) {
+    console.error('Core /ekstrakurikuler error:', e);
+    return c.json({ data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } });
+  }
+});
+
+core.get('/ekstrakurikuler/:id', async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  try {
+    const [item] = await db.select().from(ekstrakurikuler).where(eq(ekstrakurikuler.id, id));
+    if (!item) return c.json({ error: 'Not found' }, 404);
+    
+    const images = await db.select().from(ekstrakurikulerImages)
+      .where(eq(ekstrakurikulerImages.ekstrakurikulerId, id))
+      .orderBy(asc(ekstrakurikulerImages.order));
+      
+    return c.json({ ...item, images });
+  } catch (e) {
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+
+core.post('/ekstrakurikuler', adminMiddleware, zValidator('json', createEkstrakurikulerSchema), async (c) => {
+  const data = c.req.valid('json');
+  const { images, ...extraData } = data;
+  
+  // @ts-ignore
+  const [inserted] = await db.insert(ekstrakurikuler).values({
+    ...extraData,
+    createdAt: new Date().toISOString()
+  } as any).returning();
+  
+  const extraId = inserted.id;
+  if (images && images.length > 0) {
+    await db.insert(ekstrakurikulerImages).values(
+      images.map((img, index) => ({
+        ekstrakurikulerId: extraId,
+        gambar: img,
+        altText: extraData.nama,
+        order: index,
+        createdAt: new Date().toISOString()
+      }))
+    );
+  }
+  
+  const item = await db.query.ekstrakurikuler.findFirst({
+    where: eq(ekstrakurikuler.id, extraId),
+    with: { images: true }
+  });
+  return c.json(item);
+});
+
+core.put('/ekstrakurikuler/:id', adminMiddleware, zValidator('json', updateEkstrakurikulerSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  const { images, ...extraData } = data;
+  
+  await db.update(ekstrakurikuler).set(extraData as any).where(eq(ekstrakurikuler.id, id));
+  
+  if (images !== undefined) {
+    await db.delete(ekstrakurikulerImages).where(eq(ekstrakurikulerImages.ekstrakurikulerId, id));
+    if (images.length > 0) {
+      await db.insert(ekstrakurikulerImages).values(
+        images.map((img, index) => ({
+          ekstrakurikulerId: id,
+          gambar: img,
+          altText: extraData.nama || '',
+          order: index,
+          createdAt: new Date().toISOString()
+        }))
+      );
+    }
+  }
+  
+  const item = await db.query.ekstrakurikuler.findFirst({
+    where: eq(ekstrakurikuler.id, id),
+    with: { images: true }
+  });
+  return c.json(item);
+});
+
+core.delete('/ekstrakurikuler/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(ekstrakurikulerImages).where(eq(ekstrakurikulerImages.ekstrakurikulerId, id));
+  await db.delete(ekstrakurikuler).where(eq(ekstrakurikuler.id, id));
+  return c.json({ message: 'Deleted' });
+});
 core.get('/dokumentasi', async (c) => {
   try {
     const docs = await db.select().from(dokumentasi).orderBy(desc(dokumentasi.createdAt));
@@ -620,7 +819,15 @@ createSimpleCrud('biaya-pendidikan', biayaPendidikan, createBiayaPendidikanSchem
 createSimpleCrud('contact-persons', contactPersons, createContactPersonSchema, updateContactPersonSchema, contactPersons.order);
 createSimpleCrud('social-media', socialMedia, createSocialMediaSchema, updateSocialMediaSchema, socialMedia.order);
 createSimpleCrud('seragam', seragam, createSeragamSchema, updateSeragamSchema, seragam.order);
-createSimpleCrud('statistik', statistik, createStatistikSchema, updateStatistikSchema, statistik.order);
+core.get('/statistik', async (c) => {
+  try {
+    const data = await db.select().from(statistik).orderBy(asc(statistik.order));
+    return c.json(data);
+  } catch (e) {
+    console.error('Core /statistik error:', e);
+    return c.json([]);
+  }
+});
 createSimpleCrud('media', media, createMediaSchema, updateMediaSchema, media.order);
 createSimpleCrud('bagian-jabatan', bagianJabatan, createBagianJabatanSchema, updateBagianJabatanSchema, bagianJabatan.order);
 createSimpleCrud('informasi-tambahan', informasiTambahan, createInformasiTambahanSchema, updateInformasiTambahanSchema, informasiTambahan.order);
@@ -646,12 +853,14 @@ const createSingletonCrud = (path: string, table: any, updateSchema: any, defaul
       return c.json({ ...defaultValues, updatedAt: new Date().toISOString() });
     }
   });
+
   core.put(`/${path}`, adminMiddleware, zValidator('json', updateSchema), async (c) => {
     const data = c.req.valid('json');
     const existing = await db.select().from(table).limit(1);
+    
     if (existing.length === 0) {
-      const newItemRes2 = await db.insert(table).values({ ...defaultValues, ...data, updatedAt: new Date().toISOString() } as any).returning();
-      const [newItem] = Array.isArray(newItemRes2) ? newItemRes2 : (newItemRes2 as any).rows;
+      const newItemRes = await db.insert(table).values({ ...defaultValues, ...data, updatedAt: new Date().toISOString() } as any).returning();
+      const [newItem] = Array.isArray(newItemRes) ? newItemRes : (newItemRes as any).rows;
       return c.json(newItem);
     } else {
       await db.update(table)
@@ -662,18 +871,23 @@ const createSingletonCrud = (path: string, table: any, updateSchema: any, defaul
     }
   });
 };
+
 createSingletonCrud('persyaratan', persyaratan, updatePersyaratanSchema, {
   persyaratanSantri: 'Belum diatur',
   persyaratanSantriwati: 'Belum diatur'
 });
+
 createSingletonCrud('alur-pendaftaran', alurPendaftaran, updateAlurPendaftaranSchema, {
   alurPendaftaran: 'Belum diatur',
   tahapanTes: 'Belum diatur'
 });
+
 createSingletonCrud('kmi', kmi, updateKmiSchema, {
   visiKmi: 'Belum diatur',
   profilKmi: 'Belum diatur'
 });
+
+// ===== FOUNDERS =====
 core.get('/founders', async (c) => {
   const data = await db.select().from(founders).where(eq(founders.isDeleted, false)).orderBy(asc(founders.id));
   const publicData = data.map(f => ({
@@ -683,6 +897,7 @@ core.get('/founders', async (c) => {
   }));
   return c.json(publicData);
 });
+
 core.get('/founders/:id', async (c) => {
     const id = parseInt(c.req.param('id') as string);
     const [item] = await db.select().from(founders).where(eq(founders.id, id));
@@ -693,6 +908,7 @@ core.get('/founders/:id', async (c) => {
         email: item.email ? decrypt(item.email) : '',
     });
 });
+
 core.get('/admin/founders', adminMiddleware, async (c) => {
     const data = await db.select().from(founders).where(eq(founders.isDeleted, false));
     const fullData = data.map(f => ({
@@ -702,6 +918,7 @@ core.get('/admin/founders', adminMiddleware, async (c) => {
     }));
     return c.json(fullData);
 });
+
 core.get('/admin/founders/:id', adminMiddleware, async (c) => {
     const id = parseInt(c.req.param('id') as string);
     const [item] = await db.select().from(founders).where(eq(founders.id, id));
@@ -712,41 +929,49 @@ core.get('/admin/founders/:id', adminMiddleware, async (c) => {
         email: item.email ? decrypt(item.email) : '',
     });
 });
+
 core.post('/admin/founders', adminMiddleware, zValidator('json', createFounderSchema), async (c) => {
-    const user = c.get('user');
+    const user = c.get('user') as any;
     const data = c.req.valid('json');
-    const existing = await db.select({ count: sql`count(*)` }).from(founders).where(eq(founders.isDeleted, false));
+    
+    // Limits
+    const existing = await db.select({ count: count() }).from(founders).where(eq(founders.isDeleted, false));
     if (Number(existing[0]?.count) >= 5) {
         return c.json({ error: 'Maksimal 5 entri pendiri' }, 400);
     }
+
     const allFounders = await db.select().from(founders).where(eq(founders.isDeleted, false));
     for (const f of allFounders) {
         if (decrypt(f.nik) === data.nik) return c.json({ error: 'NIK sudah terdaftar' }, 400);
         if (decrypt(f.email) === data.email) return c.json({ error: 'Email sudah terdaftar' }, 400);
     }
-    // @ts-ignore
+
     const [newItem] = await db.insert(founders).values({
         ...data,
         nik: encrypt(data.nik),
         email: encrypt(data.email),
-        createdBy: user.id,
-        updatedBy: user.id,
+        createdBy: user?.id,
+        updatedBy: user?.id,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isDeleted: false
     } as any).returning();
+
     return c.json({
         ...newItem,
         nik: decrypt(newItem.nik),
         email: decrypt(newItem.email)
     });
 });
+
 core.put('/admin/founders/:id', adminMiddleware, zValidator('json', updateFounderSchema), async (c) => {
     const id = parseInt(c.req.param('id') as string);
-    const user = c.get('user');
+    const user = c.get('user') as any;
     const data = c.req.valid('json');
+    
     const [existing] = await db.select().from(founders).where(eq(founders.id, id));
     if (!existing) return c.json({ error: 'Not found' }, 404);
+
     if (data.nik || data.email) {
         const allFounders = await db.select().from(founders).where(eq(founders.isDeleted, false));
         for (const f of allFounders) {
@@ -755,10 +980,13 @@ core.put('/admin/founders/:id', adminMiddleware, zValidator('json', updateFounde
             if (data.email && decrypt(f.email) === data.email) return c.json({ error: 'Email sudah terdaftar' }, 400);
         }
     }
-    const updateData: any = { ...data, updatedAt: new Date().toISOString(), updatedBy: user.id };
+
+    const updateData: any = { ...data, updatedAt: new Date().toISOString(), updatedBy: user?.id };
     if (data.nik) updateData.nik = encrypt(data.nik);
     if (data.email) updateData.email = encrypt(data.email);
+
     await db.update(founders).set(updateData).where(eq(founders.id, id));
+    
     const [updated] = await db.select().from(founders).where(eq(founders.id, id));
     return c.json({
         ...updated,
@@ -766,13 +994,14 @@ core.put('/admin/founders/:id', adminMiddleware, zValidator('json', updateFounde
         email: decrypt(updated.email)
     });
 });
+
 core.delete('/admin/founders/:id', adminMiddleware, async (c) => {
     const id = parseInt(c.req.param('id') as string);
-    const user = c.get('user');
+    const user = c.get('user') as any;
     await db.update(founders).set({
         isDeleted: true,
         updatedAt: new Date().toISOString(),
-        updatedBy: user.id
+        updatedBy: user?.id
     }).where(eq(founders.id, id));
     return c.json({ message: 'Deleted' });
 });
@@ -789,44 +1018,10 @@ core.get('/struktur-organisasi', async (c) => {
     return c.json([]);
   }
 });
-core.get('/admin/struktur-organisasi', adminMiddleware, async (c) => {
-  const data = await db.select().from(strukturOrganisasi).orderBy(asc(strukturOrganisasi.level), asc(strukturOrganisasi.order));
-  return c.json(data);
-});
-core.get('/admin/struktur-organisasi/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id') as string);
-  const [item] = await db.select().from(strukturOrganisasi).where(eq(strukturOrganisasi.id, id));
-  if (!item) return c.json({ error: 'Not found' }, 404);
-  return c.json(item);
-});
-core.post('/admin/struktur-organisasi', adminMiddleware, async (c) => {
-  const data = await c.req.json();
-  const [item] = await db.insert(strukturOrganisasi).values({
-    nama: data.nama,
-    jabatan: data.jabatan,
-    foto: data.foto || null,
-    parentId: data.parentId || null,
-    level: data.level ?? 0,
-    order: data.order ?? 0,
-    isActive: data.isActive ?? true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }).returning();
-  return c.json(item, 201);
-});
-core.put('/admin/struktur-organisasi/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id') as string);
-  const data = await c.req.json();
-  const [updated] = await db.update(strukturOrganisasi).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(strukturOrganisasi.id, id)).returning();
-  return c.json(updated);
-});
-core.delete('/admin/struktur-organisasi/:id', adminMiddleware, async (c) => {
-  const id = parseInt(c.req.param('id') as string);
-  await db.delete(strukturOrganisasi).where(eq(strukturOrganisasi.id, id));
-  return c.json({ message: 'Deleted' });
-});
 
-// ===== FORM CONFIG =====
+// Admin routes for Struktur Organisasi moved to admin module
+
+// ===== FORM CONFIG (Public) =====
 core.get('/form-config', async (c) => {
   try {
     const formName = c.req.query('form') || 'pendaftaran';
@@ -838,25 +1033,6 @@ core.get('/form-config', async (c) => {
   } catch (e) {
     return c.json({});
   }
-});
-core.get('/admin/form-config', adminMiddleware, async (c) => {
-  const formName = c.req.query('form') || 'pendaftaran';
-  const data = await db.select().from(formConfig).where(eq(formConfig.formName, formName));
-  return c.json(data);
-});
-core.put('/admin/form-config', adminMiddleware, async (c) => {
-  const { formName, fields } = await c.req.json() as { formName: string; fields: Array<{ fieldKey: string; fieldLabel: string; fieldValue: string }> };
-  for (const field of fields) {
-    const existing = await db.select().from(formConfig)
-      .where(and(eq(formConfig.formName, formName), eq(formConfig.fieldKey, field.fieldKey)));
-    if (existing.length > 0) {
-      await db.update(formConfig).set({ fieldValue: field.fieldValue, fieldLabel: field.fieldLabel, updatedAt: new Date().toISOString() })
-        .where(eq(formConfig.id, existing[0].id));
-    } else {
-      await db.insert(formConfig).values({ formName, fieldKey: field.fieldKey, fieldLabel: field.fieldLabel, fieldValue: field.fieldValue, updatedAt: new Date().toISOString() } as any);
-    }
-  }
-  return c.json({ message: 'Saved' });
 });
 
 export default core;

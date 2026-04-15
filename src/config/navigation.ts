@@ -240,11 +240,7 @@ export const navigationConfig: NavSection[] = [
         href: '/admin/registration-flow',
         icon: Clock,
       },
-      {
-        title: 'Formulir Pendaftaran',
-        href: '/admin/form-config',
-        icon: FileText,
-      },
+
       {
         title: 'Hero Section',
         href: '/admin/hero-sections',
@@ -417,6 +413,11 @@ export const navigationConfig: NavSection[] = [
         title: 'Template Dokumen',
         href: '/admin/document-templates',
         icon: FileText,
+      },
+      {
+        title: 'Dokumentasi Sistem',
+        href: '/admin/system-docs',
+        icon: BookMarked,
       },
     ],
   },

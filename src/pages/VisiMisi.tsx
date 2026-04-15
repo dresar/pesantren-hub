@@ -3,6 +3,7 @@ import { Eye, Target, Sparkles } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import SectionWrapper from '@/components/shared/SectionWrapper';
 import { usePublicData } from '@/hooks/use-public-data';
+import SEOHead from '@/components/SEOHead';
 const values = [
   { title: 'Berilmu Amaliyah', desc: 'Ilmu yang diamalkan dalam kehidupan sehari-hari.' },
   { title: 'Beramal Ilmiyah', desc: 'Setiap amal didasari oleh ilmu yang benar.' },
@@ -19,6 +20,12 @@ const VisiMisi = () => {
   const misiList = visiMisi?.misi ? visiMisi.misi.split('\n').filter(Boolean) : [];
   return (
     <>
+      <SEOHead
+        title="Visi & Misi"
+        description="Visi dan Misi Pondok Pesantren Modern Raudhatussalam Mahato: menjadi pesantren unggulan yang melahirkan generasi Muslim rabbani, berilmu, dan berakhlak mulia."
+        path="/profil/visi-misi"
+        keywords="visi misi pesantren raudhatussalam, tujuan pendidikan pesantren mahato, panca jiwa pesantren gontor riau"
+      />
       <PageHeader
         title="Visi & Misi"
         subtitle="Fondasi dan arah langkah pesantren kami."

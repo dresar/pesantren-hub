@@ -13,6 +13,8 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import SantriProtectedRoute from "@/components/auth/SantriProtectedRoute";
 import AuthorProtectedRoute from "@/components/auth/AuthorProtectedRoute";
 import DataPrefetcher from "@/components/common/DataPrefetcher";
+import ScrollToTop from "@/components/common/ScrollToTop";
+import { HelmetProvider } from 'react-helmet-async';
 import ThemeProvider from "@/components/ThemeProvider";
 import { api } from "@/lib/api";
 import MainLayout from "@/layouts/MainLayout";
@@ -21,15 +23,14 @@ import AuthLayout from "@/layouts/AuthLayout";
 import AdminDashboardPage from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import GenericResourcePage from "./pages/GenericResourcePage";
-const GenericResourceFormPage = lazy(() => import("./pages/GenericResourceFormPage"));
-const GenericAIGeneratorPage = lazy(() => import("./pages/ai/GenericAIGeneratorPage"));
 const Home = lazy(() => import("./pages/Home"));
 const Sejarah = lazy(() => import("./pages/Sejarah"));
+const FoundersPage = lazy(() => import("./pages/FoundersPage"));
+const FounderDetailPage = lazy(() => import("./pages/FounderDetailPage"));
 const ProfilKami = lazy(() => import("./pages/ProfilKami"));
 const VisiMisi = lazy(() => import("./pages/VisiMisi"));
+const TenagaPengajarPage = lazy(() => import("./pages/TenagaPengajarPage"));
 const Organisasi = lazy(() => import("./pages/Organisasi"));
-const OrganisasiListPage = lazy(() => import("./pages/website/organisasi/OrganisasiListPage"));
-const OrganisasiFormPage = lazy(() => import("./pages/website/organisasi/OrganisasiFormPage"));
 const PublicProgramPage = lazy(() => import("./pages/ProgramPage"));
 const ProgramDetail = lazy(() => import("./pages/ProgramDetail"));
 const FasilitasPage = lazy(() => import("./pages/FasilitasPage"));
@@ -41,12 +42,7 @@ const PublicBlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogDetail = lazy(() => import("./pages/BlogDetail"));
 const KontakPage = lazy(() => import("./pages/KontakPage"));
 const PendaftaranPage = lazy(() => import("./pages/PendaftaranPage"));
-const AlurPendaftaranPage = lazy(() => import("./pages/website/AlurPendaftaranPage"));
-const DailySchedulePage = lazy(() => import("./pages/website/DailySchedulePage")); // Fixed route
-const DailyScheduleFormPage = lazy(() => import("./pages/website/DailyScheduleFormPage"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
-const DataSyncPage = lazy(() => import("./pages/auth/DataSyncPage"));
-const UserDashboardPage = lazy(() => import("./pages/DashboardPage"));
 const FormPendaftaranPage = lazy(() => import("./pages/FormPendaftaranPage"));
 const StatusPendaftaranPage = lazy(() => import("./pages/StatusPendaftaranPage"));
 const UserSchedulePage = lazy(() => import("./pages/admissions/UserSchedulePage"));
@@ -54,67 +50,15 @@ const JadwalSantriPage = lazy(() => import("./pages/JadwalSantriPage"));
 const NotifikasiPage = lazy(() => import("./pages/NotifikasiPage"));
 const PengaturanPage = lazy(() => import("./pages/PengaturanPage"));
 const PaymentPage = lazy(() => import("./pages/PaymentPage"));
-const AdmissionsPage = lazy(() => import("./pages/admissions/AdmissionsPage"));
-const SantriFormPage = lazy(() => import("./pages/admissions/SantriFormPage"));
-const SantriDetailPage = lazy(() => import("./pages/admissions/SantriDetailPage"));
-const SantriDocumentsPage = lazy(() => import("./pages/admissions/SantriDocumentsPage"));
-const ExamSchedulesPage = lazy(() => import("./pages/admissions/ExamSchedulesPage"));
-const ExamScheduleFormPage = lazy(() => import("./pages/admissions/ExamScheduleFormPage"));
-const ExamResultsPage = lazy(() => import("./pages/admissions/ExamResultsPage"));
-const ExamResultFormPage = lazy(() => import("./pages/admissions/ExamResultFormPage"));
-const UsersPage = lazy(() => import("./pages/users/UsersPage"));
-const ProfilePage = lazy(() => import("./pages/users/ProfilePage"));
-const PaymentsPage = lazy(() => import("./pages/payments/PaymentsPage"));
-const PaymentDetailPage = lazy(() => import("./pages/payments/PaymentDetailPage"));
-const FinancialDashboard = lazy(() => import("./pages/financial/FinancialDashboard"));
-const BlogEditorPage = lazy(() => import("./pages/blog/BlogEditorPage"));
-const BlogAIGeneratorPage = lazy(() => import("./pages/blog/BlogAIGeneratorPage"));
-const VisiMisiPage = lazy(() => import("./pages/website/visimisi/VisiMisiPage"));
-const HeroListPage = lazy(() => import("./pages/website/hero/HeroListPage"));
-const HeroFormPage = lazy(() => import("./pages/website/hero/HeroFormPage"));
-const ProgramListPage = lazy(() => import("./pages/website/programs/ProgramListPage"));
-const ProgramFormPage = lazy(() => import("./pages/website/programs/ProgramFormPage"));
-const HistoryListPage = lazy(() => import("./pages/website/history/HistoryListPage"));
-const HistoryFormPage = lazy(() => import("./pages/website/history/HistoryFormPage"));
-const FounderListPage = lazy(() => import("./pages/website/founders/FounderListPage"));
-const FounderFormPage = lazy(() => import("./pages/website/founders/FounderFormPage"));
-const FacilitiesListPage = lazy(() => import("./pages/website/facilities/FacilitiesListPage"));
-const FacilitiesFormPage = lazy(() => import("./pages/website/facilities/FacilitiesFormPage"));
-const EducationListPage = lazy(() => import("./pages/website/education/EducationListPage"));
-const EducationFormPage = lazy(() => import("./pages/website/education/EducationFormPage"));
-const WebsiteSettingsPage = lazy(() => import("./pages/website/settings/WebsiteSettingsPage"));
-const UniformListPage = lazy(() => import("./pages/website/uniforms/UniformListPage"));
-const HomePageManager = lazy(() => import("./pages/website/home/HomePageManager"));
-const FormConfigPage = lazy(() => import("./pages/website/settings/FormConfigPage"));
-const AnnouncementListPage = lazy(() => import("./pages/blog/announcements/AnnouncementListPage"));
-const AnnouncementFormPage = lazy(() => import("./pages/blog/announcements/AnnouncementFormPage"));
-const TestimonialListPage = lazy(() => import("./pages/blog/testimonials/TestimonialListPage"));
-const TestimonialFormPage = lazy(() => import("./pages/blog/testimonials/TestimonialFormPage"));
-const CategoryListPage = lazy(() => import("./pages/blog/categories/CategoryListPage"));
-const CategoryFormPage = lazy(() => import("./pages/blog/categories/CategoryFormPage"));
-const TagListPage = lazy(() => import("./pages/blog/tags/TagListPage"));
-const TagFormPage = lazy(() => import("./pages/blog/tags/TagFormPage"));
-const TeacherListPage = lazy(() => import("./pages/hr/teachers/TeacherListPage"));
-const TeacherFormPage = lazy(() => import("./pages/hr/teachers/TeacherFormPage"));
-const GalleryListPage = lazy(() => import("./pages/media/gallery/GalleryListPage"));
-const GalleryFormPage = lazy(() => import("./pages/media/gallery/GalleryFormPage"));
-const DocumentationListPage = lazy(() => import("./pages/media/documentation/DocumentationListPage"));
-const DocumentationFormPage = lazy(() => import("./pages/media/documentation/DocumentationFormPage"));
-const MediaDashboardPage = lazy(() => import("./pages/media/MediaDashboardPage"));
-const MediaAddAccountPage = lazy(() => import("./pages/media/MediaAddAccountPage"));
-const MediaSettingsPage = lazy(() => import("./pages/media/MediaSettingsPage"));
-const WhatsAppTemplateListPage = lazy(() => import("./pages/communication/whatsapp/WhatsAppTemplateListPage"));
-const WhatsAppTemplateFormPage = lazy(() => import("./pages/communication/whatsapp/WhatsAppTemplateFormPage"));
-const SystemSettingsPage = lazy(() => import("./pages/system/SystemSettingsPage"));
-const DocumentSettingsPage = lazy(() => import("./pages/system/DocumentSettingsPage"));
-const DocumentTemplateManager = lazy(() => import("./pages/system/DocumentTemplateManager"));
-
+const PublicationRegisterPage = lazy(() => import("./pages/publication/PublicationRegisterPage"));
 const ArticleListPage = lazy(() => import("./pages/publication/ArticleListPage"));
 const ArticleDetailPage = lazy(() => import("./pages/publication/ArticleDetailPage"));
 const JournalListPage = lazy(() => import("./pages/publication/JournalListPage"));
 const JournalDetailPage = lazy(() => import("./pages/publication/JournalDetailPage"));
-const PublicationRegisterPage = lazy(() => import("./pages/publication/PublicationRegisterPage"));
+const PublikasiPage = lazy(() => import("./pages/publication/PublikasiPage"));
 
+// User/Santri Side
+const UserDashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AuthorDashboardPage = lazy(() => import("./pages/author/AuthorDashboardPage"));
 const AuthorArticleListPage = lazy(() => import("./pages/author/AuthorArticleListPage"));
 const AuthorJournalListPage = lazy(() => import("./pages/author/AuthorJournalListPage"));
@@ -124,12 +68,78 @@ const AuthorCollaborationsPage = lazy(() => import("./pages/author/AuthorCollabo
 const AuthorCollaborationDetailPage = lazy(() => import("./pages/author/AuthorCollaborationDetailPage"));
 const AuthorDiscussionsPage = lazy(() => import("./pages/author/AuthorDiscussionsPage"));
 
-const AdminArticleListPage = lazy(() => import("./pages/admin/publication/AdminArticleListPage"));
-const AdminJournalListPage = lazy(() => import("./pages/admin/publication/AdminJournalListPage"));
-const AdminAuthorVerificationPage = lazy(() => import("./pages/admin/publication/AdminAuthorVerificationPage"));
-const AdminPublicationDashboard = lazy(() => import("./pages/admin/publication/AdminPublicationDashboard"));
-const AdminPublicationCategoryPage = lazy(() => import("./pages/admin/publication/AdminPublicationCategoryPage"));
-const AdminVolumePage = lazy(() => import("./pages/admin/publication/AdminVolumePage"));
+// === ADMIN EAGER IMPORTS (ZERO LATENCY) ===
+import GenericResourceFormPage from "./pages/GenericResourceFormPage";
+import GenericAIGeneratorPage from "./pages/ai/GenericAIGeneratorPage";
+import DataSyncPage from "./pages/auth/DataSyncPage";
+import AdmissionsPage from "./pages/admissions/AdmissionsPage";
+import SantriFormPage from "./pages/admissions/SantriFormPage";
+import SantriDetailPage from "./pages/admissions/SantriDetailPage";
+import SantriDocumentsPage from "./pages/admissions/SantriDocumentsPage";
+import ExamSchedulesPage from "./pages/admissions/ExamSchedulesPage";
+import ExamScheduleFormPage from "./pages/admissions/ExamScheduleFormPage";
+import ExamResultsPage from "./pages/admissions/ExamResultsPage";
+import ExamResultFormPage from "./pages/admissions/ExamResultFormPage";
+import UsersPage from "./pages/users/UsersPage";
+import ProfilePage from "./pages/users/ProfilePage";
+import PaymentsPage from "./pages/payments/PaymentsPage";
+import PaymentDetailPage from "./pages/payments/PaymentDetailPage";
+import FinancialDashboard from "./pages/financial/FinancialDashboard";
+import BlogEditorPage from "./pages/blog/BlogEditorPage";
+import BlogAIGeneratorPage from "./pages/blog/BlogAIGeneratorPage";
+import VisiMisiPage from "./pages/website/visimisi/VisiMisiPage";
+import HeroListPage from "./pages/website/hero/HeroListPage";
+import HeroFormPage from "./pages/website/hero/HeroFormPage";
+import ProgramListPage from "./pages/website/programs/ProgramListPage";
+import ProgramFormPage from "./pages/website/programs/ProgramFormPage";
+import HistoryListPage from "./pages/website/history/HistoryListPage";
+import HistoryFormPage from "./pages/website/history/HistoryFormPage";
+import FounderListPage from "./pages/website/founders/FounderListPage";
+import FounderFormPage from "./pages/website/founders/FounderFormPage";
+import FacilitiesListPage from "./pages/website/facilities/FacilitiesListPage";
+import FacilitiesFormPage from "./pages/website/facilities/FacilitiesFormPage";
+import EducationListPage from "./pages/website/education/EducationListPage";
+import EducationFormPage from "./pages/website/education/EducationFormPage";
+import WebsiteSettingsPage from "./pages/website/settings/WebsiteSettingsPage";
+import UniformListPage from "./pages/website/uniforms/UniformListPage";
+import HomePageManager from "./pages/website/home/HomePageManager";
+
+import AnnouncementListPage from "./pages/blog/announcements/AnnouncementListPage";
+import AnnouncementFormPage from "./pages/blog/announcements/AnnouncementFormPage";
+import TestimonialListPage from "./pages/blog/testimonials/TestimonialListPage";
+import TestimonialFormPage from "./pages/blog/testimonials/TestimonialFormPage";
+import CategoryListPage from "./pages/blog/categories/CategoryListPage";
+import CategoryFormPage from "./pages/blog/categories/CategoryFormPage";
+import TagListPage from "./pages/blog/tags/TagListPage";
+import TagFormPage from "./pages/blog/tags/TagFormPage";
+import TeacherListPage from "./pages/hr/teachers/TeacherListPage";
+import TeacherFormPage from "./pages/hr/teachers/TeacherFormPage";
+import GalleryListPage from "./pages/media/gallery/GalleryListPage";
+import GalleryFormPage from "./pages/media/gallery/GalleryFormPage";
+import DocumentationListPage from "./pages/media/documentation/DocumentationListPage";
+import DocumentationFormPage from "./pages/media/documentation/DocumentationFormPage";
+import MediaDashboardPage from "./pages/media/MediaDashboardPage";
+import MediaAddAccountPage from "./pages/media/MediaAddAccountPage";
+import MediaSettingsPage from "./pages/media/MediaSettingsPage";
+import WhatsAppTemplateListPage from "./pages/communication/whatsapp/WhatsAppTemplateListPage";
+import WhatsAppTemplateFormPage from "./pages/communication/whatsapp/WhatsAppTemplateFormPage";
+import SystemSettingsPage from "./pages/system/SystemSettingsPage";
+import DocumentSettingsPage from "./pages/system/DocumentSettingsPage";
+import DocumentTemplateManager from "./pages/system/DocumentTemplateManager";
+import AlurPendaftaranPage from "./pages/website/AlurPendaftaranPage";
+import DailySchedulePage from "./pages/website/DailySchedulePage";
+import DailyScheduleFormPage from "./pages/website/DailyScheduleFormPage";
+import OrganisasiListPage from "./pages/website/organisasi/OrganisasiListPage";
+import OrganisasiFormPage from "./pages/website/organisasi/OrganisasiFormPage";
+import DocumentationPage from "./pages/admin/DocumentationPage";
+
+import AdminArticleListPage from "./pages/admin/publication/AdminArticleListPage";
+import AdminJournalListPage from "./pages/admin/publication/AdminJournalListPage";
+import AdminAuthorVerificationPage from "./pages/admin/publication/AdminAuthorVerificationPage";
+import AdminPublicationDashboard from "./pages/admin/publication/AdminPublicationDashboard";
+import AdminPublicationCategoryPage from "./pages/admin/publication/AdminPublicationCategoryPage";
+import AdminVolumePage from "./pages/admin/publication/AdminVolumePage";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -151,7 +161,8 @@ const persister = createSyncStoragePersister({
 persistQueryClient({
   queryClient,
   persister,
-  maxAge: 1000 * 60 * 60 * 24, 
+  maxAge: 1000 * 60 * 60 * 24,
+  buster: 'v2', // increment this to clear cached data for all users
 });
 import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
@@ -187,48 +198,26 @@ const SantriRedirect = () => {
   }
   return <Navigate to={targetPath} replace />;
 };
-// Non-blocking skeleton fallback — no spinners allowed (Pillar 1 compliance)
+// Non-blocking skeleton fallback — no spinners allowed
 const PageLoader = () => <SkeletonPage />;
-import { AnimatePresence, motion } from "framer-motion";
-import PublicPreloader from "@/components/common/PublicPreloader";
-import { useState } from "react";
 
 const App = () => {
-  const [showPreloader, setShowPreloader] = useState(() => {
-     // Check immediately to avoid flicker if already visited
-     return !sessionStorage.getItem('hasVisited');
-  });
-
-  useEffect(() => {
-    // MySQL check removed as requested
-  }, []);
-
   return (
+    <HelmetProvider>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner position="top-right" richColors />
           <ConfirmDialog />
-          
-          <AnimatePresence mode="wait">
-            {showPreloader ? (
-              <PublicPreloader key="preloader" onComplete={() => setShowPreloader(false)} />
-            ) : (
-              <motion.div 
-                key="content"
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="w-full h-full"
-              >
-                <BrowserRouter
+          <BrowserRouter
                   future={{
                     v7_startTransition: true,
                     v7_relativeSplatPath: true,
                   }}
                 >
                   <DataPrefetcher />
+                  <ScrollToTop />
                   <Suspense fallback={<SkeletonPage />}>
                     <Routes>
               {}
@@ -238,6 +227,9 @@ const App = () => {
               <Route path="/profil/sejarah" element={<Navigate to="/sejarah" replace />} />
               <Route path="/profil/visi-misi" element={<MainLayout><VisiMisi /></MainLayout>} />
               <Route path="/profil/organisasi" element={<MainLayout><Organisasi /></MainLayout>} />
+              <Route path="/profil/pengajar" element={<MainLayout><TenagaPengajarPage /></MainLayout>} />
+              <Route path="/profil/pendiri" element={<MainLayout><FoundersPage /></MainLayout>} />
+              <Route path="/profil/pendiri/:id" element={<MainLayout><FounderDetailPage /></MainLayout>} />
               <Route path="/program" element={<MainLayout><PublicProgramPage /></MainLayout>} />
               <Route path="/program/:slug" element={<MainLayout><ProgramDetail /></MainLayout>} />
               <Route path="/fasilitas" element={<MainLayout><FasilitasPage /></MainLayout>} />
@@ -250,8 +242,9 @@ const App = () => {
               <Route path="/blog/:slug" element={<MainLayout><BlogDetail /></MainLayout>} />
               <Route path="/artikel" element={<MainLayout><ArticleListPage /></MainLayout>} />
               <Route path="/artikel/:slug" element={<MainLayout><ArticleDetailPage /></MainLayout>} />
+              <Route path="/publikasi" element={<MainLayout><PublikasiPage /></MainLayout>} />
               <Route path="/jurnal" element={<MainLayout><JournalListPage /></MainLayout>} />
-              <Route path="/jurnal/:id" element={<MainLayout><JournalDetailPage /></MainLayout>} />
+              <Route path="/jurnal/:slug" element={<MainLayout><JournalDetailPage /></MainLayout>} />
               <Route path="/publikasi/register" element={<MainLayout><PublicationRegisterPage /></MainLayout>} />
               <Route path="/kontak" element={<MainLayout><KontakPage /></MainLayout>} />
               <Route path="/pendaftaran" element={<MainLayout><PendaftaranPage /></MainLayout>} />
@@ -298,6 +291,7 @@ const App = () => {
               <Route element={<ProtectedRoute />}>
                 <Route path="/admin/sync" element={<DataSyncPage />} />
                 <Route element={<AdminLayout />}>
+                  <Route path="/admin/system-docs" element={<DocumentationPage />} />
                   <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                   <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
                   
@@ -384,7 +378,7 @@ const App = () => {
                   <Route path="/admin/registration-flow" element={<GenericResourcePage resource="registrationFlow" title="Alur Pendaftaran" basePath="/admin/registration-flow" />} />
                   <Route path="/admin/registration-flow/new" element={<GenericResourceFormPage resource="registrationFlow" title="Alur Pendaftaran" basePath="/admin/registration-flow" />} />
                   <Route path="/admin/registration-flow/:id/edit" element={<GenericResourceFormPage resource="registrationFlow" title="Alur Pendaftaran" basePath="/admin/registration-flow" />} />
-                  <Route path="/admin/form-config" element={<FormConfigPage />} />
+
                   <Route path="/admin/home-settings" element={<HomePageManager />} />
                   {/* === REDIRECTS === */}              <Route path="/faq" element={<Navigate to="/admin/faq" replace />} />
                   <Route path="/extracurricular" element={<Navigate to="/admin/extracurricular" replace />} />
@@ -504,12 +498,11 @@ const App = () => {
                 </Routes>
               </Suspense>
             </BrowserRouter>
-            </motion.div>
-          )}
-          </AnimatePresence>
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
+    </HelmetProvider>
   );
 };
 export default App;
+

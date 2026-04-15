@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Users, GraduationCap, Award, Calendar, BookOpen, Star, ChevronRight, Quote, ChevronLeft } from 'lucide-react';
+import { ArrowRight, Users, GraduationCap, Award, Calendar, BookOpen, Star, ChevronRight, Quote, ChevronLeft, X, ChevronLeft as Prev, ChevronRight as Next } from 'lucide-react';
 import heroImage from '@/assets/hero-pesantren.jpg';
 import SectionWrapper, { SectionHeader } from '@/components/shared/SectionWrapper';
 import { usePublicData } from '@/hooks/use-public-data';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import SEOHead, { SITE_URL } from '@/components/SEOHead';
 interface WebsiteSettings {
   heroTagline?: string;
   heroTitle?: string;
@@ -27,6 +28,8 @@ interface WebsiteSettings {
   deskripsi?: string;
   profilSingkat?: string;
   gambarProfil?: string;
+  noTelepon?: string;
+  email?: string;
 }
 interface HeroSection {
   id: number;
@@ -75,7 +78,11 @@ const HighlightTitle = ({ text }: { text: string }) => {
 };
 const Home = () => {
   const { data: settings, isLoading: isLoadingSettings, error: settingsError } = usePublicData<WebsiteSettings>(['settings'], '/core/settings');
-  const { data: heroSlides = [], isLoading: isLoadingHero, error: heroError } = usePublicData<HeroSection[]>(['heroSections'], '/core/hero');
+  const { data: heroSlides = [], isLoading: isLoadingHero, error: heroError } = usePublicData<HeroSection[]>(['heroSections'], '/core/hero', {
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+  });
   const { data: programs = [] } = usePublicData<any[]>(['programs'], '/core/programs');
   const { data: educationPrograms = [] } = usePublicData<any[]>(['education-programs'], '/core/program-pendidikan');
   const { data: statistics = [] } = usePublicData<any[]>(['statistics'], '/core/statistik');
@@ -84,6 +91,29 @@ const Home = () => {
   const isMobile = useIsMobile();
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [testimonialSlides, setTestimonialSlides] = useState<any[]>([]);
+  // Program modal state
+  const [selectedProgram, setSelectedProgram] = useState<any | null>(null);
+  const [modalImgIndex, setModalImgIndex] = useState(0);
+  const modalSlideTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const openProgramModal = useCallback((prog: any) => {
+    setSelectedProgram(prog);
+    setModalImgIndex(0);
+  }, []);
+  const closeProgramModal = useCallback(() => {
+    setSelectedProgram(null);
+    setModalImgIndex(0);
+    if (modalSlideTimer.current) clearInterval(modalSlideTimer.current);
+  }, []);
+  // Auto-slide images in modal
+  useEffect(() => {
+    if (!selectedProgram) return;
+    const imgs = selectedProgram.images || (selectedProgram.gambar ? [{ gambar: selectedProgram.gambar }] : []);
+    if (imgs.length <= 1) return;
+    modalSlideTimer.current = setInterval(() => {
+      setModalImgIndex(prev => (prev + 1) % imgs.length);
+    }, 3000);
+    return () => { if (modalSlideTimer.current) clearInterval(modalSlideTimer.current); };
+  }, [selectedProgram]);
   useEffect(() => {
     if (testimonials.length > 0) {
       const slides = testimonials.map((t, i) => ({ ...t, index: i }));
@@ -115,15 +145,11 @@ const Home = () => {
   const blogPosts = blogData?.data || [];
   return (
     <>
-      {}
+      {/* ═══ HERO SECTION — renders instantly, data populates silently ═══ */}
       <section className="relative min-h-[90vh] md:min-h-screen flex items-center -mt-16 md:-mt-18 overflow-hidden">
-        {}
+        {/* Background — static asset loads immediately as LCP element */}
         <div className="absolute inset-0">
-          {isLoadingHero ? (
-            <>
-              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent/20" />
-            </>
-          ) : activeSlides.length > 0 ? (
+          {activeSlides.length > 0 ? (
             <AnimatePresence>
               <motion.div
                 key={currentSlide}
@@ -133,20 +159,46 @@ const Home = () => {
                 transition={{ duration: 1.5, ease: "easeInOut" }}
                 className="absolute inset-0"
               >
+                {/* Pillar 4: fetchpriority=high + eager — this IS the LCP element */}
                 <img 
                   src={activeSlides[currentSlide].image || heroImage} 
-                  alt={activeSlides[currentSlide].title} 
+                  alt={activeSlides[currentSlide].title}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = heroImage;
-                  }}
+                  loading="eager"
+                  fetchpriority="high"
+                  width={1920}
+                  height={1080}
+                  onError={(e) => { e.currentTarget.src = heroImage; }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent/20" />
               </motion.div>
             </AnimatePresence>
-          ) : (
+          ) : isLoadingHero ? (
+            // Still loading — show default local asset as instant placeholder
             <>
-              <img src={(settings?.gambarProfil && !settingsError) ? settings.gambarProfil : heroImage} alt="Pesantren Raudhatussalam" className="w-full h-full object-cover" />
+              <img
+                src={heroImage}
+                alt="Pesantren Raudhatussalam"
+                className="w-full h-full object-cover"
+                loading="eager"
+                fetchpriority="high"
+                width={1920}
+                height={1080}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent/20" />
+            </>
+          ) : (
+            // Loaded but no active slides in DB — show default
+            <>
+              <img
+                src={heroImage}
+                alt="Pesantren Raudhatussalam"
+                className="w-full h-full object-cover"
+                loading="eager"
+                fetchpriority="high"
+                width={1920}
+                height={1080}
+              />
               <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent/20" />
             </>
           )}
@@ -167,34 +219,31 @@ const Home = () => {
                  </Link>
                </motion.div>
             )}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSlides.length > 0 ? currentSlide : 'static'}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 drop-shadow-sm text-white">
-                   <HighlightTitle text={
-                     activeSlides.length > 0
-                       ? activeSlides[currentSlide].title
-                       : (!isLoadingSettings && settings?.heroTitle
-                           ? settings.heroTitle
-                           : (settingsError ? 'Mencetak Pemimpin Umat Masa Depan' : ''))
-                   } />
-                </h1>
-                <p className="text-base md:text-lg text-white/90 leading-relaxed mb-8 max-w-lg mx-auto md:mx-0 drop-shadow-sm">
-                  {
-                    activeSlides.length > 0
-                      ? activeSlides[currentSlide].subtitle
-                      : (!isLoadingSettings && settings?.heroSubtitle
-                          ? settings.heroSubtitle
-                          : (settingsError ? 'Pondok Pesantren Modern Raudhatussalam Mahato — memadukan ilmu agama dan pengetahuan umum untuk generasi unggul berakhlak mulia.' : ''))
-                  }
-                </p>
-              </motion.div>
-            </AnimatePresence>
+                {/* Title — shows IMMEDIATELY with static default. API data replaces silently */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSlides.length > 0 ? currentSlide : 'static'}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                  >
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 drop-shadow-sm text-white">
+                       <HighlightTitle text={
+                         activeSlides.length > 0
+                           ? activeSlides[currentSlide].title
+                           : (settings?.heroTitle || 'Mencetak Pemimpin Umat Masa Depan')
+                       } />
+                    </h1>
+                    <p className="text-base md:text-lg text-white/90 leading-relaxed mb-8 max-w-lg mx-auto md:mx-0 drop-shadow-sm">
+                      {
+                        activeSlides.length > 0
+                          ? activeSlides[currentSlide].subtitle
+                          : (settings?.heroSubtitle || 'Pondok Pesantren Modern Raudhatussalam Mahato — memadukan ilmu agama dan pengetahuan umum untuk generasi unggul berakhlak mulia.')
+                      }
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
@@ -240,7 +289,7 @@ const Home = () => {
       <section className="relative -mt-16 z-10 px-4">
         <div className="container mx-auto max-w-5xl">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {statistics.map((stat, i) => {
+            {statistics.slice(0, 4).map((stat, i) => {
               const Icon = iconMap[stat.icon] || Star;
               return (
                 <motion.div
@@ -314,82 +363,198 @@ const Home = () => {
           </motion.div>
         </div>
       </SectionWrapper>
-      {/* Program Pendidikan Section */}
+      {/* Program Pendidikan Section — 4 grid, klik buka modal */}
       <SectionWrapper className="bg-secondary/10">
         <SectionHeader
           badge="Pendidikan"
           title="Program Pendidikan"
-          subtitle="Pilihan program pendidikan berkualitas untuk masa depan putra-putri Anda."
+          subtitle="Bidang keilmuan yang diajarkan untuk membentuk santri yang cendekia dan berakhlak mulia."
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {educationPrograms.map((edu, i) => (
-            <motion.div
-              key={edu.id}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              className="glass-card p-6 hover-lift text-center relative overflow-hidden group"
-            >
-              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                <GraduationCap className="w-24 h-24 text-primary" />
-              </div>
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center relative z-10">
-                {edu.gambar ? (
-                  <img src={edu.gambar} alt={edu.nama} className="w-full h-full object-cover rounded-2xl" />
-                ) : (
-                  <BookOpen className="w-8 h-8 text-primary" />
-                )}
-              </div>
-              <h3 className="font-bold text-xl mb-2 relative z-10">{edu.nama}</h3>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 relative z-10">
-                <Award className="w-3 h-3 text-primary" />
-                <span className="text-xs font-medium text-primary">Akreditasi {edu.akreditasi}</span>
-              </div>
-            </motion.div>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {educationPrograms.slice(0, 4).map((edu, i) => {
+            const thumb = edu.images?.[0]?.gambar || edu.gambar || null;
+            return (
+              <motion.button
+                key={edu.id}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                onClick={() => openProgramModal(edu)}
+                className="glass-card overflow-hidden hover-lift text-left group focus:outline-none focus:ring-2 focus:ring-primary rounded-xl w-full"
+              >
+                <div className="aspect-[4/3] relative overflow-hidden bg-muted/30">
+                  {thumb ? (
+                    <img src={thumb} alt={edu.nama} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full">
+                      <GraduationCap className="w-10 h-10 text-primary/40" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  {edu.akreditasi && (
+                    <span className="absolute top-2 left-2 text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">{edu.akreditasi}</span>
+                  )}
+                </div>
+                <div className="p-3 md:p-4">
+                  <h3 className="font-bold text-sm md:text-base leading-snug group-hover:text-primary transition-colors">{edu.nama}</h3>
+                  {edu.images?.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground mt-1">{edu.images.length} foto · Klik untuk lihat</p>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
       </SectionWrapper>
 
-      {/* Program Unggulan Section */}
+      {/* Jenjang Pendidikan Section — 4 grid klik modal */}
       <SectionWrapper>
         <SectionHeader
-          badge="Program Unggulan"
+          badge="Jenjang"
           title="Jenjang Pendidikan"
-          subtitle="Lima program pendidikan terpadu yang dirancang untuk membentuk generasi berilmu dan berakhlak mulia."
+          subtitle="Tiga jenjang formal yang memadukan kurikulum KMI Gontor dan pendidikan nasional."
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {programs.slice(0, 3).map((program, i) => (
-            <motion.div
-              key={program.id}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-            >
-              <Link to={`/program/${program.slug}`} className="block group">
-                <div className="glass-card p-6 h-full hover-lift">
-                  <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center mb-4">
-                    <BookOpen className="w-5 h-5 text-primary-foreground" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">{program.nama}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{program.deskripsi}</p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="px-2 py-1 rounded bg-primary/10 text-primary font-medium">Lihat Detail</span>
-                  </div>
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {programs.slice(0, 4).map((program, i) => {
+            const thumb = program.gambar || null;
+            return (
+              <motion.button
+                key={program.id}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                onClick={() => openProgramModal(program)}
+                className="glass-card overflow-hidden hover-lift text-left group focus:outline-none focus:ring-2 focus:ring-primary rounded-xl w-full"
+              >
+                <div className="aspect-[4/3] relative overflow-hidden bg-muted/30">
+                  {thumb ? (
+                    <img src={thumb} alt={program.nama} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full">
+                      <BookOpen className="w-10 h-10 text-primary/40" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  {program.status === 'published' && (
+                    <span className="absolute top-2 left-2 text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">Aktif</span>
+                  )}
                 </div>
-              </Link>
-            </motion.div>
-          ))}
+                <div className="p-3 md:p-4">
+                  <h3 className="font-bold text-sm md:text-base leading-snug group-hover:text-primary transition-colors">{program.nama}</h3>
+                  <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{program.deskripsi?.slice(0, 60)}...</p>
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
-        <div className="text-center mt-8">
+        <div className="text-center mt-6">
           <Link to="/program" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
-            Lihat Semua Program <ChevronRight className="w-4 h-4" />
+            Lihat Semua Jenjang <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
       </SectionWrapper>
+
+      {/* ══ PROGRAM MODAL ══ */}
+      <AnimatePresence>
+        {selectedProgram && (() => {
+          const imgs: { gambar: string; altText?: string; alt_text?: string }[] =
+            selectedProgram.images?.length > 0
+              ? selectedProgram.images
+              : selectedProgram.gambar
+                ? [{ gambar: selectedProgram.gambar, altText: selectedProgram.nama }]
+                : [];
+          const hasImgs = imgs.length > 0;
+          return (
+            <motion.div
+              key="program-modal-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
+              onClick={closeProgramModal}
+            >
+              <motion.div
+                key="program-modal-box"
+                initial={{ opacity: 0, y: 60, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 60, scale: 0.97 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                className="bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg md:max-w-2xl overflow-hidden max-h-[90vh] flex flex-col"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Modal image slideshow */}
+                {hasImgs && (
+                  <div className="relative aspect-[16/9] bg-muted/20 flex-shrink-0">
+                    <AnimatePresence mode="wait">
+                      <motion.img
+                        key={modalImgIndex}
+                        src={imgs[modalImgIndex].gambar}
+                        alt={imgs[modalImgIndex].altText || imgs[modalImgIndex].alt_text || selectedProgram.nama}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </AnimatePresence>
+                    {/* Slide controls */}
+                    {imgs.length > 1 && (
+                      <>
+                        <button
+                          onClick={() => setModalImgIndex(p => (p - 1 + imgs.length) % imgs.length)}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition-colors"
+                        ><Prev className="w-4 h-4" /></button>
+                        <button
+                          onClick={() => setModalImgIndex(p => (p + 1) % imgs.length)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition-colors"
+                        ><Next className="w-4 h-4" /></button>
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {imgs.map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setModalImgIndex(idx)}
+                              className={`w-2 h-2 rounded-full transition-all ${idx === modalImgIndex ? 'bg-white scale-125' : 'bg-white/50'}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {/* Close button */}
+                    <button
+                      onClick={closeProgramModal}
+                      className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors z-10"
+                    ><X className="w-4 h-4" /></button>
+                  </div>
+                )}
+                {/* Modal content */}
+                <div className="p-5 overflow-y-auto">
+                  {!hasImgs && (
+                    <button onClick={closeProgramModal} className="absolute top-3 right-3 bg-muted hover:bg-muted/80 rounded-full p-1.5 transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                  {selectedProgram.akreditasi && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full mb-2">
+                      <Award className="w-3 h-3" /> {selectedProgram.akreditasi}
+                    </span>
+                  )}
+                  <h2 className="text-lg md:text-xl font-bold mb-3 leading-snug">{selectedProgram.nama}</h2>
+                  {selectedProgram.deskripsi && (
+                    <p className="text-sm text-muted-foreground leading-relaxed">{selectedProgram.deskripsi}</p>
+                  )}
+                  {selectedProgram.status === 'published' && (
+                    <p className="text-xs text-emerald-600 font-semibold mt-3">✓ Program Aktif</p>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
       {}
       <SectionWrapper className="bg-secondary/50">
         <SectionHeader
@@ -492,7 +657,7 @@ const Home = () => {
       </SectionWrapper>
       {}
       <SectionWrapper className="!px-2 md:!px-4">
-        <SectionHeader badge="Blog" title="Berita Terbaru" subtitle="Kabar terkini seputar kegiatan dan prestasi pesantren." />
+        <SectionHeader badge="Publikasi Ilmiah" title="Berita & Artikel Terkini" subtitle="Kabar terbaru dan karya tulis dari lingkungan pesantren." />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
           {blogPosts.slice(0, 4).map((post, i) => (
             <motion.div key={post.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
@@ -519,36 +684,13 @@ const Home = () => {
           ))}
         </div>
         <div className="text-center mt-8">
-          <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
-            Semua Artikel <ChevronRight className="w-4 h-4" />
+          <Link to="/publikasi" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+            Semua Publikasi Ilmiah <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
       </SectionWrapper>
 
-      {/* Article Preview Section (2 Grid) */}
-      <SectionWrapper className="bg-secondary/5">
-        <SectionHeader badge="Artikel" title="Bacaan Pilihan" subtitle="Artikel menarik lainnya untuk Anda." />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {blogPosts.slice(4, 8).map((post, i) => (
-            <motion.div key={post.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-              <Link to={`/blog/${post.slug}`} className="block group">
-                <div className="glass-card overflow-hidden hover-lift h-full flex flex-row items-center gap-4 p-4">
-                  <div className="w-1/3 aspect-square bg-muted relative overflow-hidden rounded-lg shrink-0">
-                    {post.featuredImage && (
-                        <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
-                    )}
-                  </div>
-                  <div className="flex-1 flex flex-col justify-center">
-                    <span className="text-xs font-medium text-primary line-clamp-1">{post.category?.name}</span>
-                    <h3 className="text-lg font-semibold mt-1 line-clamp-2 group-hover:text-primary transition-colors leading-tight">{post.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </SectionWrapper>
+
       {}
       <section className="px-4 py-16 md:py-24">
         <div className="container mx-auto max-w-4xl">

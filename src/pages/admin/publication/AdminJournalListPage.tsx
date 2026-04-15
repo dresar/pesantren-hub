@@ -1,5 +1,5 @@
 import { PageHeader, DataTable, StatusBadge, ConfirmDialog } from '@/components/common';
-import { GraduationCap, Eye, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { GraduationCap, Eye, CheckCircle, XCircle, Trash2, PenBox } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ColumnDef } from '@tanstack/react-table';
@@ -142,8 +142,14 @@ export default function AdminJournalListPage() {
       cell: ({ row }) => (
         <div className="flex gap-1">
           <Button size="icon" variant="ghost" asChild title="Lihat">
-            <Link to={`/publication/journals/${row.original.slug}`} target="_blank">
+            <Link to={`/jurnal/${row.original.slug}`} target="_blank">
               <Eye className="w-4 h-4" />
+            </Link>
+          </Button>
+
+          <Button size="icon" variant="ghost" asChild title="Edit">
+            <Link to={`/author/articles/${row.original.id}/edit`}>
+              <PenBox className="w-4 h-4" />
             </Link>
           </Button>
           
@@ -186,11 +192,18 @@ export default function AdminJournalListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Manajemen Jurnal"
-        description="Kelola, moderasi, dan publikasi jurnal ilmiah"
-        icon={GraduationCap}
-      />
+      <div className="flex justify-between items-center">
+        <PageHeader
+          title="Manajemen Jurnal"
+          description="Kelola, moderasi, dan publikasi jurnal ilmiah"
+          icon={GraduationCap}
+        />
+        <Button asChild>
+          <Link to="/author/articles/new?type=journal">
+            <GraduationCap className="mr-2 h-4 w-4" /> Tambah Jurnal Baru
+          </Link>
+        </Button>
+      </div>
       
       <DataTable
         columns={columns}

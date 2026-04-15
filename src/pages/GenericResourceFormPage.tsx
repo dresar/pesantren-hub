@@ -24,7 +24,7 @@ import {
 
 const RESOURCE_FIELDS: Record<string, string[]> = {
   seragam: ['hari', 'seragamPutra', 'gambarPutra', 'seragamPutri', 'gambarPutri', 'order'],
-  ekstrakurikuler: ['nama', 'icon', 'gambar', 'order'],
+  ekstrakurikuler: ['nama', 'icon', 'gambar', 'images', 'order'],
   faq: ['pertanyaan', 'jawaban', 'isPublished', 'order'],
   statistik: ['judul', 'nilai', 'icon', 'deskripsi', 'warna', 'order', 'isPublished'],
   biayaPendidikan: ['tipe', 'nama', 'jumlah', 'keterangan', 'order'],
@@ -198,11 +198,54 @@ export default function GenericResourceFormPage({ resource, title, basePath }: G
                 return (
                   <div key={key} className={`space-y-2 ${isImageField || isTextArea || isColorField ? 'col-span-full' : ''}`}>
                     <Label className="capitalize flex items-center gap-2">
-                      {key.replace(/_/g, ' ')}
+                      {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}
                       {isOptional && <span className="text-muted-foreground font-normal text-sm">(Opsional)</span>}
                     </Label>
                     
-                    {isImageField ? (
+                    {key === 'images' ? (
+                        <div className="space-y-4 col-span-full border p-4 rounded-xl bg-muted/10">
+                            <div className="flex items-center justify-between mb-2">
+                                <Label>Galeri Gambar (Max 5)</Label>
+                                <span className="text-[10px] text-muted-foreground">{(formData[key] || []).length}/5</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {(formData[key] || []).map((imgUrl: string, index: number) => (
+                                    <div key={index} className="relative group">
+                                         <DualImageInput
+                                            value={imgUrl}
+                                            onChange={(val) => {
+                                                const newImages = [...(formData[key] || [])];
+                                                if (val) {
+                                                    newImages[index] = val;
+                                                } else {
+                                                    newImages.splice(index, 1);
+                                                }
+                                                handleInputChange(key, newImages);
+                                            }}
+                                            label={`Gambar ${index + 1}`}
+                                            showMediaLibrary
+                                        />
+                                    </div>
+                                ))}
+                                {(formData[key] || []).length < 5 && (
+                                    <div className="flex items-end h-full">
+                                        <Button 
+                                            type="button" 
+                                            variant="outline" 
+                                            className="w-full h-32 border-dashed flex flex-col gap-2"
+                                            onClick={() => {
+                                                const newImages = [...(formData[key] || []), ''];
+                                                handleInputChange(key, newImages);
+                                            }}
+                                        >
+                                            <Database className="w-6 h-6 opacity-30" />
+                                            <span>Tambah Gambar</span>
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : isImageField ? (
                       <DualImageInput
                         value={formData[key] || ''}
                         onChange={(val) => handleInputChange(key, val)}

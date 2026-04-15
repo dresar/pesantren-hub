@@ -138,6 +138,7 @@ export const createEkstrakurikulerSchema = z.object({
   icon: z.string().min(1),
   gambar: z.string().optional(),
   order: z.number().optional(),
+  images: z.array(z.string()).max(5).optional(),
 });
 export const updateEkstrakurikulerSchema = createEkstrakurikulerSchema.partial();
 export const createDokumentasiSchema = z.object({
