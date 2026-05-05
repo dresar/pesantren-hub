@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isQuickLoading, setIsQuickLoading] = useState(false);
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
@@ -106,37 +105,19 @@ export default function LoginPage() {
         setIsLoading(false);
     }
   };
-  const handleQuickLogin = async () => {
-    setIsQuickLoading(true);
-    try {
-        const devCreds = { username: 'dev_admin', password: 'password123' };
-        try {
-            const response = await api.post('/auth/login', devCreds);
-            const { user, token } = response.data;
-            setAuth(user, token);
-            toast.success('Quick Login Berhasil (Dev Mode)');
-            navigate('/dashboard', { replace: true });
-            return;
-        } catch (e) {
-             try {
-                await api.post('/auth/register', {
-                    ...devCreds,
-                    email: 'dev@example.com',
-                    firstName: 'Developer',
-                    lastName: 'Admin',
-                    phone: '08123456789',
-                });
-                const response = await api.post('/auth/login', devCreds);
-                const { user, token } = response.data;
-                setAuth(user, token);
-                toast.success('Quick Login Berhasil (Created Dev User)');
-                navigate('/dashboard', { replace: true });
-            } catch (regError) {
-                toast.error('Gagal membuat/login user dev. Pastikan backend berjalan.');
-            }
-        }
-    } finally {
-        setIsQuickLoading(false);
+  const fillDemoLogin = (role: 'admin' | 'santri' | 'penulis') => {
+    if (role === 'admin') {
+      setUsername('admin');
+      setPassword('password123');
+      toast.success('Form terisi dengan akun Admin Panel');
+    } else if (role === 'santri') {
+      setUsername('santri');
+      setPassword('password123');
+      toast.success('Form terisi dengan akun Santri');
+    } else if (role === 'penulis') {
+      setUsername('penulis');
+      setPassword('password123');
+      toast.success('Form terisi dengan akun Penulis');
     }
   };
   const toggleTab = (tab: 'login' | 'register') => {
@@ -372,21 +353,39 @@ export default function LoginPage() {
                 )}
             </AnimatePresence>
             {}
-            {import.meta.env.DEV && activeTab === 'login' && (
+            {import.meta.env.VITE_SHOW_DEMO_LOGIN === 'true' && activeTab === 'login' && (
                 <div className="mt-6 pt-6 border-t border-dashed border-border/60">
-                    <div className="text-center mb-3">
+                    <div className="text-center mb-4">
                         <span className="text-[10px] font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded uppercase tracking-wider">
-                            Development Only
+                            Demo Logins (Auto-Fill)
                         </span>
                     </div>
-                    <button 
-                        type="button"
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors"
-                        onClick={handleQuickLogin}
-                        disabled={isQuickLoading || isLoading}
-                    >
-                        {isQuickLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : '🚀 Login Cepat (Dev Admin)'}
-                    </button>
+                    <div className="grid grid-cols-1 gap-2">
+                        <button 
+                            type="button"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-lg border border-dashed border-blue-500/40 text-blue-600 bg-blue-500/5 hover:bg-blue-500/10 transition-colors"
+                            onClick={() => fillDemoLogin('admin')}
+                            disabled={isLoading}
+                        >
+                            🛡️ Admin Panel
+                        </button>
+                        <button 
+                            type="button"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-lg border border-dashed border-green-500/40 text-green-600 bg-green-500/5 hover:bg-green-500/10 transition-colors"
+                            onClick={() => fillDemoLogin('santri')}
+                            disabled={isLoading}
+                        >
+                            👤 Santri
+                        </button>
+                        <button 
+                            type="button"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-lg border border-dashed border-orange-500/40 text-orange-600 bg-orange-500/5 hover:bg-orange-500/10 transition-colors"
+                            onClick={() => fillDemoLogin('penulis')}
+                            disabled={isLoading}
+                        >
+                            ✍️ Penulis
+                        </button>
+                    </div>
                 </div>
             )}
           </div>
