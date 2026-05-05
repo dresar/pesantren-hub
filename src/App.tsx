@@ -38,10 +38,13 @@ const FasilitasDetail = lazy(() => import("./pages/FasilitasDetail"));
 const JadwalPage = lazy(() => import("./pages/JadwalPage"));
 const EkstrakurikulerPage = lazy(() => import("./pages/EkstrakurikulerPage"));
 const GaleriPage = lazy(() => import("./pages/GaleriPage"));
+const GaleriDetail = lazy(() => import("./pages/GaleriDetail"));
 const PublicBlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogDetail = lazy(() => import("./pages/BlogDetail"));
 const KontakPage = lazy(() => import("./pages/KontakPage"));
 const PendaftaranPage = lazy(() => import("./pages/PendaftaranPage"));
+const KebijakanPrivasiPage = lazy(() => import("./pages/KebijakanPrivasiPage"));
+const SyaratKetentuanPage = lazy(() => import("./pages/SyaratKetentuanPage"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
 const FormPendaftaranPage = lazy(() => import("./pages/FormPendaftaranPage"));
 const StatusPendaftaranPage = lazy(() => import("./pages/StatusPendaftaranPage"));
@@ -139,6 +142,22 @@ import AdminAuthorVerificationPage from "./pages/admin/publication/AdminAuthorVe
 import AdminPublicationDashboard from "./pages/admin/publication/AdminPublicationDashboard";
 import AdminPublicationCategoryPage from "./pages/admin/publication/AdminPublicationCategoryPage";
 import AdminVolumePage from "./pages/admin/publication/AdminVolumePage";
+
+// === KMI LMS IMPORTS ===
+import KMIDashboardPage from "./pages/kmi/KMIDashboardPage";
+import KMIMapelPage from "./pages/kmi/KMIMapelPage";
+import KMIKalenderPage from "./pages/kmi/KMIKalenderPage";
+import KMIKelasPage from "./pages/kmi/KMIKelasPage";
+import KMIAbsensiPage from "./pages/kmi/KMIAbsensiPage";
+import KMINilaiPage from "./pages/kmi/KMINilaiPage";
+import KMIRaporPage from "./pages/kmi/KMIRaporPage";
+import KMITahunAjaranPage from "./pages/kmi/KMITahunAjaranPage";
+import KMIGuruMapelPage from "./pages/kmi/KMIGuruMapelPage";
+import KMIJadwalPage from "./pages/kmi/KMIJadwalPage";
+import KMIKokurPage from "./pages/kmi/KMIKokurPage";
+
+
+
 
 
 const queryClient = new QueryClient({
@@ -238,6 +257,7 @@ const App = () => {
               <Route path="/kehidupan-santri/jadwal" element={<MainLayout><JadwalPage /></MainLayout>} />
               <Route path="/kehidupan-santri/ekstrakurikuler" element={<MainLayout><EkstrakurikulerPage /></MainLayout>} />
               <Route path="/galeri" element={<MainLayout><GaleriPage /></MainLayout>} />
+              <Route path="/galeri/:id" element={<MainLayout><GaleriDetail /></MainLayout>} />
               <Route path="/blog" element={<MainLayout><PublicBlogPage /></MainLayout>} />
               <Route path="/blog/:slug" element={<MainLayout><BlogDetail /></MainLayout>} />
               <Route path="/artikel" element={<MainLayout><ArticleListPage /></MainLayout>} />
@@ -248,6 +268,8 @@ const App = () => {
               <Route path="/publikasi/register" element={<MainLayout><PublicationRegisterPage /></MainLayout>} />
               <Route path="/kontak" element={<MainLayout><KontakPage /></MainLayout>} />
               <Route path="/pendaftaran" element={<MainLayout><PendaftaranPage /></MainLayout>} />
+              <Route path="/kebijakan-privasi" element={<MainLayout><KebijakanPrivasiPage /></MainLayout>} />
+              <Route path="/syarat-ketentuan" element={<MainLayout><SyaratKetentuanPage /></MainLayout>} />
               <Route path="/alur-pendaftaran" element={<MainLayout><AlurPendaftaranPage /></MainLayout>} />
               <Route path="/alur" element={<Navigate to="/alur-pendaftaran" replace />} />
               {}
@@ -483,6 +505,9 @@ const App = () => {
                   <Route path="/admin/whatsapp-templates/new" element={<WhatsAppTemplateFormPage />} />
                   <Route path="/admin/whatsapp-templates/:id/edit" element={<WhatsAppTemplateFormPage />} />
                   <Route path="/admin/settings" element={<SystemSettingsPage />} />
+                  <Route path="/admin/bugnotes" element={<GenericResourcePage resource="adminBugnotes" title="Bug Notes" basePath="/admin/bugnotes" />} />
+                  <Route path="/admin/bugnotes/new" element={<GenericResourceFormPage resource="adminBugnotes" title="Bug Notes" basePath="/admin/bugnotes" />} />
+                  <Route path="/admin/bugnotes/:id/edit" element={<GenericResourceFormPage resource="adminBugnotes" title="Bug Notes" basePath="/admin/bugnotes" />} />
                   <Route path="/admin/document-settings" element={<DocumentSettingsPage />} />
                   <Route path="/admin/document-templates" element={<DocumentTemplateManager />} />
                   {}
@@ -491,8 +516,28 @@ const App = () => {
                   <Route path="/social-media" element={<Navigate to="/admin/social-media" replace />} />
                   <Route path="/whatsapp-templates" element={<Navigate to="/admin/whatsapp-templates" replace />} />
                   <Route path="/whatsapp-templates/*" element={<Navigate to="/admin/whatsapp-templates" replace />} />
+                  <Route path="/bugnotes" element={<Navigate to="/admin/bugnotes" replace />} />
                   <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
+
+                  {/* ╔══════════════════════════════════ */}
+                  {/* ║ KMI LMS ROUTES                   */}
+                  {/* ╚══════════════════════════════════ */}
+                  <Route path="/admin/kmi/dashboard" element={<KMIDashboardPage />} />
+                  <Route path="/admin/kmi/mapel" element={<KMIMapelPage />} />
+                  <Route path="/admin/kmi/kalender" element={<KMIKalenderPage />} />
+                  <Route path="/admin/kmi/tahun-ajaran" element={<KMITahunAjaranPage />} />
+                  <Route path="/admin/kmi/kelas" element={<KMIKelasPage />} />
+                  <Route path="/admin/kmi/guru-mapel" element={<KMIGuruMapelPage />} />
+                  <Route path="/admin/kmi/jadwal" element={<KMIJadwalPage />} />
+                  <Route path="/admin/kmi/absensi" element={<KMIAbsensiPage />} />
+                  <Route path="/admin/kmi/absensi/input" element={<KMIAbsensiPage />} />
+                  <Route path="/admin/kmi/nilai" element={<KMINilaiPage />} />
+                  <Route path="/admin/kmi/rapor" element={<KMIRaporPage />} />
+                  <Route path="/admin/kmi/kokur" element={<KMIKokurPage />} />
+                  {/* END KMI ROUTES */}
+
                 </Route>
+
               </Route>
               <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
                 </Routes>
@@ -505,4 +550,3 @@ const App = () => {
   );
 };
 export default App;
-

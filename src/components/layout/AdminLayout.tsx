@@ -6,6 +6,7 @@ import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
 import WhatsAppButton from '@/components/shared/WhatsAppButton';
 import AiAssistantButton from '@/components/shared/AiAssistantButton';
+import BugNoteButton from '@/components/shared/BugNoteButton';
 import { useSyncStore } from '@/stores/sync-store';
 import { CACHE_EXPIRATION_TIME } from '@/lib/sync-config';
 import { useAdminPrefetch } from '@/hooks/use-admin-prefetch';
@@ -40,6 +41,7 @@ export function AdminLayout() {
             <Outlet />
           </div>
         </main>
+        <BugNoteButton />
         <AiAssistantButton />
         <WhatsAppButton role="admin" />
       </div>

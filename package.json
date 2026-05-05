@@ -4,21 +4,17 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm run cleanup && concurrently -n api,web -c blue,green \"npm run dev:api\" \"vite\"",
-    "dev:api": "tsx watch server/src/server.ts",
-    "dev:all": "npm run dev",
-    "cleanup": "npx kill-port 3008 8080",
-    "start:api": "tsx server/src/server.ts",
+    "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "build:server": "tsc -p tsconfig.server.json",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push:pg"
+    "db:push": "drizzle-kit push:pg",
+    "db:seed": "node dumppy/seed-all.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

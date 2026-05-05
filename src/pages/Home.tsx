@@ -79,9 +79,9 @@ const HighlightTitle = ({ text }: { text: string }) => {
 const Home = () => {
   const { data: settings, isLoading: isLoadingSettings, error: settingsError } = usePublicData<WebsiteSettings>(['settings'], '/core/settings');
   const { data: heroSlides = [], isLoading: isLoadingHero, error: heroError } = usePublicData<HeroSection[]>(['heroSections'], '/core/hero', {
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnMount: false,
   });
   const { data: programs = [] } = usePublicData<any[]>(['programs'], '/core/programs');
   const { data: educationPrograms = [] } = usePublicData<any[]>(['education-programs'], '/core/program-pendidikan');
@@ -174,31 +174,13 @@ const Home = () => {
               </motion.div>
             </AnimatePresence>
           ) : isLoadingHero ? (
-            // Still loading — show default local asset as instant placeholder
-            <>
-              <img
-                src={heroImage}
-                alt="Pesantren Raudhatussalam"
-                className="w-full h-full object-cover"
-                loading="eager"
-                fetchpriority="high"
-                width={1920}
-                height={1080}
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent/20" />
-            </>
+            // Loading state
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+               <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+            </div>
           ) : (
-            // Loaded but no active slides in DB — show default
+            // Loaded but no active slides in DB — fallback
             <>
-              <img
-                src={heroImage}
-                alt="Pesantren Raudhatussalam"
-                className="w-full h-full object-cover"
-                loading="eager"
-                fetchpriority="high"
-                width={1920}
-                height={1080}
-              />
               <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent/20" />
             </>
           )}
@@ -219,30 +201,44 @@ const Home = () => {
                  </Link>
                </motion.div>
             )}
-                {/* Title — shows IMMEDIATELY with static default. API data replaces silently */}
+                {/* Title — shows loading skeleton, then API data */ }
                 <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeSlides.length > 0 ? currentSlide : 'static'}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                  >
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 drop-shadow-sm text-white">
-                       <HighlightTitle text={
-                         activeSlides.length > 0
-                           ? activeSlides[currentSlide].title
-                           : (settings?.heroTitle || 'Mencetak Pemimpin Umat Masa Depan')
-                       } />
-                    </h1>
-                    <p className="text-base md:text-lg text-white/90 leading-relaxed mb-8 max-w-lg mx-auto md:mx-0 drop-shadow-sm">
-                      {
-                        activeSlides.length > 0
-                          ? activeSlides[currentSlide].subtitle
-                          : (settings?.heroSubtitle || 'Pondok Pesantren Modern Raudhatussalam Mahato — memadukan ilmu agama dan pengetahuan umum untuk generasi unggul berakhlak mulia.')
-                      }
-                    </p>
-                  </motion.div>
+                  {isLoadingHero || isLoadingSettings ? (
+                    <motion.div
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="animate-pulse"
+                    >
+                      <div className="h-12 sm:h-16 md:h-20 bg-white/20 rounded-lg w-3/4 mb-6 mx-auto md:mx-0"></div>
+                      <div className="h-4 sm:h-5 bg-white/20 rounded w-full mb-3 mx-auto md:mx-0"></div>
+                      <div className="h-4 sm:h-5 bg-white/20 rounded w-5/6 mb-8 mx-auto md:mx-0"></div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key={activeSlides.length > 0 ? currentSlide : 'static'}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.5, delay: 0.1 }}
+                    >
+                      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 drop-shadow-sm text-white">
+                         <HighlightTitle text={
+                           activeSlides.length > 0
+                             ? activeSlides[currentSlide].title
+                             : (settings?.heroTitle || 'Mencetak Pemimpin Umat Masa Depan')
+                         } />
+                      </h1>
+                      <p className="text-base md:text-lg text-white/90 leading-relaxed mb-8 max-w-lg mx-auto md:mx-0 drop-shadow-sm">
+                        {
+                          activeSlides.length > 0
+                            ? activeSlides[currentSlide].subtitle
+                            : (settings?.heroSubtitle || 'Pondok Pesantren Modern Raudhatussalam Mahato — memadukan ilmu agama dan pengetahuan umum untuk generasi unggul berakhlak mulia.')
+                        }
+                      </p>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
@@ -250,19 +246,28 @@ const Home = () => {
               transition={{ delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-3 items-center justify-center md:justify-start"
             >
-              <Link
-                to={settings?.heroCtaPrimaryLink || '/pendaftaran'}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl gradient-primary text-white hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto"
-              >
-                {settings?.heroCtaPrimaryText || 'Daftar Sekarang'}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to={settings?.heroCtaSecondaryLink || '/alur-pendaftaran'}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors w-full sm:w-auto"
-              >
-                {settings?.heroCtaSecondaryText || 'Alur Pendaftaran'}
-              </Link>
+              {isLoadingHero || isLoadingSettings ? (
+                <>
+                  <div className="h-12 w-full sm:w-40 bg-white/20 rounded-xl animate-pulse"></div>
+                  <div className="h-12 w-full sm:w-40 bg-white/20 rounded-xl animate-pulse"></div>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to={settings?.heroCtaPrimaryLink || '/pendaftaran'}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl gradient-primary text-white hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto"
+                  >
+                    {settings?.heroCtaPrimaryText || 'Daftar Sekarang'}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link
+                    to={settings?.heroCtaSecondaryLink || '/alur-pendaftaran'}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors w-full sm:w-auto"
+                  >
+                    {settings?.heroCtaSecondaryText || 'Alur Pendaftaran'}
+                  </Link>
+                </>
+              )}
             </motion.div>
           </div>
         </div>

@@ -19,6 +19,11 @@ const getTable = (name: string) => {
     documentTemplates: 'documentTemplates',
     websiteSettings: 'websiteSettings',
     registrationFlow: 'websiteRegistrationFlow',
+    dokumentasiimage: 'dokumentasiImages',
+    dokumentasiImage: 'dokumentasiImages',
+    dokumentasiImages: 'dokumentasiImages',
+    dokumentasi_images: 'dokumentasiImages',
+    dokumentasi_image: 'dokumentasiImages',
   };
   const schemaName = mapping[name] || name;
   if (schema[schemaName as keyof typeof schema]) {

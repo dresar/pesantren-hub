@@ -211,10 +211,6 @@ export const createSeragamSchema = z.object({
   order: z.number().optional(),
 });
 export const updateSeragamSchema = createSeragamSchema.partial();
-export const updateKmiSchema = z.object({
-  visiKmi: z.string().optional(),
-  profilKmi: z.string().optional(),
-});
 export const createStatistikSchema = z.object({
   judul: z.string().min(1),
   nilai: z.string().min(1),

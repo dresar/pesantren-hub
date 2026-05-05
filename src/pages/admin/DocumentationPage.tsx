@@ -5,7 +5,7 @@ import {
   Terminal, Layers, Search, Copy, Check, ChevronRight, 
   ArrowRight, Activity, Users, CreditCard, Shield, Globe, 
   FileText, ImageIcon, Settings, MessageSquare, Info,
-  ExternalLink, Maximize2
+  ExternalLink, Maximize2, Bookmark
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,44 +30,57 @@ interface APIEndpoint {
 }
 
 const API_CATALOG: APIEndpoint[] = [
-  // AUTH
+  // AUTH & USERS
   { module: 'Auth', method: 'POST', path: '/api/auth/login', auth: false, description: 'Autentikasi user dan dapatkan JWT.', requestBody: { username: 'admin', password: 'password123' }, responseBody: { token: 'jwt_hash...', user: { id: 1, role: 'admin' } } },
   { module: 'Auth', method: 'GET', path: '/api/auth/me', auth: true, description: 'Ambil profil user yang sedang login.', responseBody: { id: 1, role: 'superadmin', name: 'John Doe' } },
   { module: 'Auth', method: 'POST', path: '/api/auth/logout', auth: true, description: 'Keluar dan hapus session.' },
+  { module: 'Users', method: 'GET', path: '/api/users', auth: true, role: ['admin'], description: 'Ambil semua user/staff/author di aplikasi.' },
+  { module: 'Users', method: 'PUT', path: '/api/users/:id/role', auth: true, role: ['superadmin'], description: 'Update role serta akses pengguna.' },
 
-  // ADMIN - CORE
-  { module: 'Admin', method: 'GET', path: '/api/admin/stats', auth: true, role: ['admin', 'superadmin'], description: 'Ambil statistik dashboard (Total santri, revenue, gender distribution).', responseBody: { totalSantri: 450, pendingPayments: 12, genderDistribution: [{name: 'L', value: 200}] } },
-  { module: 'Admin', method: 'GET', path: '/api/admin/santri', auth: true, description: 'Daftar santri dengan pagination & filter.', responseBody: { data: [], meta: { total: 450, page: 1 } } },
-  { module: 'Admin', method: 'POST', path: '/api/admin/santri', auth: true, description: 'Daftarkan santri baru manual dari admin.', requestBody: { namaLengkap: 'Budi Santoso', nisn: '12345678' } },
-  { module: 'Admin', method: 'POST', path: '/api/admin/santri/bulk-action', auth: true, description: 'Aksi massal (Accept, Reject, Delete).', requestBody: { action: 'accept', ids: [1, 2, 3] } },
-  { module: 'Admin', method: 'POST', path: '/api/admin/santri/import', auth: true, description: 'Import data santri dari JSON/Excel.', requestBody: { items: [{ nama: '...' }] } },
+  // ADMIN - CORE DASHBOARD
+  { module: 'Admin', method: 'GET', path: '/api/admin/stats', auth: true, role: ['admin', 'superadmin'], description: 'Ambil statistik dashboard (Total santri, revenue, pendaftaran bulanan).', responseBody: { totalSantri: 450, pendingPayments: 12, revenue: 50000000 } },
+
+  // ADMIN - ADMISSIONS (PSB)
+  { module: 'Admissions', method: 'GET', path: '/api/admin/santri', auth: true, description: 'Daftar santri dengan pagination & filter komprehensif.', responseBody: { data: [], meta: { total: 450, page: 1 } } },
+  { module: 'Admissions', method: 'POST', path: '/api/admin/santri/bulk-action', auth: true, description: 'Aksi massal (Accept, Reject, Delete santri).', requestBody: { action: 'accept', ids: [1, 2, 3] } },
+  { module: 'Admissions', method: 'GET', path: '/api/admin/exam-schedules', auth: true, description: 'Manajemen jadwal seleksi masuk (ujian).' },
+  { module: 'Admissions', method: 'POST', path: '/api/admin/exam-results', auth: true, description: 'Submit nilai tes akademik/lisan pendaftar baru.' },
 
   // ADMIN - PAYMENTS
-  { module: 'Admin', method: 'GET', path: '/api/admin/payments', auth: true, description: 'Daftar konfirmasi pembayaran masuk.', responseBody: { data: [{ id: 1, amount: 500000, status: 'pending' }] } },
-  { module: 'Admin', method: 'PUT', path: '/api/admin/payments/:id/verify', auth: true, description: 'Verifikasi pembayaran santri.', requestBody: { status: 'verified', catatan: 'Diterima' } },
+  { module: 'Payments', method: 'GET', path: '/api/admin/payments', auth: true, description: 'Daftar konfirmasi pembayaran masuk (uang pangkal/SPP).' },
+  { module: 'Payments', method: 'PUT', path: '/api/admin/payments/:id/verify', auth: true, description: 'Verifikasi bayar santri.', requestBody: { status: 'verified', catatan: 'Diterima' } },
 
-  // ADMIN - GENERIC
-  { module: 'Generic', method: 'GET', path: '/api/admin/generic/:resource', auth: true, description: 'Ambil data dari tabel manapun (website_settings, founders, dll).' },
-  { module: 'Generic', method: 'POST', path: '/api/admin/generic/:resource', auth: true, description: 'Tambah record baru secara dinamis.' },
-  { module: 'Generic', method: 'PUT', path: '/api/admin/generic/:resource/:id', auth: true, description: 'Update record secara dinamis.' },
+  // WEBSITE / PUBLIC API (CORE)
+  { module: 'Public', method: 'GET', path: '/api/core/programs', auth: false, description: 'Ambil daftar jenjang pendidikan dan prodi.' },
+  { module: 'Public', method: 'GET', path: '/api/core/fasilitas', auth: false, description: 'Daftar fasilitas pesantren.' },
+  { module: 'Public', method: 'GET', path: '/api/core/ekstrakurikuler', auth: false, description: 'Data ekstrakurikuler yang aktif.' },
+  { module: 'Public', method: 'GET', path: '/api/core/tenaga-pengajar', auth: false, description: 'Direktori asatidz dan ustadz.' },
+  { module: 'Public', method: 'GET', path: '/api/core/jadwal-harian', auth: false, description: 'Daftar rincian aktivitas keseharian.' },
 
-  // PUBLIC / PSB
-  { module: 'PSB', method: 'POST', path: '/api/psb/register', auth: false, description: 'Landing page pendaftaran santri baru.', requestBody: { namaLengkap: '...', email: '...' } },
-  { module: 'PSB', method: 'POST', path: '/api/psb/payment', auth: false, description: 'Upload bukti bayar pendaftaran.', requestBody: { santriId: 1, bank: 'BCA', file: 'blob...' } },
-  { module: 'PSB', method: 'GET', path: '/api/psb/status/:nisn', auth: false, description: 'Cek status pendaftaran publik.' },
+  // PUBLIC / PSB (REGISTRASI)
+  { module: 'PSB', method: 'POST', path: '/api/psb/register', auth: false, description: 'Form registrasi santri.', requestBody: { namaLengkap: '...', nik: '...' } },
+  { module: 'PSB', method: 'POST', path: '/api/psb/payment', auth: false, description: 'Upload bukti transfer dari pihak calon wali santri.' },
+  { module: 'PSB', method: 'GET', path: '/api/psb/status/:nisn', auth: false, description: 'Cek status penerimaan secara publik menggunakan NISN/NIK.' },
 
-  // PUBLICATION
-  { module: 'Publikasi', method: 'GET', path: '/api/publication/articles', auth: false, description: 'Ambil daftar artikel ilmiah publik.' },
-  { module: 'Publikasi', method: 'POST', path: '/api/publication/author/articles', auth: true, role: ['author'], description: 'Submit naskah artikel baru.', requestBody: { judul: '...', content: '...' } },
-  { module: 'Publikasi', method: 'PUT', path: '/api/publication/admin/articles/:id/approve', auth: true, role: ['editor'], description: 'Approve naskah artikel oleh editor.' },
+  // PUBLICATION (JURNAL)
+  { module: 'Publikasi', method: 'GET', path: '/api/publication/articles', auth: false, description: 'Daftar manuskrip / artikel ilmiah terpublikasi.' },
+  { module: 'Publikasi', method: 'POST', path: '/api/publication/author/articles', auth: true, role: ['author'], description: 'Submit karya ilmiah untuk masuk radar review.' },
+  { module: 'Publikasi', method: 'PUT', path: '/api/publication/admin/articles/:id/approve', auth: true, role: ['editor'], description: 'Proses peer-review approval.' },
+  { module: 'Publikasi', method: 'GET', path: '/api/publication/volumes', auth: false, description: 'Arsip e-Journal per volume & edisi.' },
 
-  // BLOG
-  { module: 'Blog', method: 'GET', path: '/api/blog/posts', auth: false, description: 'Daftar berita website.' },
-  { module: 'Blog', method: 'POST', path: '/api/admin/blog/posts', auth: true, description: 'Posting berita baru.', requestBody: { title: '...', content: '...' } },
+  // BLOG & PENGUMUMAN
+  { module: 'Blog', method: 'GET', path: '/api/blog/posts', auth: false, description: 'Feed berita pesantren, artikel, tausiyah.' },
+  { module: 'Blog', method: 'POST', path: '/api/admin/blog/posts', auth: true, description: 'Publikasi konten berita via WYSIWYG editor.' },
+  { module: 'Blog', method: 'GET', path: '/api/blog/pengumuman', auth: false, description: 'Pengumuman krusial berbatas waktu (slider).' },
 
-  // MEDIA
-  { module: 'Media', method: 'POST', path: '/api/upload', auth: true, description: 'Upload file ke Cloudinary/ImageKit.' },
-  { module: 'Media', method: 'GET', path: '/api/media/files', auth: true, description: 'Daftar file di Media Manager.' },
+  // MEDIA FILES
+  { module: 'Media', method: 'POST', path: '/api/upload', auth: true, description: 'Cloud upload gateway (ImageKit/Cloudinary fallback).' },
+  { module: 'Media', method: 'GET', path: '/api/media/files', auth: true, description: 'File Management API (Asset library).' },
+
+  // GENERIC ADMIN CRUD
+  { module: 'Generic', method: 'GET', path: '/api/admin/generic/:resource', auth: true, description: 'Endpoint sakti untuk 30+ tabel secara generik (websitesettings, founders, dll).' },
+  { module: 'Generic', method: 'POST', path: '/api/admin/generic/:resource', auth: true, description: 'Dynamic record insert.' },
+  { module: 'Generic', method: 'PUT', path: '/api/admin/generic/:resource/:id', auth: true, description: 'Dynamic record update.' },
 ];
 
 export default function DocumentationPage() {
@@ -235,57 +248,131 @@ export default function DocumentationPage() {
               <div className="p-10 min-w-[1200px]">
                 <Mermaid chart={`
                   erDiagram
+                    %% Core Configs & Settings
+                    CORE_WEBSITESETTINGS {
+                        int id PK
+                        string nama_pondok
+                        string hero_title
+                    }
+                    CORE_PROGRAMS {
+                        int id PK
+                        string slug UK
+                        string nama
+                    }
+                    CORE_FASILITAS {
+                        int id PK
+                        string nama
+                    }
+                    CORE_JADWAL {
+                        int id PK
+                        string kegiatan
+                    }
+
                     %% Core Users
-                    USER ||--o{ PAYMENTS : "verifikasi"
-                    USER ||--o{ BLOG_POSTS : "tulis"
-                    USER ||--o{ LOGIN_HISTORY : "catat"
-                    USER ||--o{ NOTIFICATIONS : "terima"
+                    USERS {
+                        int id PK
+                        string username UK
+                        string role "admin|staff|author"
+                    }
+                    NOTIFICATIONS {
+                        int id PK
+                        int user_id FK
+                        string message
+                    }
+                    USERS ||--o{ NOTIFICATIONS : "receive"
+                    USER_LOGIN_HISTORY {
+                        int id PK
+                        int user_id FK
+                    }
+                    USERS ||--o{ USER_LOGIN_HISTORY : "tracks"
                     
-                    %% Admissions
-                    SANTRI ||--o| PAYMENTS : "bayar"
-                    SANTRI ||--o{ EXAM_SCHEDULES : "ikuti"
-                    SANTRI ||--o| EXAM_RESULTS : "dapat"
-                    SANTRI }|--|{ PARENTS : "anak_dari"
-                    
-                    %% Publication
-                    USER ||--o| PUB_PROFILE : "miliki"
-                    PUB_PROFILE ||--o{ PUB_ARTICLES : "submit"
-                    PUB_ARTICLES }|--|| PUB_CATEGORIES : "kategori"
-                    PUB_ARTICLES ||--o{ PUB_VOMS : "volume"
-                    PUB_COLLAB ||--o{ PUB_COLLAB_MEMS : "anggota"
-                    PUB_ARTICLES ||--|| PUB_COLLAB : "kerjasama"
-                    
-                    %% CMS / Blog
-                    BLOG_POSTS }|--|| BLOG_CATS : "kategori"
-                    BLOG_POSTS ||--o{ POST_TAGS : "tag"
-                    POST_TAGS }|--|| TAGS : "isi"
-                    
-                    %% Media
-                    MEDIA_F ||--|| MEDIA_ACC : "disimpan_di"
-                    USER ||--o{ MEDIA_F : "upload"
-                    
+                    %% Admissions / PSB
                     SANTRI {
                         int id PK
                         string nisn UK
                         string nama_lengkap
                         string status "pending|accepted|rejected"
                     }
-                    USER {
+                    PARENTS {
                         int id PK
-                        string username UK
-                        string role "admin|staff|author"
+                        string nik UK
+                        string nama
                     }
+                    SANTRI }|--|{ PARENTS : "anak_dari"
+                    
+                    EXAM_SCHEDULES {
+                        int id PK
+                        timestamp tanggal
+                    }
+                    EXAM_RESULTS {
+                        int id PK
+                        int santri_id FK
+                        int schedule_id FK
+                        decimal nilai_akhir
+                    }
+                    SANTRI ||--o| EXAM_RESULTS : "memiliki"
+                    EXAM_SCHEDULES ||--o{ EXAM_RESULTS : "menyelenggarakan"
+                    
+                    %% Payments
                     PAYMENTS {
                         int id PK
                         int santri_id FK
                         decimal jumlah
                         string status "pending|verified"
                     }
+                    BANK_ACCOUNTS {
+                        int id PK
+                        string nomor_rekening
+                    }
+                    SANTRI ||--o{ PAYMENTS : "bayar"
+                    PAYMENTS }|--|| BANK_ACCOUNTS : "via"
+
+                    %% Publication (Jurnal)
                     PUB_ARTICLES {
                         int id PK
                         string title
-                        string status "draft|pending|approved"
+                        string status "draft|approved"
+                        int author_id FK
+                        int volume_id FK
                     }
+                    PUB_VOLUMES {
+                        int id PK
+                        string name
+                    }
+                    PUB_CATEGORIES {
+                        int id PK
+                        string name
+                    }
+                    USERS ||--o{ PUB_ARTICLES : "menulis"
+                    PUB_ARTICLES }|--|| PUB_VOLUMES : "termasuk"
+                    PUB_ARTICLES }|--|| PUB_CATEGORIES : "dikategorikan_dalam"
+                    
+                    %% CMS / Blog
+                    BLOG_POSTS {
+                        int id PK
+                        string title
+                        int author_id FK
+                        int category_id FK
+                    }
+                    BLOG_CATEGORIES {
+                        int id PK
+                        string name
+                    }
+                    TAGS {
+                        int id PK
+                        string slug UK
+                    }
+                    USERS ||--o{ BLOG_POSTS : "write"
+                    BLOG_POSTS }|--|| BLOG_CATEGORIES : "jenis"
+                    BLOG_POSTS }|--|{ TAGS : "berisi"
+                    
+                    %% Media Files
+                    MEDIA_FILES {
+                        int id PK
+                        string url
+                        string type
+                    }
+                    USERS ||--o{ MEDIA_FILES : "upload"
                 `} />
               </div>
             </CardContent>
@@ -298,18 +385,24 @@ export default function DocumentationPage() {
 
           <div className="grid gap-6 md:grid-cols-4">
               {[
-                { title: 'Identity', tables: 'users, login_history, notifications', icon: Users, color: 'text-blue-500' },
-                { title: 'Admissions', tables: 'santri, parents, exam_schedules', icon: FileText, color: 'text-emerald-500' },
-                { title: 'Financial', tables: 'payments, tuition_fees, bank_accounts', icon: CreditCard, color: 'text-amber-500' },
-                { title: 'CMS', tables: 'blog_posts, categories, tags, gallery', icon: ImageIcon, color: 'text-purple-500' }
+                { title: 'Identity & Auth', tables: 'users_user, loginhistory, notifications, system_settings', icon: Users, color: 'text-blue-500' },
+                { title: 'Public Settings (Core)', tables: 'core_websitesettings, core_herosection, core_faq, core_visimisi, struktur_organisasi', icon: Globe, color: 'text-sky-500' },
+                { title: 'Academics & Info', tables: 'core_program, core_fasilitas, core_ekstrakurikuler, core_tenagapengajar, core_jadwalharian', icon: Book, color: 'text-indigo-500' },
+                { title: 'Admissions (PSB)', tables: 'admissions_santri, parents, exam_schedules, exam_results', icon: FileText, color: 'text-emerald-500' },
+                { title: 'Financials', tables: 'payments_payment, bankaccount, core_biayapendidikan', icon: CreditCard, color: 'text-amber-500' },
+                { title: 'Blog & Information', tables: 'blog_blogpost, blog_category, blog_tag, blog_pengumuman, testimoni', icon: Copy, color: 'text-purple-500' },
+                { title: 'Publications', tables: 'publication_articles, volumes, collaborations, categories', icon: Bookmark, color: 'text-rose-500' },
+                { title: 'Media & Docs Manager', tables: 'media_files, media_accounts, document_templates', icon: ImageIcon, color: 'text-teal-500' }
               ].map((group, i) => (
                 <Card key={i} className="border-none shadow-md hover:shadow-lg transition-all cursor-default">
                   <CardHeader className="pb-2">
-                    <group.icon className={cn("h-6 w-6 mb-2", group.color)} />
-                    <CardTitle className="text-sm">{group.title}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <group.icon className={cn("h-5 w-5", group.color)} />
+                      <CardTitle className="text-sm font-bold">{group.title}</CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-[10px] uppercase text-muted-foreground font-semibold">{group.tables}</p>
+                    <p className="text-[9px] leading-relaxed uppercase text-muted-foreground font-semibold line-clamp-3">{group.tables}</p>
                   </CardContent>
                 </Card>
               ))}

@@ -30,6 +30,15 @@ import {
   BarChart3,
   Clock,
   Home,
+  Bug,
+  BookCheck,
+  ClipboardList,
+  CheckSquare,
+  CalendarDays,
+  ScrollText,
+  School,
+  NotebookPen,
+  Layers,
   type LucideIcon,
 } from 'lucide-react';
 export interface NavItem {
@@ -109,6 +118,69 @@ export const navigationConfig: NavSection[] = [
         title: 'Dashboard Keuangan',
         href: '/admin/financial-dashboard',
         icon: BarChart3,
+      },
+    ],
+  },
+  {
+    title: 'Akademik KMI',
+    icon: School,
+    badge: 'Demo',
+    roles: ['admin', 'superadmin', 'staff'],
+    items: [
+      {
+        title: 'Dashboard KMI',
+        href: '/admin/kmi/dashboard',
+        icon: LayoutDashboard,
+      },
+      {
+        title: 'Tahun Ajaran',
+        href: '/admin/kmi/tahun-ajaran',
+        icon: Calendar,
+      },
+      {
+        title: 'Kelas & Rombel',
+        href: '/admin/kmi/kelas',
+        icon: Layers,
+      },
+      {
+        title: 'Mata Pelajaran',
+        href: '/admin/kmi/mapel',
+        icon: BookOpen,
+      },
+      {
+        title: 'Penugasan Guru',
+        href: '/admin/kmi/guru-mapel',
+        icon: UserCheck,
+      },
+      {
+        title: 'Jadwal Pelajaran',
+        href: '/admin/kmi/jadwal',
+        icon: CalendarDays,
+      },
+      {
+        title: 'Absensi',
+        href: '/admin/kmi/absensi',
+        icon: CheckSquare,
+      },
+      {
+        title: 'Input Nilai',
+        href: '/admin/kmi/nilai',
+        icon: NotebookPen,
+      },
+      {
+        title: 'Rapor KMI',
+        href: '/admin/kmi/rapor',
+        icon: ScrollText,
+      },
+      {
+        title: 'Ko-Kurikuler',
+        href: '/admin/kmi/kokur',
+        icon: BookCheck,
+      },
+      {
+        title: 'Kalender Akademik',
+        href: '/admin/kmi/kalender',
+        icon: ClipboardList,
       },
     ],
   },
@@ -351,7 +423,7 @@ export const navigationConfig: NavSection[] = [
         icon: ImageIcon,
       },
       {
-        title: 'Dokumentasi',
+        title: 'Album Galeri',
         href: '/admin/documentation',
         icon: FolderOpen,
       },
@@ -413,6 +485,16 @@ export const navigationConfig: NavSection[] = [
         title: 'Template Dokumen',
         href: '/admin/document-templates',
         icon: FileText,
+      },
+      {
+        title: 'AI Generator',
+        href: '/admin/ai-generator',
+        icon: Sparkles,
+      },
+      {
+        title: 'Bug Notes',
+        href: '/admin/bugnotes',
+        icon: Bug,
       },
       {
         title: 'Dokumentasi Sistem',

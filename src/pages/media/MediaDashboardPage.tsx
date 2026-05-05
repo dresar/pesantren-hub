@@ -624,11 +624,11 @@ export default function MediaDashboardPage() {
                     </div>
 
                     {isFilesLoading ? (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {[1,2,3,4].map(i => <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />)}
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            {[1,2,3,4,5].map(i => <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />)}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
                             {filesData?.data?.map((file: MediaFile) => (
                                 <Card key={file.id} className={`overflow-hidden group relative transition-all ${selectedFiles.includes(file.id) ? 'ring-2 ring-primary' : ''}`}>
                                     <div className={`absolute top-2 left-2 z-10 ${selectedFiles.includes(file.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
@@ -669,7 +669,7 @@ export default function MediaDashboardPage() {
                                         </DropdownMenu>
                                     </div>
                                     <div className="aspect-square relative bg-muted flex items-center justify-center cursor-pointer" onClick={() => setViewFile(file)}>
-                                        {file.mimeType.startsWith('image/') ? (
+                                        {file.mimeType?.startsWith('image/') || file.originalName?.match(/\.(jpg|jpeg|png|gif|webp|svg|heic)$/i) || file.url?.match(/\.(jpg|jpeg|png|gif|webp|svg|heic)$/i) ? (
                                             <img 
                                                 src={file.thumbnailUrl || file.url} 
                                                 alt={file.originalName} 
@@ -701,7 +701,7 @@ export default function MediaDashboardPage() {
                     <DialogContent className="max-w-screen-lg w-full p-0 overflow-hidden bg-black/90 border-none shadow-2xl flex justify-center items-center h-[90vh]">
                         {viewFile && (
                             <div className="relative w-full h-full flex items-center justify-center">
-                                {viewFile.mimeType.startsWith('image/') ? (
+                                {viewFile.mimeType?.startsWith('image/') || viewFile.originalName?.match(/\.(jpg|jpeg|png|gif|webp|svg|heic)$/i) || viewFile.url?.match(/\.(jpg|jpeg|png|gif|webp|svg|heic)$/i) ? (
                                     <img 
                                         src={viewFile.url} 
                                         alt={viewFile.originalName} 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Calendar, Image as ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
@@ -71,14 +72,13 @@ const GaleriPage = () => {
       <SectionWrapper>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {galleryItems?.map((item, i) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="group cursor-pointer hover-lift"
-              onClick={() => openLightbox(item)}
-            >
+            <Link key={item.id} to={`/galeri/${item.id}`}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="group cursor-pointer hover-lift"
+              >
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-muted">
                 {item.images && item.images.length > 0 ? (
                   <img 
@@ -114,7 +114,8 @@ const GaleriPage = () => {
                 {item.deskripsi && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.deskripsi}</p>}
               </div>
             </motion.div>
-          ))}
+          </Link>
+        ))}
         </div>
         {(!galleryItems || galleryItems.length === 0) && (
           <div className="text-center py-10 text-muted-foreground">

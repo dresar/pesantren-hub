@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PageHeader, DataTable, getSelectionColumn } from '@/components/common';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, ArrowLeft, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Pencil, Trash2, ArrowLeft, Loader2, MoreHorizontal, Sparkles } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -14,12 +14,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAppStore } from '@/stores/app-store';
 import { ColumnDef } from '@tanstack/react-table';
+import { LucideIcon } from 'lucide-react';
 interface BaseResourceListProps<T> {
   resource: string;
   title: string;
   description?: string;
   columns: ColumnDef<T>[];
-  icon?: any;
+  icon?: LucideIcon;
   basePath: string; 
   apiEndpoint?: string; 
 }
@@ -33,6 +34,7 @@ export function BaseResourceList<T extends { id: string | number }>({
   apiEndpoint,
 }: BaseResourceListProps<T>) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { showConfirm } = useAppStore();
   const endpoint = apiEndpoint || `/admin/generic/${resource}`;
@@ -68,9 +70,10 @@ export function BaseResourceList<T extends { id: string | number }>({
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5">
               <span className="sr-only">Open menu</span>
-              <Pencil className="h-4 w-4" />
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="text-xs">Aksi</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -98,10 +101,23 @@ export function BaseResourceList<T extends { id: string | number }>({
         description={description}
         icon={Icon}
       >
-        <Button onClick={() => navigate(`${basePath}/new`)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Tambah Baru
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() =>
+              navigate(
+                `/admin/ai-generator?type=blog&returnUrl=${encodeURIComponent(location.pathname)}&prompt=${encodeURIComponent(`Buat konten untuk ${title}`)}`
+              )
+            }
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            AI Generator
+          </Button>
+          <Button onClick={() => navigate(`${basePath}/new`)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Tambah Baru
+          </Button>
+        </div>
       </PageHeader>
       <DataTable
         columns={finalColumns}

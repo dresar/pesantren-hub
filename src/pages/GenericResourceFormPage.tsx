@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/common';
@@ -13,6 +13,7 @@ import { ArrowLeft, Save, Database, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { DualImageInput } from '@/components/forms/DualImageInput';
 import { cn } from '@/lib/utils';
+import { AIGeneratorButton } from '@/components/ai/AIGeneratorButton';
 
 import {
   Select,
@@ -57,9 +58,10 @@ interface GenericResourceFormPageProps {
 
 export default function GenericResourceFormPage({ resource, title, basePath }: GenericResourceFormPageProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [fields, setFields] = useState<string[]>(RESOURCE_FIELDS[resource] || ['nama', 'deskripsi', 'keterangan', 'status', 'is_active']);
 
   const { data: sampleData } = useQuery({
@@ -121,7 +123,7 @@ export default function GenericResourceFormPage({ resource, title, basePath }: G
     return split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
   };
 
-  const handleInputChange = (key: string, value: any) => {
+  const handleInputChange = (key: string, value: unknown) => {
     if (key === 'jumlah' && resource === 'biayaPendidikan') {
       const cleanValue = value.toString().replace(/\D/g, '');
       const formatted = formatRupiah(cleanValue);
@@ -132,15 +134,15 @@ export default function GenericResourceFormPage({ resource, title, basePath }: G
   };
 
   const mutation = useMutation({
-    mutationFn: async (data: any) => {
-      const payload = { ...data };
+    mutationFn: async (data: Record<string, unknown>) => {
+      const payload = { ...data } as Record<string, unknown>;
       if (resource === 'biayaPendidikan' && payload.jumlah) {
-          payload.jumlah = parseInt(payload.jumlah.toString().replace(/\./g, ''), 10);
+          payload.jumlah = parseInt(String(payload.jumlah).replace(/\./g, ''), 10);
       }
       
       // Ensure order is a number
       if (payload.order) {
-          payload.order = parseInt(payload.order, 10);
+          payload.order = parseInt(String(payload.order), 10);
       } else {
           payload.order = 0; // Default order if missing
       }
@@ -155,9 +157,10 @@ export default function GenericResourceFormPage({ resource, title, basePath }: G
       toast.success(id ? 'Data diperbarui' : 'Data berhasil disimpan');
       navigate(basePath);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string; error?: string } } };
       console.error('Form submission error:', error);
-      const message = error.response?.data?.message || error.response?.data?.error || 'Gagal menyimpan data';
+      const message = err.response?.data?.message || err.response?.data?.error || 'Gagal menyimpan data';
       toast.error(message);
     }
   });
@@ -174,9 +177,21 @@ export default function GenericResourceFormPage({ resource, title, basePath }: G
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title={id ? `Edit ${title}` : `Tambah ${title}`} description={`Form ${title}`} icon={Database}>
-        <Button variant="outline" onClick={() => navigate(basePath)}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() =>
+              navigate(
+                `/admin/ai-generator?type=blog&returnUrl=${encodeURIComponent(location.pathname)}&prompt=${encodeURIComponent(`Buat konten untuk ${title}`)}`
+              )
+            }
+          >
+            AI Generator
+          </Button>
+          <Button variant="outline" onClick={() => navigate(basePath)}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+          </Button>
+        </div>
       </PageHeader>
       <Card>
         <CardHeader>
@@ -253,12 +268,21 @@ export default function GenericResourceFormPage({ resource, title, basePath }: G
                         showMediaLibrary
                       />
                     ) : isTextArea ? (
-                      <Textarea
-                        value={formData[key] || ''}
-                        onChange={(e) => handleInputChange(key, e.target.value)}
-                        placeholder={`Masukkan ${key}`}
-                        rows={5}
-                      />
+                      <div className="space-y-2">
+                        <Textarea
+                          value={formData[key] || ''}
+                          onChange={(e) => handleInputChange(key, e.target.value)}
+                          placeholder={`Masukkan ${key}`}
+                          rows={5}
+                        />
+                        <AIGeneratorButton
+                          type={key.toLowerCase().includes('jawaban') ? 'faq' : 'blog'}
+                          label={`AI untuk ${key.replace(/_/g, ' ')}`}
+                          size="sm"
+                          variant="outline"
+                          onInsert={(content) => handleInputChange(key, content)}
+                        />
+                      </div>
                     ) : isDayDropdown ? (
                       <Select
                         value={formData[key] || ''}

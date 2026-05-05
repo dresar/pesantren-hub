@@ -23,6 +23,7 @@ export const navItems: NavItem[] = [
     label: 'Publikasi', href: '#',
     children: [
       { label: 'Berita Terbaru', href: '/blog' },
+      { label: 'Jurnal Ilmiah', href: '/jurnal' },
       { label: 'Publikasi Ilmiah', href: '/publikasi' },
     ]
   },

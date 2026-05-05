@@ -7,7 +7,7 @@ import {
   programPendidikan, programPendidikanImages, fasilitas, ekstrakurikuler, 
   ekstrakurikulerImages, dokumentasi, dokumentasiImages, jadwalHarian, 
   persyaratan, alurPendaftaran, biayaPendidikan, contactPersons, socialMedia, 
-  seragam, kmi, statistik, media, bagianJabatan, tenagaPengajar, informasiTambahan,
+  seragam, statistik, media, bagianJabatan, tenagaPengajar, informasiTambahan,
   websiteRegistrationFlow,
   founders,
   strukturOrganisasi,
@@ -28,7 +28,7 @@ import {
   updatePersyaratanSchema, updateAlurPendaftaranSchema, createBiayaPendidikanSchema, 
   updateBiayaPendidikanSchema, createContactPersonSchema, updateContactPersonSchema, 
   createSocialMediaSchema, updateSocialMediaSchema, createSeragamSchema, 
-  updateSeragamSchema, updateKmiSchema, createStatistikSchema, updateStatistikSchema, 
+  updateSeragamSchema, createStatistikSchema, updateStatistikSchema, 
   createMediaSchema, updateMediaSchema, createBagianJabatanSchema, 
   updateBagianJabatanSchema, createTenagaPengajarSchema, updateTenagaPengajarSchema, 
   createInformasiTambahanSchema, updateInformasiTambahanSchema,
@@ -739,19 +739,34 @@ core.delete('/ekstrakurikuler/:id', adminMiddleware, async (c) => {
 });
 core.get('/dokumentasi', async (c) => {
   try {
-    const docs = await db.select().from(dokumentasi).orderBy(desc(dokumentasi.createdAt));
-    const images = await db.select().from(dokumentasiImages).orderBy(asc(dokumentasiImages.order));
-    const docsWithImages = docs.map(doc => {
-      const docImages = images.filter(img => img.dokumentasiId === doc.id);
-      return {
-        ...doc,
-        images: docImages
-      };
+    const items = await db.query.dokumentasi.findMany({
+      where: eq(dokumentasi.isPublished, true),
+      with: { images: true },
+      orderBy: [desc(dokumentasi.createdAt)]
     });
-    return c.json(docsWithImages);
+    return c.json(items);
   } catch (e) {
     console.error('Core /dokumentasi error:', e);
     return c.json([]);
+  }
+});
+
+core.get('/dokumentasi/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id') as string);
+    const item = await db.query.dokumentasi.findFirst({
+      where: and(
+        eq(dokumentasi.id, id),
+        eq(dokumentasi.isPublished, true)
+      ),
+      with: { images: true }
+    });
+    
+    if (!item) return c.json({ error: 'Not found or unpublished' }, 404);
+    return c.json(item);
+  } catch (e) {
+    console.error('Core /dokumentasi/:id error:', e);
+    return c.json({ error: 'Server error' }, 500);
   }
 });
 core.post('/dokumentasi', adminMiddleware, zValidator('json', createDokumentasiSchema), async (c) => {
@@ -882,10 +897,6 @@ createSingletonCrud('alur-pendaftaran', alurPendaftaran, updateAlurPendaftaranSc
   tahapanTes: 'Belum diatur'
 });
 
-createSingletonCrud('kmi', kmi, updateKmiSchema, {
-  visiKmi: 'Belum diatur',
-  profilKmi: 'Belum diatur'
-});
 
 // ===== FOUNDERS =====
 core.get('/founders', async (c) => {

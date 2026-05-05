@@ -33,7 +33,7 @@ export const users = pgTable('users_user', {
 
 export const publicationProfiles = pgTable('publication_profiles', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id),
+  userId: integer('user_id').notNull().references(() => users.id).unique(),
   bio: text('bio'),
   institution: varchar('institution', { length: 200 }),
   whatsapp: varchar('whatsapp', { length: 20 }),
@@ -972,12 +972,6 @@ export const seragam = pgTable('core_seragam', {
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
 });
 
-export const kmi = pgTable('core_kmi', {
-  id: serial('id').primaryKey(),
-  visiKmi: text('visi_kmi').notNull(),
-  profilKmi: text('profil_kmi').notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' }).notNull(),
-});
 
 export const statistik = pgTable('core_statistik', {
   id: serial('id').primaryKey(),
@@ -1080,6 +1074,7 @@ export const adminBugnotes = pgTable('admin_panel_bugnote', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 200 }).notNull(),
   description: text('description').notNull(),
+  screenshot: text('screenshot'),
   pageUrl: varchar('page_url', { length: 200 }).notNull(),
   status: varchar('status', { length: 20 }).notNull(),
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
@@ -1247,13 +1242,5 @@ export const admissionsParentsRelations = relations(admissionsParents, ({ many }
   children: many(santriParents),
 }));
 
-export const santriParentsRelations = relations(santriParents, ({ one }) => ({
-  santri: one(santri, {
-    fields: [santriParents.santriId],
-    references: [santri.id],
-  }),
-  parent: one(admissionsParents, {
-    fields: [santriParents.parentId],
-    references: [admissionsParents.id],
-  }),
-}));
+
+

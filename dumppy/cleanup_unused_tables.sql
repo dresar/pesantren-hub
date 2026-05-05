@@ -60,6 +60,20 @@ WHERE table_schema = 'public'
 ORDER BY table_name;
 
 -- ==============================================================================
+-- ENSURE UNIQUE CONSTRAINTS FOR SEEDING
+-- ==============================================================================
+-- Fix publication_profiles user_id constraint if missing
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'publication_profiles_user_id_unique'
+    ) THEN
+        ALTER TABLE publication_profiles ADD CONSTRAINT publication_profiles_user_id_unique UNIQUE (user_id);
+    END IF;
+END $$;
+
+-- ==============================================================================
 -- HASIL YANG DIHARAPKAN SETELAH CLEANUP:
 -- Total tabel berkurang dari 68 → 66 tabel
 -- Tabel yang dihapus: core_form_config, core_whatsapptemplatekategori

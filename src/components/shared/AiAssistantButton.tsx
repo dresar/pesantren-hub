@@ -22,7 +22,7 @@ const AiAssistantButton = () => {
   const getSystemContext = () => {
     try {
       const queries = queryClient.getQueryCache().findAll();
-      const cacheData: Record<string, any> = {};
+      const cacheData: Record<string, unknown> = {};
       queries.forEach(query => {
         if (query.state.status === 'success' && query.state.data) {
           const key = JSON.stringify(query.queryKey);
@@ -58,6 +58,10 @@ const AiAssistantButton = () => {
     try {
       const apiKey = import.meta.env.VITE_AI_API_KEY;
       const apiUrl = import.meta.env.VITE_AI_API_URL || 'https://one.apprentice.cyou/api/v1/chat/completions';
+      const model = import.meta.env.VITE_AI_MODEL || 'gemini-2.5-flash';
+      if (!apiKey) {
+        throw new Error('API key AI belum diatur');
+      }
       const systemPrompt = getSystemContext();
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -66,7 +70,7 @@ const AiAssistantButton = () => {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gemini-2.5-flash',
+          model,
           messages: [
             { role: 'system', content: systemPrompt },
             ...aiMessages,

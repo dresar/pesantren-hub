@@ -2,7 +2,7 @@ import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 const isDev = import.meta.env.DEV;
 const STALE_TIME_PROD = 1000 * 60 * 60; 
-const STALE_TIME_DEV = 0; 
+const STALE_TIME_DEV = 1000 * 60 * 5;
 export function usePublicData<T>(
   key: string[],
   endpoint: string,
@@ -22,6 +22,7 @@ export function usePublicData<T>(
     staleTime: isDev ? STALE_TIME_DEV : STALE_TIME_PROD,
     gcTime: 1000 * 60 * 60 * 24, 
     retry: 3, 
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
     networkMode: 'offlineFirst', 

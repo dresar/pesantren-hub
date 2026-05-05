@@ -1,4 +1,5 @@
 -- Insert 5 Jurnal Publikasi Ilmiah Terbaru
+DELETE FROM publication_articles WHERE type = 'journal';
 -- Menggunakan dummy user yang sudah ada dan kategori jurnal
 
 -- Pastikan kategori 'Jurnal Keislaman' dan 'Jurnal Pendidikan' ada

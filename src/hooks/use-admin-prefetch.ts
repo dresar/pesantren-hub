@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAppStore } from '@/stores/app-store';
+import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Aggressive Admin Prefetcher (Fixed)
@@ -13,6 +14,13 @@ export function useAdminPrefetch() {
   const setIsAdminSyncing = useAppStore(state => state.setIsAdminSyncing);
 
   useEffect(() => {
+    // Only prefetch for admins to avoid 401s for public users
+    const authState = useAuthStore.getState();
+    const userRole = authState.user?.role;
+    const isAuthorized = ['admin', 'superadmin', 'staff', 'author'].includes(userRole || '');
+    
+    if (!authState.isAuthenticated || !isAuthorized) return;
+
     // Helper to map backend payment structure to frontend snake_case
     const transformPayment = (p: any) => ({
       id: p.id,

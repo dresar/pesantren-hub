@@ -18,6 +18,7 @@ import { publication } from './modules/publication';
 
 const app = new Hono();
 
+
 // ── Middlewares ───────────────────────────────────────────────────────────────
 app.use('*', logger());
 app.use('*', cors({
@@ -62,18 +63,15 @@ app.get('/health', (c) => {
 });
 
 // ── API Routes ────────────────────────────────────────────────────────────────
-app.route('/api/auth', auth);
-app.route('/api/admin', admin);
-app.route('/api/users', users);
-app.route('/api/payments', payments);
-app.route('/api/psb', admissions);
-app.route('/api/blog', blog);
-app.route('/api/core', core);
-app.route('/api/upload', upload);
-app.route('/api/media', media);
-app.route('/api/notifications', notifications);
-app.route('/api/santri', santri);
-app.route('/api/publication', publication);
+const apiRoutes = {
+  auth, admin, users, payments, psb: admissions,
+  blog, core, upload, media, notifications, santri, publication
+};
+
+Object.entries(apiRoutes).forEach(([path, module]) => {
+  app.route(`/api/${path}`, module);
+});
+
 
 // Export for serverless handle
 export default app;

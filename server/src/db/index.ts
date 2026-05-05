@@ -15,11 +15,14 @@ if (!process.env.DATABASE_URL) {
 // .returning(), and all existing code patterns.
 neonConfig.webSocketConstructor = ws as any;
 
-// Use a minimal pool: each serverless instance gets its own pool.
-// max: 1 is sufficient since each function invocation handles one request.
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Use a pool: 
+// - In serverless (Vercel), max: 1 is sufficient.
+// - In persistent servers (cPanel), we increase this for better performance.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || '',
-  max: 1,
+  max: isProduction ? 10 : 1,
 });
 
 export const db = drizzle(pool, { schema });

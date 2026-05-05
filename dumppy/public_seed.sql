@@ -1,4 +1,7 @@
--- SEED DATA for Public Content (Fasilitas, Ekskul, Galeri, Jadwal)
+-- SEED DATA for Public Content (Fasilitas, Ekskul, Jadwal)
+DELETE FROM core_fasilitas;
+DELETE FROM core_ekstrakurikuler;
+DELETE FROM core_jadwalharian;
 
 -- FASILITAS (20 Records)
 INSERT INTO core_fasilitas (nama, icon, gambar, "order", created_at) VALUES 
@@ -46,48 +49,13 @@ INSERT INTO core_ekstrakurikuler (nama, icon, gambar, "order", created_at) VALUE
 ('Pecinta Alam', 'Mountain', 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000', 19, NOW()),
 ('Jurnalistik Santri', 'FileText', 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=2000', 20, NOW());
 
--- GAMBAR UNTUK EKSKUL (Diberikan fallback jika gambar nulll agar tidak error constraint)
+-- GAMBAR UNTUK EKSKUL
+DELETE FROM core_ekstrakurikulerimage;
 INSERT INTO core_ekstrakurikulerimage (gambar, alt_text, "order", created_at, ekstrakurikuler_id)
 SELECT COALESCE(gambar, 'https://images.unsplash.com/photo-1551966775-a4ddc8df052b?q=80&w=1000'), nama, 1, NOW(), id FROM core_ekstrakurikuler;
 
--- DOKUMENTASI/GALERI (20 Records)
-INSERT INTO core_dokumentasi (judul, deskripsi, kategori, lokasi, "order", is_published, created_at, updated_at) VALUES 
-('Wisuda Tahfizh V', 'Moment bahagia santriwati yang menyelesaikan hafalan 30 juz al-quran.', 'Akademik', 'Aula Pesantren', 1, true, NOW(), NOW()),
-('Lari Pagi Bersama', 'Kegiatan menjaga kesehatan jasmani santri setiap hari jumat.', 'Olahraga', 'Area Sekitar Pesantren', 2, true, NOW(), NOW()),
-('Lomba Pidato 3 Bahasa', 'Mengasah kemampuan retorika dalam bahasa Arab, Inggris, dan Indonesia.', 'Lomba', 'Gedung Kesenian', 3, true, NOW(), NOW()),
-('Bakti Sosial Ramadhan', 'Santri membagikan sembako kepada masyarakat sekitar pesantren.', 'Sosial', 'Desa Mahato', 4, true, NOW(), NOW()),
-('Kajian Umum Ahad Pagi', 'Pencerahan rohani bagi santri dan masyarakat sekitar mahato.', 'Keagamaan', 'Masjid Jami', 5, true, NOW(), NOW()),
-('Perkemahan Sabtu Minggu', 'Membangun karakter disiplin melalui kegiatan kepramukaan persami.', 'Pramuka', 'Hutan Lindung', 6, true, NOW(), NOW()),
-('Ujian Akhir Semester', 'Keseriusan santri menguji ilmu yang didapat selama satu semester.', 'Akademik', 'Ruang Kelas', 7, true, NOW(), NOW()),
-('Latihan Silat Tapak Suci', 'Pelestarian budaya silat dan pertahanan diri bagi santri.', 'Olahraga', 'Lapangan Tengah', 8, true, NOW(), NOW()),
-('Pentas Seni Tahunan', 'Malam pagelaran seni santri Raudhatussalam Mahato.', 'Seni', 'Panggung Terbuka', 9, true, NOW(), NOW()),
-('Kunjungan Edukasi Museum', 'Mempelajari sejarah perjuangan bangsa di museum daerah.', 'Edukasi', 'Museum Pekanbaru', 10, true, NOW(), NOW()),
-('Pelatihan Wirausaha Lele', 'Pemberdayaan santri dalam bidang perikanan darat.', 'Ekonomi', 'Kolam Pesantren', 11, true, NOW(), NOW()),
-('Lomba Kaligrafi Nasional', 'Partisipasi santri dalam ajang kaligrafi tingkat nasional.', 'Lomba', 'Jakarta', 12, true, NOW(), NOW()),
-('Khutbah Jumat Santri', 'Latihan menjadi khatib jumat bagi santri kelas akhir.', 'Keagamaan', 'Masjid Cabang', 13, true, NOW(), NOW()),
-('Cerdas Cermat Agama', 'Kompetisi pengetahuan agama antar asrama.', 'Lomba', 'Perpustakaan', 14, true, NOW(), NOW()),
-('Penyembelihan Hewan Qurban', 'Edukasi tata cara penyembelihan sesuai syariat islam.', 'Keagamaan', 'Area Penyembelihan', 15, true, NOW(), NOW()),
-('Workshop Desain Grafis', 'Membekali santri dengan kemampuan teknologi informasi.', 'Edukasi', 'Lab Komputer', 16, true, NOW(), NOW()),
-('Lomba Masak Antar Kamar', 'Menumbuhkan kekompakan dan kemandirian santriwati.', 'Social', 'Dapur Utama', 17, true, NOW(), NOW()),
-('Pembekalan KKN Santri', 'Persiapan pengabdian masyarakat bagi santri pengabdian.', 'Edukasi', 'Aula', 18, true, NOW(), NOW()),
-('Ziarah Makam Wali', 'Mengenang jasa para penyebar islam di tanah air.', 'Keagamaan', 'Sumatera Barat', 19, true, NOW(), NOW()),
-('Upacara Hari Santri', 'Memperingati hari santri nasional dengan penuh khidmat.', 'Nasional', 'Lapangan Utama', 20, true, NOW(), NOW());
-
--- GAMBAR UNTUK GALERI/DOKUMENTASI
-INSERT INTO core_dokumentasiimage (gambar, alt_text, "order", created_at, dokumentasi_id)
-SELECT 
-  CASE id % 4
-    WHEN 0 THEN 'https://images.unsplash.com/photo-1542668595-fa9394e5b686?q=80&w=2000'
-    WHEN 1 THEN 'https://images.unsplash.com/photo-1551966775-a4ddc8df052b?q=80&w=2000'
-    WHEN 2 THEN 'https://images.unsplash.com/photo-1523050853064-909386801977?q=80&w=2000'
-    ELSE 'https://images.unsplash.com/photo-1606761568285-1e0d58224f24?q=80&w=2000'
-  END,
-  judul, 1, NOW(), id 
-FROM core_dokumentasi;
-
--- JADWAL HARIAN (20 Putra, 20 Putri)
+-- JADWAL HARIAN (PUTRA & PUTRI)
 INSERT INTO core_jadwalharian (waktu, judul, deskripsi, kategori, target, "order", created_at) VALUES 
--- PUTRA
 ('04:00', 'Bangun Pagi & Shalat Tahajud', 'Mempersiapkan diri menghadap Allah di sepertiga malam.', 'ibadah', 'putra', 1, NOW()),
 ('04:45', 'Shalat Subuh Berjamaah', 'Kewajiban utama memulai hari dengan barakah.', 'ibadah', 'putra', 2, NOW()),
 ('05:30', 'Kajian Kitab Kuning', 'Pelajaran literatur klasik islam bersama asatidz.', 'akademik', 'putra', 3, NOW()),
@@ -108,8 +76,6 @@ INSERT INTO core_jadwalharian (waktu, judul, deskripsi, kategori, target, "order
 ('21:30', 'Istirahat / Tidur Malam', 'Meregenerasi energi untuk hari esok.', 'istirahat', 'putra', 18, NOW()),
 ('03:45', 'Persiapan Qiyamul Lail', 'Membangunkan santri pelan-pelan.', 'istirahat', 'putra', 19, NOW()),
 ('16:30', 'Kegiatan Bebas Terpimpin', 'Waktu santai santri di area pesantren.', 'istirahat', 'putra', 20, NOW()),
-
--- PUTRI
 ('04:00', 'Bangun Pagi & Shalat Tahajud', 'Tilawah mandiri dan munajat pagi.', 'ibadah', 'putri', 1, NOW()),
 ('04:45', 'Shalat Subuh Berjamaah', 'Kewajiban utama mengawali hari.', 'ibadah', 'putri', 2, NOW()),
 ('05:30', 'Muhadatsah (Bahasa)', 'Latihan percakapan bahasa arab/inggris.', 'akademik', 'putri', 3, NOW()),
