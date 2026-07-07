@@ -332,21 +332,22 @@ export class MediaService {
         // 4. Create Pending Record to Generate Sequential ID
         // This ensures the filename (ID) matches the database ID
         const [pendingFile] = await db.insert(mediaFiles).values({
-            accountId: primaryAccount.id,
-            url: 'pending_upload', // Placeholder
-            fileId: 'pending_id',  // Placeholder
+            filename: 'pending',
             originalName: metadata.filename,
-            mimeType: mimetype,
+            mimetype: mimetype,
             size: bufferToUpload.length,
-            category: options.category || 'general',
-            uploadedBy: options.userId,
+            url: 'pending_upload',
+            path: options.folder || '/',
+            provider: primaryAccount.provider,
+            accountId: primaryAccount.id,
+            userId: options.userId,
+            folder: options.folder || '/',
             metadata: { 
-                folder: options.folder || '/',
                 tags: options.tags ? options.tags.split(',') : [],
+                category: options.category || 'general',
                 width: 0,
                 height: 0
             },
-            status: 'uploading'
         } as any).returning();
 
         const newId = pendingFile.id;
@@ -366,19 +367,21 @@ export class MediaService {
             // 6. Update Pending Record with Real Data
             const [fileRecord] = await db.update(mediaFiles)
                 .set({
+                    filename: shortFilename,
                     url: primaryResult.url,
-                    fileId: primaryResult.fileId,
-                    status: 'active',
+                    path: primaryResult.fileId || shortFilename,
+                    thumbnailUrl: primaryResult.thumbnailUrl || primaryResult.url,
                     metadata: {
                         ...pendingFile.metadata as any,
-                        thumbnailUrl: primaryResult.thumbnailUrl
+                        thumbnailUrl: primaryResult.thumbnailUrl,
+                        cloudFileId: primaryResult.fileId
                     }
                 } as any)
                 .where(eq(mediaFiles.id, newId))
                 .returning();
 
             // 7. Log Activity
-            await this.logActivity({ action: 'UPLOAD', status: 'success', details: `Uploaded ${shortFilename} (ID: ${newId})`, accountId: primaryAccount.id, fileId: newId, performedBy: options.userId });
+            await this.logActivity({ action: 'UPLOAD', fileId: newId, userId: options.userId, details: `Uploaded ${shortFilename} (ID: ${newId}) to ${primaryAccount.provider}` });
 
             // 8. Background: Sync to Secondary (if exists)
             if (secondaryAccount) {
@@ -393,7 +396,7 @@ export class MediaService {
             return {
                 id: fileRecord.id,
                 url: fileRecord.url,
-                thumbnailUrl: (fileRecord.metadata as any)?.thumbnailUrl || fileRecord.url,
+                thumbnailUrl: fileRecord.thumbnailUrl || fileRecord.url,
                 name: fileRecord.originalName,
                 mimetype: fileRecord.mimetype,
                 size: fileRecord.size,
@@ -405,7 +408,7 @@ export class MediaService {
             // Cleanup pending record
             await db.delete(mediaFiles).where(eq(mediaFiles.id, newId));
             
-            await this.logActivity({ action: 'UPLOAD', status: 'error', details: `Failed to upload: ${(error as Error).message}`, accountId: primaryAccount.id, performedBy: options.userId });
+            await this.logActivity({ action: 'UPLOAD', userId: options.userId, details: `Failed to upload: ${(error as Error).message}` });
             throw error;
         }
     }
@@ -451,12 +454,10 @@ export class MediaService {
         await db.delete(mediaFiles).where(eq(mediaFiles.id, id));
 
         await this.logActivity({
-            accountId: file.accountId ?? undefined,
-            fileId: id,
             action: 'DELETE',
-            status: 'success',
-            details: `Deleted ${file.originalName}`,
-            performedBy: userId
+            fileId: id,
+            userId: userId,
+            details: `Deleted ${file.originalName}`
         });
     }
 
@@ -488,36 +489,29 @@ export class MediaService {
             console.warn('No active media accounts found in database.');
         }
 
-        // Filter by quota and credential completeness
+        // Filter by credential completeness (credentials are in config JSON)
         const validAccounts = accounts.filter((accountParam) => {
             const acc = accountParam as any;
-            // Provider credentials must be complete
+            const config = (acc.config || {}) as any;
             let isValid = true;
             let reason = '';
 
             if (acc.provider === 'imagekit') {
-                if (!acc.apiKey || !acc.apiSecret) {
+                if (!config.apiKey || !config.apiSecret) {
                     isValid = false;
-                    reason = 'Missing apiKey or apiSecret';
+                    reason = 'Missing apiKey or apiSecret in config';
                 }
-                // Require a usable endpoint
-                else if (!acc.urlEndpoint || !/^https?:\/\//i.test(acc.urlEndpoint)) {
+                else if (!config.urlEndpoint || !/^https?:\/\//i.test(config.urlEndpoint)) {
                     isValid = false;
-                    reason = 'Invalid urlEndpoint';
+                    reason = 'Invalid urlEndpoint in config';
                 }
             } else if (acc.provider === 'cloudinary') {
-                if (!acc.cloudName || !acc.apiKey || !acc.apiSecret) {
+                if (!config.cloudName || !config.apiKey || !config.apiSecret) {
                     isValid = false;
-                    reason = 'Missing cloudName, apiKey, or apiSecret';
+                    reason = 'Missing cloudName, apiKey, or apiSecret in config';
                 }
             } else if (acc.provider === 'mock') {
-                // Mock provider is always valid
                 isValid = true;
-            }
-            
-            if (isValid && acc.quotaLimit > 0 && (Number(acc.quotaUsed) + fileSize) >= Number(acc.quotaLimit)) {
-                isValid = false;
-                reason = 'Quota exceeded';
             }
 
             if (!isValid) {
@@ -528,8 +522,7 @@ export class MediaService {
 
         // Sort strategy:
         // 1. Preferred provider (if matches)
-        // 2. Primary account
-        // 3. Most free space (Load Balancing)
+        // 2. Default account (isDefault flag)
         validAccounts.sort((accountA, accountB) => {
             const a = accountA as any;
             const b = accountB as any;
@@ -539,14 +532,11 @@ export class MediaService {
                 if (a.provider !== preferredProvider && b.provider === preferredProvider) return 1;
             }
 
-            // Priority 2: Primary Account
-            if (a.isPrimary && !b.isPrimary) return -1;
-            if (!a.isPrimary && b.isPrimary) return 1;
+            // Priority 2: Default Account
+            if (a.isDefault && !b.isDefault) return -1;
+            if (!a.isDefault && b.isDefault) return 1;
             
-            // Priority 3: Free Space
-            const freeA = Number(a.quotaLimit) - Number(a.quotaUsed);
-            const freeB = Number(b.quotaLimit) - Number(b.quotaUsed);
-            return freeB - freeA; 
+            return 0;
         });
 
         return validAccounts;
@@ -554,21 +544,20 @@ export class MediaService {
 
     private getProviderInstance(accountParam: typeof mediaAccounts.$inferSelect) {
         const account = accountParam as any;
+        const config = (account.config || {}) as any;
         if (account.provider === 'imagekit') {
             return new ImageKitProvider({
-                publicKey: account.apiKey, 
-                privateKey: account.apiSecret, 
-                urlEndpoint: account.urlEndpoint || account.cloudName // Fallback to cloudName if urlEndpoint is empty (legacy support)
+                publicKey: config.apiKey || config.publicKey, 
+                privateKey: config.apiSecret || config.privateKey, 
+                urlEndpoint: config.urlEndpoint || config.cloudName
             });
         } else if (account.provider === 'cloudinary') {
             return new CloudinaryProvider({
-                cloudName: account.cloudName,
-                apiKey: account.apiKey,
-                apiSecret: account.apiSecret
+                cloudName: config.cloudName,
+                apiKey: config.apiKey,
+                apiSecret: config.apiSecret
             });
         } else if (account.provider === 'mock') {
-            // Mock provider is disabled for production/real usage
-            // return new MockProvider({});
             throw new Error('Mock provider is disabled');
         }
         throw new Error(`Unsupported provider: ${account.provider}`);
@@ -581,16 +570,17 @@ export class MediaService {
     }
 
     private async logActivity(data: {
-        accountId?: number,
-        fileId?: number,
         action: string,
-        status: string,
+        fileId?: number,
+        userId?: number,
         details?: string,
-        performedBy?: number
     }) {
         try {
             await db.insert(mediaLogs).values({
-                ...data,
+                action: data.action,
+                fileId: data.fileId,
+                userId: data.userId,
+                details: data.details,
                 createdAt: new Date().toISOString()
             });
         } catch (error) {

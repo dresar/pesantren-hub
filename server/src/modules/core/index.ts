@@ -557,7 +557,24 @@ core.get('/sejarah-timeline', async (c) => {
     return c.json(eventsWithImages);
   } catch (e) {
     console.error('Core /sejarah-timeline error:', e);
-    return c.json([]);
+  }
+});
+core.get('/sejarah-timeline/:id', async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  try {
+    const [event] = await db.select().from(sejarahTimeline).where(eq(sejarahTimeline.id, id));
+    if (!event) return c.json({ error: 'Not found' }, 404);
+    
+    const eventImages = await db.select().from(sejarahTimelineImages)
+      .where(eq(sejarahTimelineImages.timelineId, id))
+      .orderBy(asc(sejarahTimelineImages.order));
+      
+    return c.json({
+      ...event,
+      images: eventImages.map(img => img.gambar)
+    });
+  } catch (e) {
+    return c.json({ error: 'Internal Server Error' }, 500);
   }
 });
 core.post('/sejarah-timeline', adminMiddleware, zValidator('json', createSejarahTimelineSchema), async (c) => {

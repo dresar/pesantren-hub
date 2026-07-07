@@ -31,6 +31,7 @@ const RESOURCE_FIELDS: Record<string, string[]> = {
   biayaPendidikan: ['tipe', 'nama', 'jumlah', 'keterangan', 'order'],
   registrationFlow: ['title', 'description', 'icon', 'order', 'isActive'],
   informasiTambahan: ['judul', 'deskripsi', 'icon', 'warna', 'order', 'isPublished'],
+  bagianJabatan: ['nama', 'deskripsi', 'order', 'isActive'],
 };
 
 const COLOR_MAP: Record<string, string> = {

@@ -17,6 +17,7 @@ import ScrollToTop from "@/components/common/ScrollToTop";
 import { HelmetProvider } from 'react-helmet-async';
 import ThemeProvider from "@/components/ThemeProvider";
 import { api } from "@/lib/api";
+import { usePublicData } from "@/hooks/use-public-data";
 import MainLayout from "@/layouts/MainLayout";
 import AppLayout from "@/layouts/AppLayout";
 import AuthLayout from "@/layouts/AuthLayout";
@@ -220,6 +221,25 @@ const SantriRedirect = () => {
 // Non-blocking skeleton fallback — no spinners allowed
 const PageLoader = () => <SkeletonPage />;
 
+const FaviconUpdater = () => {
+  const { data: settings } = usePublicData<any>(['settings'], '/core/settings');
+
+  useEffect(() => {
+    if (settings?.favicon) {
+      const faviconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+      if (faviconLink) {
+        faviconLink.href = settings.favicon;
+      }
+      const appleLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement;
+      if (appleLink) {
+        appleLink.href = settings.favicon;
+      }
+    }
+  }, [settings]);
+
+  return null;
+};
+
 const App = () => {
   return (
     <HelmetProvider>
@@ -236,6 +256,7 @@ const App = () => {
                   }}
                 >
                   <DataPrefetcher />
+                  <FaviconUpdater />
                   <ScrollToTop />
                   <Suspense fallback={<SkeletonPage />}>
                     <Routes>

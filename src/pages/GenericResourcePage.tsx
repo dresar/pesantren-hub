@@ -351,6 +351,38 @@ export default function GenericResourcePage({ resource, title, description, base
       labels: {
         isActive: 'Aktif'
       }
+    },
+    bagianJabatan: {
+      fields: ['nama', 'deskripsi', 'order', 'isActive'],
+      types: {
+        deskripsi: 'textarea',
+        order: 'number',
+        isActive: 'boolean'
+      },
+      labels: {
+        isActive: 'Aktif'
+      }
+    },
+    contactPersons: {
+      fields: ['nama', 'foto', 'noHp', 'order', 'isActive'],
+      types: {
+        foto: 'image',
+        order: 'number',
+        isActive: 'boolean'
+      },
+      labels: {
+        isActive: 'Aktif'
+      }
+    },
+    socialMedia: {
+      fields: ['platform', 'username', 'url', 'order', 'isActive'],
+      types: {
+        order: 'number',
+        isActive: 'boolean'
+      },
+      labels: {
+        isActive: 'Aktif'
+      }
     }
   };
 

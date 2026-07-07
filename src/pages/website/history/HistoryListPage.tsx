@@ -11,7 +11,7 @@ const shortText = (text?: string, max = 110) => {
 export default function HistoryListPage() {
   type HistoryItem = {
     id: number | string;
-    gambar?: string;
+    images?: { id: number; gambar: string }[];
     judul: string;
     deskripsi?: string;
     order?: number;
@@ -21,13 +21,14 @@ export default function HistoryListPage() {
     {
       accessorKey: 'gambar',
       header: 'Gambar',
-      cell: ({ row }) => (
-        row.original.gambar ? (
-          <img src={row.original.gambar} alt={row.original.judul} className="h-12 w-20 object-cover rounded-md border" />
+      cell: ({ row }) => {
+        const firstImage = row.original.images?.[0]?.gambar;
+        return firstImage ? (
+          <img src={firstImage} alt={row.original.judul} className="h-12 w-20 object-cover rounded-md border" />
         ) : (
           <div className="h-12 w-20 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground border">No Img</div>
-        )
-      )
+        );
+      }
     },
     {
       accessorKey: 'timeline',

@@ -15,6 +15,7 @@ import notifications from './modules/notifications';
 import santri from './modules/santri';
 import media from './modules/media';
 import { publication } from './modules/publication';
+import kmi from './modules/kmi';
 
 const app = new Hono();
 
@@ -65,7 +66,7 @@ app.get('/health', (c) => {
 // ── API Routes ────────────────────────────────────────────────────────────────
 const apiRoutes = {
   auth, admin, users, payments, psb: admissions,
-  blog, core, upload, media, notifications, santri, publication
+  blog, core, upload, media, notifications, santri, publication, kmi
 };
 
 Object.entries(apiRoutes).forEach(([path, module]) => {
