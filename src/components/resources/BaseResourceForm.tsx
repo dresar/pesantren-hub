@@ -108,6 +108,16 @@ export function BaseResourceForm<T extends FieldValues>({
       });
     },
   });
+  const onInvalid = (errors: any) => {
+    console.error('Form validation failed:', errors);
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length > 0) {
+      const firstError = errors[errorKeys[0]];
+      const message = firstError?.message || `Kolom ${errorKeys[0]} tidak valid`;
+      toast.error(`Gagal menyimpan: ${message}`);
+    }
+  };
+
   const onSubmit = (values: T) => {
     mutation.mutate(values);
   };
@@ -149,7 +159,7 @@ export function BaseResourceForm<T extends FieldValues>({
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
               {children(form)}
               <div className="flex justify-end gap-4">
                 <Button

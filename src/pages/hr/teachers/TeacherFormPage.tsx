@@ -22,7 +22,7 @@ const teacherSchema = z.object({
   tanggalLahir: z.string().optional(),
   alamat: z.string().optional(),
   noHp: z.string().min(1, 'Nomor HP harus diisi'),
-  email: z.string().email('Email tidak valid').optional(),
+  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
   pendidikanTerakhir: z.string().optional(),
   universitas: z.string().optional(),
   tahunLulus: z.string().optional(),
