@@ -6,12 +6,15 @@ import PublicThemeToggle from '@/components/shared/PublicThemeToggle';
 import { Logo } from '@/components/shared/Logo';
 import { navItems } from '@/lib/constants';
 import { useAuthStore } from '@/stores/auth-store';
+import { usePublicData } from '@/hooks/use-public-data';
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const location = useLocation();
   const { isAuthenticated, user } = useAuthStore();
+  const { data: settings } = usePublicData<any>(['settings'], '/core/settings');
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
@@ -58,14 +61,14 @@ const Navbar = () => {
                 <div className="hidden lg:block">
                   <Logo variant="icon" iconClassName="w-10 h-10" />
                 </div>
-                {}
+                {/* Desktop Text */}
                 <div className={`hidden lg:block ${scrolled ? 'text-foreground' : 'text-white'}`}>
-                  <span className="text-sm font-bold tracking-tight leading-none block">Raudhatussalam</span>
-                  <span className={`text-[10px] leading-none ${scrolled ? 'text-muted-foreground' : 'text-white/80'}`}>Pesantren Modern</span>
+                  <span className="text-sm font-bold tracking-tight leading-none block">{settings?.namaInstansi || 'Raudhatussalam'}</span>
+                  <span className={`text-[10px] leading-none ${scrolled ? 'text-muted-foreground' : 'text-white/80'}`}>{settings?.tagline || 'Pesantren Modern'}</span>
                 </div>
-                {}
+                {/* Mobile Text */}
                 <div className={`block lg:hidden ${scrolled ? 'text-foreground' : 'text-white'}`}>
-                  <span className="text-xs font-bold tracking-tight leading-none block text-center">Raudhatussalam Mahato</span>
+                  <span className="text-xs font-bold tracking-tight leading-none block text-center">{settings?.singkatan || settings?.namaInstansi || 'Raudhatussalam Mahato'}</span>
                 </div>
               </Link>
             </div>

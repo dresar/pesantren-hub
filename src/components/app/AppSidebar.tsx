@@ -3,6 +3,7 @@ import { Home, FileText, BookOpen, Calendar, Bell, Settings, LogOut, ClipboardLi
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { usePublicData } from '@/hooks/use-public-data';
+import { Logo } from '@/components/shared/Logo';
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -50,13 +51,7 @@ const AppSidebar = ({ collapsed, onClose }: AppSidebarProps) => {
       {}
       <div className="h-14 flex items-center px-4 border-b border-sidebar-border shrink-0">
         <Link to="/" className="flex items-center gap-2.5" onClick={onClose}>
-          {settings?.logo ? (
-            <img src={settings.logo} alt="Logo" className="w-8 h-8 rounded-md object-contain shrink-0" />
-          ) : (
-            <div className="w-8 h-8 rounded-md gradient-primary flex items-center justify-center font-arabic text-primary-foreground font-bold text-sm shrink-0">
-              ر
-            </div>
-          )}
+          <Logo variant="icon" iconClassName="w-8 h-8 rounded-md shrink-0" />
           {!collapsed && (
             <span className="text-sm font-bold tracking-tight text-sidebar-foreground whitespace-nowrap">
               Raudhatussalam

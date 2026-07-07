@@ -5,6 +5,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2, Eye, EyeOff, LogIn, UserPlus, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from '@/components/shared/Logo';
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -131,7 +132,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542816417-0983c9c9ad53?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent"></div>
         <div className="relative z-10 p-12 text-white max-w-lg">
-          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center font-arabic text-primary-foreground font-bold text-3xl mb-8 shadow-glow">ر</div>
+          <Logo variant="icon" iconClassName="w-16 h-16 mb-8 rounded-2xl shadow-glow" />
           <h2 className="text-4xl font-bold mb-6 leading-tight">Membangun Generasi <br/><span className="text-primary">Berakhlak Mulia</span></h2>
           <p className="text-lg text-slate-300 leading-relaxed">
             Platform manajemen pesantren modern yang terintegrasi. Memudahkan administrasi, pemantauan akademik, dan komunikasi dengan wali santri.
@@ -169,7 +170,7 @@ export default function LoginPage() {
           </div>
           <div className="text-center lg:text-left">
             <Link to="/" className="lg:hidden inline-flex items-center gap-2.5 mb-8">
-              <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center font-arabic text-primary-foreground font-bold text-xl">ر</div>
+              <Logo variant="icon" iconClassName="w-10 h-10" />
             </Link>
             <h1 className="text-3xl font-bold tracking-tight">
                 {activeTab === 'login' ? 'Selamat Datang' : 'Buat Akun Baru'}

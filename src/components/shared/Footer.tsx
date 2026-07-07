@@ -11,6 +11,8 @@ interface WebsiteSettings {
   instagramUrl?: string;
   youtubeUrl?: string;
   logoUrl?: string;
+  namaInstansi?: string;
+  tagline?: string;
 }
 const Footer = () => {
   const { data: settings } = usePublicData<WebsiteSettings>(['settings'], '/core/settings');
@@ -18,13 +20,13 @@ const Footer = () => {
     <footer className="bg-secondary border-t border-border">
       <div className="container mx-auto max-w-7xl px-4 py-12 md:py-16">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {}
+          {/* Logo & Info */}
           <div className="col-span-2 sm:col-span-2 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
               <Logo variant="icon" iconClassName="w-9 h-9" />
               <div>
-                <span className="text-sm font-bold tracking-tight leading-none block">Raudhatussalam</span>
-                <span className="text-[10px] text-muted-foreground leading-none">Pesantren Modern</span>
+                <span className="text-sm font-bold tracking-tight leading-none block">{settings?.namaInstansi || 'Raudhatussalam'}</span>
+                <span className="text-[10px] text-muted-foreground leading-none">{settings?.tagline || 'Pesantren Modern'}</span>
               </div>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">

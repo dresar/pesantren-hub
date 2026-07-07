@@ -22,7 +22,7 @@ const ProgramPage = () => {
     return (
       <>
         <PageHeader
-          title="Program Pendidikan"
+          title="Program Unggulan"
           subtitle="Lima program unggulan yang dirancang untuk membentuk generasi berilmu dan berakhlak mulia."
           breadcrumbs={[{ label: 'Program' }]}
         />
@@ -48,7 +48,7 @@ const ProgramPage = () => {
   return (
     <>
       <PageHeader
-        title="Program Pendidikan"
+        title="Program Unggulan"
         subtitle="Lima program unggulan yang dirancang untuk membentuk generasi berilmu dan berakhlak mulia."
         breadcrumbs={[{ label: 'Program' }]}
       />
@@ -61,7 +61,7 @@ const ProgramPage = () => {
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shrink-0">
                       {program.gambar ? (
-                         <img src={program.gambar} alt={program.nama} className="w-full h-full object-cover rounded-xl" />
+                        <img src={program.gambar} alt={program.nama} className="w-full h-full object-cover rounded-xl" />
                       ) : (
                         <BookOpen className="w-6 h-6 text-primary-foreground" />
                       )}
@@ -74,14 +74,14 @@ const ProgramPage = () => {
                       <h3 className="text-lg font-semibold group-hover:text-primary transition-colors mb-2">{program.nama}</h3>
                       <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">{program.deskripsi}</p>
                       <ul className="space-y-1.5">
-                          <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                            Kurikulum Terpadu
-                          </li>
-                          <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                            Tenaga Pengajar Profesional
-                          </li>
+                        <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          Kurikulum Terpadu
+                        </li>
+                        <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          Tenaga Pengajar Profesional
+                        </li>
                       </ul>
                       <div className="flex items-center gap-1 text-sm font-semibold text-primary mt-4">
                         Detail Program <ChevronRight className="w-4 h-4" />
@@ -97,4 +97,4 @@ const ProgramPage = () => {
     </>
   );
 };
-export default ProgramPage;
+export default ProgramPage;

@@ -97,6 +97,7 @@ export default function WebsiteSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['websiteSettings'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
       toast.success('Pengaturan website berhasil disimpan');
       setIsEditing(false);
     },
