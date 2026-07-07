@@ -63,8 +63,8 @@ const Navbar = () => {
                 </div>
                 {/* Desktop Text */}
                 <div className={`hidden lg:block ${scrolled ? 'text-foreground' : 'text-white'}`}>
-                  <span className="text-sm font-bold tracking-tight leading-none block">{settings?.tagline || 'Pesantren Modern'}</span>
-                  <span className={`text-[10px] leading-none ${scrolled ? 'text-muted-foreground' : 'text-white/80'}`}>{settings?.namaInstansi || 'Raudhatussalam'}</span>
+                  <span className="text-sm font-bold tracking-tight leading-none block">{settings?.namaInstansi || 'Raudhatussalam'}</span>
+                  <span className={`text-[10px] leading-none ${scrolled ? 'text-muted-foreground' : 'text-white/80'}`}>{settings?.tagline || 'Pesantren Modern'}</span>
                 </div>
                 {/* Mobile Text */}
                 <div className={`block lg:hidden ${scrolled ? 'text-foreground' : 'text-white'}`}>
