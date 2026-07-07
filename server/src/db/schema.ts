@@ -814,7 +814,7 @@ export const programPendidikan = pgTable('core_programpendidikan', {
   akreditasi: varchar('akreditasi', { length: 50 }).notNull(),
   deskripsi: text('deskripsi'),
   galeri: text('galeri'),
-  icon: text('icon').notNull(),
+  icon: text('icon'),
   gambar: text('gambar'),
   order: integer('order').notNull(),
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),

@@ -67,19 +67,7 @@ export default function EducationFormPage() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="icon"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Icon (Lucide name)</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Contoh: graduation-cap" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <FormField
               control={form.control}
               name="order"

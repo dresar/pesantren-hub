@@ -53,19 +53,19 @@ export const createFaqSchema = z.object({
 export const updateFaqSchema = createFaqSchema.partial();
 export const createProgramSchema = z.object({
   nama: z.string().min(1),
-  slug: z.string().optional(), 
+  slug: z.string().nullable().optional(), 
   deskripsi: z.string().min(1),
-  gambar: z.string().optional(),
-  tanggalMulai: z.string().optional(), 
-  tanggalSelesai: z.string().optional(), 
+  gambar: z.string().nullable().optional(),
+  tanggalMulai: z.string().nullable().optional(), 
+  tanggalSelesai: z.string().nullable().optional(), 
   status: z.enum(['draft', 'published']).optional(),
   isFeatured: z.boolean().optional(),
-  tipe: z.string().optional(),
-  durasi: z.string().optional(),
-  keunggulan: z.string().optional(),
-  galeri: z.string().optional(),
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
+  tipe: z.string().nullable().optional(),
+  durasi: z.string().nullable().optional(),
+  keunggulan: z.string().nullable().optional(),
+  galeri: z.string().nullable().optional(),
+  metaTitle: z.string().nullable().optional(),
+  metaDescription: z.string().nullable().optional(),
   order: z.number().optional(),
 });
 export const updateProgramSchema = createProgramSchema.partial();
@@ -124,11 +124,11 @@ export const updateVisiMisiSchema = z.object({
 });
 export const createProgramPendidikanSchema = z.object({
   nama: z.string().min(1),
-  akreditasi: z.string().optional(),
-  deskripsi: z.string().optional(),
-  galeri: z.string().optional(),
-  icon: z.string().optional(),
-  gambar: z.string().optional(),
+  akreditasi: z.string().nullable().optional(),
+  deskripsi: z.string().nullable().optional(),
+  galeri: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  gambar: z.string().nullable().optional(),
   order: z.number().or(z.string().regex(/^\d+$/).transform(Number)).optional(),
 });
 export const updateProgramPendidikanSchema = createProgramPendidikanSchema.partial();
