@@ -16,6 +16,7 @@ const programSchema = z.object({
   tipe: z.string().optional(),
   durasi: z.string().optional(),
   keunggulan: z.string().optional(),
+  galeri: z.string().optional(),
 });
 type ProgramForm = z.infer<typeof programSchema>;
 export default function ProgramFormPage() {
@@ -34,6 +35,7 @@ export default function ProgramFormPage() {
         tipe: 'Reguler',
         durasi: '3 Tahun',
         keunggulan: 'Kurikulum Terpadu\nTenaga Pengajar Profesional\nFasilitas Lengkap\nEkstrakurikuler Beragam',
+        galeri: '',
       }}
       icon={Calendar}
       apiEndpoint="/core/programs"
@@ -160,6 +162,19 @@ export default function ProgramFormPage() {
                   <FormLabel>Keunggulan Program (Satu Per Baris)</FormLabel>
                   <FormControl>
                     <Textarea {...field} rows={4} placeholder="Contoh:&#10;Kurikulum Terpadu&#10;Tenaga Pengajar Profesional" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="galeri"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Galeri Foto Tambahan (Satu Link Gambar Per Baris)</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={4} placeholder="Paste link gambar di sini, pisahkan dengan enter (satu baris satu link)..." />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

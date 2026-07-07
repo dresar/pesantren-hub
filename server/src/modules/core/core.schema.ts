@@ -63,6 +63,7 @@ export const createProgramSchema = z.object({
   tipe: z.string().optional(),
   durasi: z.string().optional(),
   keunggulan: z.string().optional(),
+  galeri: z.string().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   order: z.number().optional(),
@@ -124,6 +125,8 @@ export const updateVisiMisiSchema = z.object({
 export const createProgramPendidikanSchema = z.object({
   nama: z.string().min(1),
   akreditasi: z.string().optional(),
+  deskripsi: z.string().optional(),
+  galeri: z.string().optional(),
   icon: z.string().optional(),
   gambar: z.string().optional(),
   order: z.number().or(z.string().regex(/^\d+$/).transform(Number)).optional(),

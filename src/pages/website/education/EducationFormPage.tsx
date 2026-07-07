@@ -3,15 +3,21 @@ import { z } from 'zod';
 import { GraduationCap } from 'lucide-react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { DualImageInput } from '@/components/forms/DualImageInput';
+
 const educationSchema = z.object({
   nama: z.string().min(1, 'Nama program harus diisi'),
   akreditasi: z.string().optional(),
+  deskripsi: z.string().optional(),
+  galeri: z.string().optional(),
   icon: z.string().optional(),
   gambar: z.string().optional(),
   order: z.coerce.number().min(0),
 });
+
 type EducationForm = z.infer<typeof educationSchema>;
+
 export default function EducationFormPage() {
   return (
     <BaseResourceForm<EducationForm>
@@ -22,6 +28,8 @@ export default function EducationFormPage() {
       defaultValues={{
         nama: '',
         akreditasi: '',
+        deskripsi: '',
+        galeri: '',
         icon: '',
         gambar: '',
         order: 0,
@@ -73,9 +81,22 @@ export default function EducationFormPage() {
             />
             <FormField
               control={form.control}
-              name="gambar"
+              name="order"
               render={({ field }) => (
                 <FormItem>
+                  <FormLabel>Urutan</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="gambar"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
                   <DualImageInput
                     label="Gambar Ilustrasi"
                     value={field.value}
@@ -87,14 +108,29 @@ export default function EducationFormPage() {
                 </FormItem>
               )}
             />
+          </div>
+          <div className="mt-6 space-y-6">
             <FormField
               control={form.control}
-              name="order"
+              name="deskripsi"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Urutan</FormLabel>
+                  <FormLabel>Deskripsi Program</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Textarea {...field} rows={5} placeholder="Jelaskan detail program pendidikan ini..." />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="galeri"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Galeri Foto Tambahan (Satu Link Gambar Per Baris)</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={4} placeholder="Paste link gambar di sini, pisahkan dengan enter (satu baris satu link)..." />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

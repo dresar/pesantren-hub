@@ -9,9 +9,9 @@ import {
   BookOpen,
   Calendar,
   Grid,
-  ChevronDown
+  ChevronDown,
+  Check
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import PageHeader from '@/components/shared/PageHeader';
 import SectionWrapper from '@/components/shared/SectionWrapper';
 import { usePublicData } from '@/hooks/use-public-data';
@@ -34,6 +34,8 @@ interface EducationProgram {
   id: number;
   nama: string;
   akreditasi: string;
+  deskripsi?: string;
+  galeri?: string;
   icon: string;
   gambar?: string;
   order: number;
@@ -47,6 +49,10 @@ interface FeaturedProgram {
   deskripsi: string;
   gambar?: string;
   status: string;
+  tipe?: string;
+  durasi?: string;
+  keunggulan?: string;
+  galeri?: string;
 }
 
 const fadeUp = {
@@ -64,18 +70,21 @@ const ProgramPage = () => {
   const { data: featuredPrograms, isLoading: isLoadingFeatured, error: errFeatured } = 
     usePublicData<FeaturedProgram[]>(['programs'], '/core/programs');
 
-  // Program modal state (for education programs)
-  const [selectedProgram, setSelectedProgram] = useState<EducationProgram | null>(null);
+  // Program modal state
+  const [selectedProgram, setSelectedProgram] = useState<any | null>(null);
+  const [selectedProgramType, setSelectedProgramType] = useState<'pendidikan' | 'unggulan' | null>(null);
   const [modalImgIndex, setModalImgIndex] = useState(0);
   const modalSlideTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const openProgramModal = useCallback((prog: EducationProgram) => {
+  const openProgramModal = useCallback((prog: any, type: 'pendidikan' | 'unggulan') => {
     setSelectedProgram(prog);
+    setSelectedProgramType(type);
     setModalImgIndex(0);
   }, []);
 
   const closeProgramModal = useCallback(() => {
     setSelectedProgram(null);
+    setSelectedProgramType(null);
     setModalImgIndex(0);
     if (modalSlideTimer.current) clearInterval(modalSlideTimer.current);
   }, []);
@@ -83,7 +92,24 @@ const ProgramPage = () => {
   // Auto-slide images in modal
   useEffect(() => {
     if (!selectedProgram) return;
-    const imgs = selectedProgram.images || (selectedProgram.gambar ? [{ gambar: selectedProgram.gambar }] : []);
+    
+    // Calculate slides count
+    const imgs: string[] = [];
+    if (selectedProgram.gambar) imgs.push(selectedProgram.gambar);
+    if (selectedProgram.galeri) {
+      selectedProgram.galeri.split('\n')
+        .map((url: string) => url.trim())
+        .filter(Boolean)
+        .forEach((url: string) => imgs.push(url));
+    }
+    if (selectedProgram.images && selectedProgram.images.length > 0) {
+      selectedProgram.images.forEach((img: any) => {
+        if (img.gambar !== selectedProgram.gambar) {
+          imgs.push(img.gambar);
+        }
+      });
+    }
+
     if (imgs.length <= 1) return;
     modalSlideTimer.current = setInterval(() => {
       setModalImgIndex(prev => (prev + 1) % imgs.length);
@@ -248,7 +274,7 @@ const ProgramPage = () => {
                       whileInView="visible"
                       viewport={{ once: true }}
                       variants={fadeUp}
-                      onClick={() => openProgramModal(program)}
+                      onClick={() => openProgramModal(program, 'pendidikan')}
                       className="glass-card overflow-hidden hover-lift text-left group focus:outline-none focus:ring-2 focus:ring-primary rounded-xl w-full flex flex-col h-full"
                     >
                       <div className="aspect-[4/3] relative overflow-hidden bg-muted/30 w-full shrink-0">
@@ -275,8 +301,8 @@ const ProgramPage = () => {
                           <h3 className="font-bold text-base md:text-lg leading-snug group-hover:text-primary transition-colors mb-2">
                             {program.nama}
                           </h3>
-                          <p className="text-xs text-muted-foreground">
-                            Kurikulum terpadu pesantren modern dengan fokus pendidikan karakter Islami.
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {program.deskripsi || 'Kurikulum terpadu pesantren modern dengan fokus pendidikan karakter Islami.'}
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mt-4">
@@ -290,7 +316,7 @@ const ProgramPage = () => {
             </SectionWrapper>
           )}
 
-          {/* SECTION 2: PROGRAM UGGULAN */}
+          {/* SECTION 2: PROGRAM UNGGULAN */}
           {(activeTab === 'all' || activeTab === 'unggulan') && (
             <SectionWrapper className={activeTab === 'all' ? 'pt-8 pb-16' : 'py-6'}>
               {activeTab === 'all' && (
@@ -307,38 +333,51 @@ const ProgramPage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {featuredPrograms?.map((program, i) => (
-                  <motion.div key={program.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                    <Link to={`/program/${program.slug || '#'}`} className="block group h-full">
-                      <div className="glass-card p-6 md:p-8 h-full hover-lift">
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-                            {program.gambar ? (
-                              <img src={program.gambar} alt={program.nama} className="w-full h-full object-cover rounded-xl" />
-                            ) : (
-                              <BookOpen className="w-6 h-6 text-primary-foreground" />
-                            )}
+                  <motion.button 
+                    key={program.id} 
+                    custom={i} 
+                    initial="hidden" 
+                    whileInView="visible" 
+                    viewport={{ once: true }} 
+                    variants={fadeUp}
+                    onClick={() => openProgramModal(program, 'unggulan')}
+                    className="block text-left group h-full w-full focus:outline-none focus:ring-2 focus:ring-primary rounded-xl"
+                  >
+                    <div className="glass-card p-6 md:p-8 h-full hover-lift flex flex-col justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shrink-0">
+                          {program.gambar ? (
+                            <img src={program.gambar} alt={program.nama} className="w-full h-full object-cover rounded-xl" />
+                          ) : (
+                            <BookOpen className="w-6 h-6 text-primary-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-primary/10 text-primary">
+                              {program.tipe || 'Reguler'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{program.durasi || '3 Tahun'}</span>
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="px-2 py-0.5 text-xs font-medium rounded bg-primary/10 text-primary">Spesial</span>
-                              <span className="text-xs text-muted-foreground">Aktif</span>
-                            </div>
-                            <h3 className="text-lg font-semibold group-hover:text-primary transition-colors mb-2">{program.nama}</h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">{program.deskripsi}</p>
+                          <h3 className="text-lg font-semibold group-hover:text-primary transition-colors mb-2">{program.nama}</h3>
+                          <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">{program.deskripsi}</p>
+                          {program.keunggulan && (
                             <ul className="space-y-1.5">
-                              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                                Dibimbing Ustadz Profesional
-                              </li>
+                              {program.keunggulan.split('\n').slice(0, 2).map((f: string, idx: number) => (
+                                <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                  {f}
+                                </li>
+                              ))}
                             </ul>
-                            <div className="flex items-center gap-1 text-sm font-semibold text-primary mt-4">
-                              Detail Program <Next className="w-4 h-4" />
-                            </div>
-                          </div>
+                          )}
                         </div>
                       </div>
-                    </Link>
-                  </motion.div>
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mt-4 self-start">
+                        Lihat Galeri & Detail <Next className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  </motion.button>
                 ))}
               </div>
             </SectionWrapper>
@@ -349,11 +388,26 @@ const ProgramPage = () => {
       {/* ══ PROGRAM DETAIL MODAL ══ */}
       <AnimatePresence>
         {selectedProgram && (() => {
-          const imgs = selectedProgram.images?.length 
-            ? selectedProgram.images 
-            : selectedProgram.gambar 
-              ? [{ gambar: selectedProgram.gambar, altText: selectedProgram.nama }]
-              : [];
+          // Collect images slideshow
+          const imgs: { gambar: string }[] = [];
+          if (selectedProgram.gambar) {
+            imgs.push({ gambar: selectedProgram.gambar });
+          }
+          if (selectedProgram.galeri) {
+            selectedProgram.galeri.split('\n')
+              .map((url: string) => url.trim())
+              .filter(Boolean)
+              .forEach((url: string) => {
+                imgs.push({ gambar: url });
+              });
+          }
+          if (selectedProgram.images && selectedProgram.images.length > 0) {
+            selectedProgram.images.forEach((img: any) => {
+              if (img.gambar !== selectedProgram.gambar) {
+                imgs.push({ gambar: img.gambar });
+              }
+            });
+          }
           const hasImgs = imgs.length > 0;
           return (
             <motion.div
@@ -370,7 +424,7 @@ const ProgramPage = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 60, scale: 0.97 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-                className="bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg md:max-w-2xl overflow-hidden max-h-[90vh] flex flex-col"
+                className="bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg md:max-w-2xl overflow-hidden max-h-[95vh] flex flex-col"
                 onClick={e => e.stopPropagation()}
               >
                 {/* Modal image slideshow */}
@@ -380,7 +434,7 @@ const ProgramPage = () => {
                       <motion.img
                         key={modalImgIndex}
                         src={imgs[modalImgIndex].gambar}
-                        alt={imgs[modalImgIndex].altText || selectedProgram.nama}
+                        alt={selectedProgram.nama}
                         className="absolute inset-0 w-full h-full object-cover"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -433,15 +487,46 @@ const ProgramPage = () => {
                       <X className="w-4 h-4" />
                     </button>
                   )}
-                  {selectedProgram.akreditasi && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full mb-2">
-                      <Award className="w-3 h-3" /> Akreditasi {selectedProgram.akreditasi}
-                    </span>
-                  )}
+                  
+                  {/* Badges / Header info */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    {selectedProgramType === 'pendidikan' && selectedProgram.akreditasi && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+                        <Award className="w-3.5 h-3.5" /> Akreditasi {selectedProgram.akreditasi}
+                      </span>
+                    )}
+                    {selectedProgramType === 'unggulan' && (
+                      <>
+                        <span className="inline-flex items-center text-[11px] font-semibold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+                          {selectedProgram.tipe || 'Reguler'}
+                        </span>
+                        <span className="inline-flex items-center text-[11px] font-semibold bg-secondary/80 text-muted-foreground px-2.5 py-0.5 rounded-full border">
+                          Durasi: {selectedProgram.durasi || '3 Tahun'}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  
                   <h2 className="text-lg md:text-xl font-bold mb-3 leading-snug">{selectedProgram.nama}</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Jenjang pendidikan {selectedProgram.nama} di Pondok Pesantren Modern Raudhatussalam Mahato didukung oleh fasilitas lengkap dan kurikulum terpadu untuk melahirkan lulusan terbaik.
+                  
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {selectedProgram.deskripsi || `Program ${selectedProgram.nama} di Pondok Pesantren Modern Raudhatussalam Mahato diselenggarakan dengan standar kualitas unggulan.`}
                   </p>
+                  
+                  {/* Keunggulan List (only for featured programs) */}
+                  {selectedProgramType === 'unggulan' && selectedProgram.keunggulan && (
+                    <div className="mt-5 border-t pt-4">
+                      <h3 className="text-sm font-semibold mb-3">Keunggulan Program:</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {selectedProgram.keunggulan.split('\n').filter(Boolean).map((feature: string, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 p-2.5 rounded-lg bg-secondary/50 border text-xs">
+                            <Check className="w-4 h-4 text-primary shrink-0" />
+                            <span className="font-medium text-foreground">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </motion.div>

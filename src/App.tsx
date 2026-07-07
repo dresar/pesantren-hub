@@ -32,8 +32,7 @@ const ProfilKami = lazy(() => import("./pages/ProfilKami"));
 const VisiMisi = lazy(() => import("./pages/VisiMisi"));
 const TenagaPengajarPage = lazy(() => import("./pages/TenagaPengajarPage"));
 const Organisasi = lazy(() => import("./pages/Organisasi"));
-const PublicProgramPage = lazy(() => import("./pages/ProgramPage"));
-const ProgramDetail = lazy(() => import("./pages/ProgramDetail"));
+const ProgramPage = lazy(() => import("./pages/ProgramPage"));
 const FasilitasPage = lazy(() => import("./pages/FasilitasPage"));
 const FasilitasDetail = lazy(() => import("./pages/FasilitasDetail"));
 const JadwalPage = lazy(() => import("./pages/JadwalPage"));
@@ -270,8 +269,7 @@ const App = () => {
               <Route path="/profil/pengajar" element={<MainLayout><TenagaPengajarPage /></MainLayout>} />
               <Route path="/profil/pendiri" element={<MainLayout><FoundersPage /></MainLayout>} />
               <Route path="/profil/pendiri/:id" element={<MainLayout><FounderDetailPage /></MainLayout>} />
-              <Route path="/program" element={<MainLayout><PublicProgramPage /></MainLayout>} />
-              <Route path="/program/:slug" element={<MainLayout><ProgramDetail /></MainLayout>} />
+              <Route path="/program" element={<MainLayout><ProgramPage /></MainLayout>} />
               <Route path="/fasilitas" element={<MainLayout><FasilitasPage /></MainLayout>} />
               <Route path="/fasilitas/:slug" element={<MainLayout><FasilitasDetail /></MainLayout>} />
               <Route path="/kehidupan-santri" element={<Navigate to="/kehidupan-santri/jadwal" replace />} />
