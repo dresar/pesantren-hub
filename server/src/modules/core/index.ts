@@ -163,6 +163,19 @@ core.get('/programs', async (c) => {
     return c.json([]);
   }
 });
+core.get('/programs/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id') as string);
+    const [item] = await db.select().from(programs).where(eq(programs.id, id));
+    if (!item) {
+      return c.json({ error: 'Program not found' }, 404);
+    }
+    return c.json(item);
+  } catch (e) {
+    console.error('Core GET /programs/:id error:', e);
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
 core.post('/programs', adminMiddleware, zValidator('json', createProgramSchema), async (c) => {
   const data = c.req.valid('json');
   
