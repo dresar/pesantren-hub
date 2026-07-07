@@ -48,7 +48,14 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-semibold mb-4">Menu</h4>
             <ul className="space-y-2.5">
-              {navItems.slice(0, 6).map((item) => (
+              {[
+                { label: 'Beranda', href: '/' },
+                { label: 'Profil', href: '/sejarah' },
+                { label: 'Program', href: '/program' },
+                { label: 'Fasilitas', href: '/fasilitas' },
+                { label: 'Kehidupan Santri', href: '/kehidupan-santri/jadwal' },
+                { label: 'Publikasi', href: '/publikasi' },
+              ].map((item) => (
                 <li key={item.href}>
                   <Link to={item.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     {item.label}
