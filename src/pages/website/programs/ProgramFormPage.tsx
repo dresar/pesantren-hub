@@ -13,6 +13,9 @@ const programSchema = z.object({
   gambar: z.string().optional(),
   status: z.enum(['draft', 'published']).default('published'),
   isFeatured: z.boolean().default(false),
+  tipe: z.string().optional(),
+  durasi: z.string().optional(),
+  keunggulan: z.string().optional(),
 });
 type ProgramForm = z.infer<typeof programSchema>;
 export default function ProgramFormPage() {
@@ -28,6 +31,9 @@ export default function ProgramFormPage() {
         gambar: '',
         status: 'published',
         isFeatured: false,
+        tipe: 'Reguler',
+        durasi: '3 Tahun',
+        keunggulan: 'Kurikulum Terpadu\nTenaga Pengajar Profesional\nFasilitas Lengkap\nEkstrakurikuler Beragam',
       }}
       icon={Calendar}
       apiEndpoint="/core/programs"
@@ -105,20 +111,61 @@ export default function ProgramFormPage() {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="tipe"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipe Program</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Contoh: Reguler / Pilihan" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="durasi"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Durasi Program</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Contoh: 3 Tahun / 6 Tahun" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
-          <FormField
-            control={form.control}
-            name="deskripsi"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Deskripsi</FormLabel>
-                <FormControl>
-                  <Textarea {...field} rows={5} placeholder="Jelaskan detail program..." />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-6 mt-6">
+            <FormField
+              control={form.control}
+              name="deskripsi"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Deskripsi</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={5} placeholder="Jelaskan detail program..." />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="keunggulan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Keunggulan Program (Satu Per Baris)</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={4} placeholder="Contoh:&#10;Kurikulum Terpadu&#10;Tenaga Pengajar Profesional" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </>
       )}
     </BaseResourceForm>

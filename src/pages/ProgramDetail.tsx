@@ -10,6 +10,9 @@ interface Program {
   slug: string;
   deskripsi: string;
   gambar?: string;
+  tipe?: string;
+  durasi?: string;
+  keunggulan?: string;
 }
 const ProgramDetail = () => {
   const { slug } = useParams();
@@ -52,13 +55,18 @@ const ProgramDetail = () => {
                 )}
               </div>
               <div>
-                <span className="px-2.5 py-1 text-xs font-medium rounded bg-primary/10 text-primary">Reguler</span>
-                <p className="text-sm text-muted-foreground mt-1">Durasi: 3 Tahun</p>
+                <span className="px-2.5 py-1 text-xs font-medium rounded bg-primary/10 text-primary">
+                  {program.tipe || 'Reguler'}
+                </span>
+                <p className="text-sm text-muted-foreground mt-1">Durasi: {program.durasi || '3 Tahun'}</p>
               </div>
             </div>
             <h3 className="text-lg font-semibold mb-4">Keunggulan Program</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-              {['Kurikulum Terpadu', 'Tenaga Pengajar Profesional', 'Fasilitas Lengkap', 'Ekstrakurikuler Beragam'].map((f, i) => (
+              {(program.keunggulan
+                ? program.keunggulan.split('\n').filter(Boolean)
+                : ['Kurikulum Terpadu', 'Tenaga Pengajar Profesional', 'Fasilitas Lengkap', 'Ekstrakurikuler Beragam']
+              ).map((f, i) => (
                 <div key={i} className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary">
                   <Check className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-sm">{f}</span>
