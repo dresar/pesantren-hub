@@ -1,16 +1,9 @@
 import { motion } from 'framer-motion';
-import { Eye, Target, Sparkles } from 'lucide-react';
+import { Eye, Target } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import SectionWrapper from '@/components/shared/SectionWrapper';
 import { usePublicData } from '@/hooks/use-public-data';
 import SEOHead from '@/components/SEOHead';
-const values = [
-  { title: 'Berilmu Amaliyah', desc: 'Ilmu yang diamalkan dalam kehidupan sehari-hari.' },
-  { title: 'Beramal Ilmiyah', desc: 'Setiap amal didasari oleh ilmu yang benar.' },
-  { title: 'Berakhlakul Karimah', desc: 'Akhlak mulia sebagai mahkota kehidupan.' },
-  { title: 'Berbadan Sehat', desc: 'Jasmani yang kuat sebagai wadah ibadah.' },
-  { title: 'Berwawasan Luas', desc: 'Pemikiran terbuka terhadap ilmu dan peradaban.' },
-];
 interface VisiMisiData {
   visi: string;
   misi: string;
@@ -77,26 +70,9 @@ const VisiMisi = () => {
               )}
             </div>
           </motion.div>
-          {}
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-accent-foreground" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-bold">Panca Jiwa</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {values.map((v, i) => (
-                <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }} className="glass-card p-5 hover-lift">
-                  <h3 className="font-semibold text-primary mb-1">{v.title}</h3>
-                  <p className="text-sm text-muted-foreground">{v.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
         </div>
       </SectionWrapper>
     </>
   );
 };
-export default VisiMisi;
+export default VisiMisi;
