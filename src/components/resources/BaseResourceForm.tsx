@@ -53,24 +53,44 @@ export function BaseResourceForm<T extends FieldValues>({
   });
   useEffect(() => {
     if (itemData) {
-      // Map snake_case to camelCase for form fields
-      const mappedData: Record<string, unknown> = { ...itemData };
+      const mappedData: Record<string, unknown> = {};
       Object.keys(itemData).forEach(key => {
+        let value = itemData[key];
+        if (value === null) {
+          const lowerKey = key.toLowerCase();
+          if (lowerKey.endsWith('id') || lowerKey === 'order') {
+            value = undefined;
+          } else if (lowerKey.startsWith('is') || lowerKey.startsWith('has')) {
+            value = false;
+          } else {
+            value = '';
+          }
+        }
+        
+        mappedData[key] = value;
+
         if (key.includes('_')) {
           const camelKey = key.replace(/([-_][a-z])/gi, ($1) => {
             return $1.toUpperCase().replace('-', '').replace('_', '');
           });
-          mappedData[camelKey] = itemData[key];
+          mappedData[camelKey] = value;
         }
       });
-      form.reset(mappedData);
+      form.reset(mappedData as any);
     }
   }, [itemData, form]);
   const mutation = useMutation({
     mutationFn: (values: T) => {
       const payload = { ...values };
-      // Inject timestamps client-side as fallback
       const mutablePayload = payload as Record<string, unknown>;
+      
+      // Convert empty strings to null so PostgreSQL nullable columns (dates/integers) don't crash on empty values
+      Object.keys(mutablePayload).forEach(key => {
+        if (mutablePayload[key] === '') {
+          mutablePayload[key] = null;
+        }
+      });
+
       if (!mutablePayload.createdAt) {
           mutablePayload.createdAt = new Date().toISOString();
       }
@@ -112,9 +132,11 @@ export function BaseResourceForm<T extends FieldValues>({
     console.error('Form validation failed:', errors);
     const errorKeys = Object.keys(errors);
     if (errorKeys.length > 0) {
-      const firstError = errors[errorKeys[0]];
-      const message = firstError?.message || `Kolom ${errorKeys[0]} tidak valid`;
-      toast.error(`Gagal menyimpan: ${message}`);
+      const errorList = errorKeys.map(key => {
+        const fieldName = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        return `${fieldName}: ${errors[key]?.message || 'Nilai tidak valid'}`;
+      }).join(', ');
+      toast.error(`Validasi gagal: ${errorList}`);
     }
   };
 
