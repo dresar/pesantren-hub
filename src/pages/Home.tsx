@@ -704,25 +704,25 @@ const Home = () => {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="relative rounded-2xl overflow-hidden gradient-primary p-8 md:p-12 text-center islamic-pattern"
+            className="relative rounded-2xl overflow-hidden border border-border bg-gradient-to-br from-primary/10 via-card to-secondary/80 p-8 md:p-12 text-center shadow-glow backdrop-blur-sm"
           >
-            <h2 className="text-2xl md:text-4xl font-bold text-primary-foreground mb-4">
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-4">
               {settings?.ctaTitle || 'Siap Bergabung?'}
             </h2>
-            <p className="text-primary-foreground/80 text-sm md:text-base max-w-lg mx-auto mb-8">
+            <p className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto mb-8">
               {settings?.ctaDescription || 'Daftarkan putra-putri Anda sekarang dan wujudkan generasi yang berilmu, beriman, dan berakhlak mulia.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 to={settings?.ctaPrimaryLink || '/pendaftaran'}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl bg-background text-foreground hover:bg-background/90 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 {settings?.ctaPrimaryText || 'Daftar Sekarang'}
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to={settings?.ctaSecondaryLink || '/kontak'}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl border border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-secondary/80 transition-colors"
               >
                 {settings?.ctaSecondaryText || 'Hubungi Kami'}
               </Link>
