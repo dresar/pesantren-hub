@@ -5,6 +5,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DualImageInput } from '@/components/forms/DualImageInput';
+import { MultiImageInput } from '@/components/forms/MultiImageInput';
 
 const educationSchema = z.object({
   nama: z.string().min(1, 'Nama program harus diisi'),
@@ -127,10 +128,13 @@ export default function EducationFormPage() {
               control={form.control}
               name="galeri"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Galeri Foto Tambahan (Satu Link Gambar Per Baris)</FormLabel>
+                <FormItem className="col-span-full">
                   <FormControl>
-                    <Textarea {...field} rows={4} placeholder="Paste link gambar di sini, pisahkan dengan enter (satu baris satu link)..." />
+                    <MultiImageInput
+                      label="Galeri Foto Tambahan"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

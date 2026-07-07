@@ -1,220 +1,192 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Upload, X, Loader2, Image as ImageIcon, Plus, Link as LinkIcon } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-// Assuming api is available here, or use axios directly
-import { api } from '@/lib/api'; 
+import { Upload, X, Loader2, LayoutGrid, Plus, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import { api } from '@/lib/api';
+import { MediaLibraryModal } from '../media/MediaLibraryModal';
 
 interface MultiImageInputProps {
-  values: string[];
-  onChange: (values: string[]) => void;
+  value?: string; // Newline-separated image URLs
+  onChange: (value: string) => void;
   label?: string;
-  disabled?: boolean;
-  maxFiles?: number;
 }
 
 export function MultiImageInput({
-  values = [],
+  value = '',
   onChange,
-  label = 'Galeri Foto',
-  disabled = false,
-  maxFiles = 10,
+  label = 'Galeri Foto Tambahan',
 }: MultiImageInputProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(false);
-  const [urlInput, setUrlInput] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUrlSubmit = () => {
-    if (!urlInput) return;
-    // Basic URL validation
-    if (!urlInput.match(/^https?:\/\/.+/)) {
-        toast({ title: "URL Tidak Valid", description: "Harus diawali dengan http:// atau https://", variant: "destructive" });
-        return;
-    }
-    
-    if (values.length >= maxFiles) {
-        toast({ title: "Batas Tercapai", description: `Maksimal ${maxFiles} gambar.`, variant: "destructive" });
-        return;
-    }
+  // Parse URLs
+  const urls = value ? value.split('\n').map(u => u.trim()).filter(Boolean) : [];
 
-    onChange([...values, urlInput]);
-    setUrlInput('');
-    setShowUrlInput(false);
-  };
-
-  const handleFileUpload = async (files: FileList | null) => {
+  const handleUploadFiles = async (files: FileList) => {
     if (!files || files.length === 0) return;
 
-    // Filter valid files
-    const validFiles = Array.from(files).filter(file => {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({ title: "Gagal", description: `${file.name} terlalu besar (max 5MB)`, variant: "destructive" });
-        return false;
-      }
-      if (!file.type.startsWith('image/')) {
-        toast({ title: "Gagal", description: `${file.name} bukan gambar`, variant: "destructive" });
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-    if (values.length + validFiles.length > maxFiles) {
-        toast({ title: "Batas Tercapai", description: `Maksimal ${maxFiles} gambar.`, variant: "destructive" });
-        return;
-    }
-
     setIsUploading(true);
-    const newUrls: string[] = [];
+    const toastId = toast.loading(`Mengunggah ${files.length} gambar...`);
+    const newUploadedUrls: string[] = [];
 
     try {
-      // Upload sequentially or parallel
-      for (const file of validFiles) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`File "${file.name}" terlalu besar (maks 5MB)`);
+          continue;
+        }
+        if (!file.type.startsWith('image/')) {
+          toast.error(`File "${file.name}" bukan format gambar`);
+          continue;
+        }
+
         const formData = new FormData();
-        formData.append('file', file); // Adjust field name based on backend
-        
-        // Mock upload or real upload
-        // In real scenario: const res = await api.post('/upload', formData);
-        // For now assuming api exists and works
+        formData.append('file', file);
         const response = await api.post('/upload', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
-        
+
         if (response.data?.url) {
-            newUrls.push(response.data.url);
+          newUploadedUrls.push(response.data.url);
         }
       }
 
-      if (newUrls.length > 0) {
-        onChange([...values, ...newUrls]);
-        toast({ title: "Berhasil", description: `${newUrls.length} gambar berhasil diunggah.` });
+      if (newUploadedUrls.length > 0) {
+        const updatedUrls = [...urls, ...newUploadedUrls];
+        onChange(updatedUrls.join('\n'));
+        toast.success(`Berhasil mengunggah ${newUploadedUrls.length} gambar`, { id: toastId });
+      } else {
+        toast.error('Gagal mengunggah gambar', { id: toastId });
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({ title: "Gagal Upload", description: "Terjadi kesalahan saat mengunggah gambar.", variant: "destructive" });
+    } catch (error: any) {
+      console.error('Bulk upload error:', error);
+      toast.error('Gagal mengunggah gambar', { id: toastId });
     } finally {
       setIsUploading(false);
-      if (inputRef.current) {
-        inputRef.current.value = '';
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
   };
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileUpload(e.target.files);
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      handleUploadFiles(e.target.files);
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files) {
-      handleFileUpload(e.dataTransfer.files);
-    }
+  const handleSelectFromLibrary = (selectedFiles: any[]) => {
+    const selectedUrls = selectedFiles.map(file => file.url);
+    const updatedUrls = [...urls, ...selectedUrls];
+    onChange(updatedUrls.join('\n'));
+    setMediaLibraryOpen(false);
   };
 
-  const removeImage = (index: number) => {
-    const newValues = [...values];
-    newValues.splice(index, 1);
-    onChange(newValues);
+  const handleRemoveImage = (indexToRemove: number) => {
+    const updatedUrls = urls.filter((_, idx) => idx !== indexToRemove);
+    onChange(updatedUrls.join('\n'));
   };
 
   return (
     <div className="space-y-3">
-      {label && (
-        <div className="flex justify-between items-center">
-            <Label>{label} ({values.length}/{maxFiles})</Label>
-            <Button variant="ghost" size="sm" type="button" onClick={() => setShowUrlInput(!showUrlInput)} className="h-6 text-xs">
-                <LinkIcon className="w-3 h-3 mr-1" />
-                {showUrlInput ? 'Tutup URL' : 'Tambah URL'}
-            </Button>
+      <div className="flex items-center justify-between">
+        {label && <Label className="text-sm font-semibold">{label}</Label>}
+        <div className="flex gap-2">
+          {/* Media Library Button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs border-dashed"
+            onClick={() => setMediaLibraryOpen(true)}
+          >
+            <LayoutGrid className="w-3.5 h-3.5 mr-1.5 text-primary" />
+            Pilih dari Galeri
+          </Button>
+
+          {/* Bulk Upload Button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs border-dashed"
+            disabled={isUploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {isUploading ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Upload className="w-3.5 h-3.5 mr-1.5 text-primary" />
+            )}
+            Upload Massal
+          </Button>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
-      )}
-      
-      {showUrlInput && (
-        <div className="flex gap-2 mb-2">
-            <Input 
-                placeholder="https://..." 
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                className="h-8 text-sm"
-            />
-            <Button size="sm" type="button" onClick={handleUrlSubmit} className="h-8">Tambah</Button>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        {values.map((url, index) => (
-          <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
-            <img 
-              src={url} 
-              alt={`Gallery ${index}`} 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=Error';
-              }}
-            />
+      </div>
+
+      {/* Grid Previews */}
+      <div className="border rounded-xl p-4 bg-muted/20 min-h-[120px]">
+        {urls.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-xs gap-1.5">
+            <ImageIcon className="w-8 h-8 opacity-40 text-primary" />
+            <p>Belum ada foto tambahan yang dipilih</p>
+            <p className="text-[10px] text-muted-foreground/80">
+              Gunakan tombol di atas untuk memilih atau mengunggah gambar.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            {urls.map((url, idx) => (
+              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border bg-background group shadow-sm">
+                <img
+                  src={url}
+                  alt={`Preview ${idx + 1}`}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(idx)}
+                  className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[9px] text-white text-center py-0.5">
+                  Foto {idx + 1}
+                </div>
+              </div>
+            ))}
+            
+            {/* Quick Add Square */}
             <button
               type="button"
-              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => removeImage(index)}
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed rounded-lg flex flex-col items-center justify-center aspect-square bg-background/50 hover:bg-background transition-colors text-muted-foreground hover:text-primary gap-1"
             >
-              <X className="w-3 h-3" />
+              <Plus className="w-5 h-5" />
+              <span className="text-[10px] font-medium">Tambah</span>
             </button>
           </div>
-        ))}
-        
-        {/* Upload Button Placeholder */}
-        {values.length < maxFiles && (
-            <div
-                className={cn(
-                "relative flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg cursor-pointer transition-colors bg-muted/30 hover:bg-muted/50",
-                dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50",
-                disabled && "opacity-50 cursor-not-allowed"
-                )}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                onClick={() => inputRef.current?.click()}
-            >
-                <input
-                ref={inputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={onFileChange}
-                accept="image/*"
-                disabled={disabled || isUploading}
-                />
-                {isUploading ? (
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                ) : (
-                <>
-                    <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                    <span className="text-xs text-muted-foreground text-center px-2">
-                        Klik / Drop Gambar
-                    </span>
-                </>
-                )}
-            </div>
         )}
       </div>
+
+      {/* Media Library Selector Modal */}
+      <MediaLibraryModal
+        open={mediaLibraryOpen}
+        onOpenChange={setMediaLibraryOpen}
+        onSelect={handleSelectFromLibrary}
+        mode="select"
+        multiSelect={true}
+      />
     </div>
   );
 }
