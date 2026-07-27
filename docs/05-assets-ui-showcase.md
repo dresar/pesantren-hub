@@ -10,7 +10,11 @@ This document presents the visual interface showcase of **Pesantren Hub**, docum
 
 Below is the recorded video demonstration showcasing the live user experience, smooth navigation transitions, and administrative features of Pesantren Hub.
 
-![Pesantren Hub Interactive Web Application Demo](../asset/Macbook-Air-localhost-ie2znc--2clx7h.webm)
+<video src="../asset/Macbook-Air-localhost-ie2znc--2clx7h.webm" controls width="100%" preload="metadata">
+  Your browser does not support the video tag.
+</video>
+
+> 💡 *If the video player does not render automatically in your GitHub view, click [here](../asset/Macbook-Air-localhost-ie2znc--2clx7h.webm) to watch or download the file.*
 
 ---
 

@@ -10,7 +10,11 @@
 
 Saksikan rekaman simulasi dan navigasi interaktif aplikasi **Pesantren Hub**:
 
-![Pesantren Hub Video Demo](asset/Macbook-Air-localhost-ie2znc--2clx7h.webm)
+<video src="asset/Macbook-Air-localhost-ie2znc--2clx7h.webm" controls width="100%" preload="metadata">
+  Your browser does not support the video tag.
+</video>
+
+> 💡 *Jika player video di atas tidak muncul secara otomatis di GitHub, Anda dapat memutar atau mengunduh video secara langsung [di sini](asset/Macbook-Air-localhost-ie2znc--2clx7h.webm).*
 
 ---
 

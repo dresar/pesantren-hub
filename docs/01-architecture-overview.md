@@ -12,23 +12,23 @@ Built with performance, security, and scalability in mind, Pesantren Hub uses a 
 
 ```mermaid
 graph TD
-    Client[Web Browser / Mobile Client] -->|HTTPS / JSON API| Frontend[React 18 + Vite Frontend]
-    Frontend -->|HTTP REST Endpoints| API Gateway[Hono API Framework]
+    Client["Web Browser / Mobile Client"] -->|HTTPS / JSON API| Frontend["React 18 + Vite Frontend"]
+    Frontend -->|HTTP REST Endpoints| APIGateway["Hono API Framework"]
     
-    subgraph "Backend API Layer (Hono Engine)"
-        API Gateway --> AuthMod[Auth Module]
-        API Gateway --> AdminMod[Admin Module]
-        API Gateway --> SantriMod[Santri Module]
-        API Gateway --> KmiMod[KMI Academic Module]
-        API Gateway --> PsbMod[PSB Admissions Module]
-        API Gateway --> PubMod[Publication Module]
-        API Gateway --> PayMod[Payments Module]
-        API Gateway --> CoreMod[Core & Media Module]
+    subgraph Backend["Backend API Layer (Hono Engine)"]
+        APIGateway --> AuthMod["Auth Module"]
+        APIGateway --> AdminMod["Admin Module"]
+        APIGateway --> SantriMod["Santri Module"]
+        APIGateway --> KmiMod["KMI Academic Module"]
+        APIGateway --> PsbMod["PSB Admissions Module"]
+        APIGateway --> PubMod["Publication Module"]
+        APIGateway --> PayMod["Payments Module"]
+        APIGateway --> CoreMod["Core & Media Module"]
     end
 
-    subgraph "Data & Persistence Layer"
-        AuthMod & AdminMod & SantriMod & KmiMod & PsbMod & PubMod & PayMod & CoreMod -->|Drizzle ORM| DB[(Neon PostgreSQL DB)]
-        CoreMod -->|File Storage| Disk[Local Uploads / Cloud Storage]
+    subgraph DataLayer["Data & Persistence Layer"]
+        AuthMod & AdminMod & SantriMod & KmiMod & PsbMod & PubMod & PayMod & CoreMod -->|Drizzle ORM| DB[("Neon PostgreSQL DB")]
+        CoreMod -->|File Storage| Disk["Local Uploads / Cloud Storage"]
     end
 ```
 
