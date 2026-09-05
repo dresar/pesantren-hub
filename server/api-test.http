@@ -1,0 +1,144 @@
+@baseUrl = https://backend.rdsmahato.ponpes.id
+
+### Health Check (Root)
+GET {{baseUrl}}/
+
+### Health Check (/health)
+GET {{baseUrl}}/health
+
+# =========================================
+# CORE API
+# =========================================
+
+### Core Health
+GET {{baseUrl}}/api/core/health
+
+# =========================================
+# AUTH API
+# =========================================
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+### Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "New User",
+  "email": "newuser@example.com",
+  "password": "password123"
+}
+
+### Get Current User (requires auth)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer YOUR_TOKEN_HERE
+
+# =========================================
+# USERS API
+# =========================================
+
+### Get User Profile
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Update User Profile
+PUT {{baseUrl}}/api/users/me
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "Updated Name"
+}
+
+### Update Password
+PUT {{baseUrl}}/api/users/me/password
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "currentPassword": "oldpassword",
+  "newPassword": "newpassword123"
+}
+
+# =========================================
+# SANTRI API
+# =========================================
+
+### Santri Dashboard
+GET {{baseUrl}}/api/santri/dashboard
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Santri Registration Status
+GET {{baseUrl}}/api/santri/registration-status
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Santri Registration Submission
+POST {{baseUrl}}/api/santri/registration
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "fullName": "Ahmad Santri",
+  "nisn": "1234567890",
+  "birthDate": "2010-01-01",
+  "gender": "L"
+}
+
+### Bank Accounts
+GET {{baseUrl}}/api/santri/bank-accounts
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Payments List
+GET {{baseUrl}}/api/santri/payment
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Make Payment
+POST {{baseUrl}}/api/santri/payments
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "amount": 100000,
+  "method": "transfer"
+}
+
+### Notifications
+GET {{baseUrl}}/api/santri/notifications
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Schedule
+GET {{baseUrl}}/api/santri/schedule
+Authorization: Bearer YOUR_TOKEN_HERE
+
+# =========================================
+# PSB (Penerimaan Santri Baru) API
+# =========================================
+
+### Get Admissions
+GET {{baseUrl}}/api/psb/admissions
+
+# =========================================
+# ADMIN API
+# =========================================
+
+### Admin Dashboard
+GET {{baseUrl}}/api/admin/dashboard
+Authorization: Bearer YOUR_ADMIN_TOKEN_HERE
+
+### List Users
+GET {{baseUrl}}/api/admin/users
+Authorization: Bearer YOUR_ADMIN_TOKEN_HERE
+
+# =========================================
+# PUBLICATION API
+# =========================================
+
+### List Publications
+GET {{baseUrl}}/api/publication/articles

@@ -1,0 +1,1079 @@
+import { Hono } from 'hono';
+import { db } from '../../db';
+import { eq, asc, desc, sql, and, count, ilike } from 'drizzle-orm';
+import { 
+  websiteSettings, faq, programs, whatsappTemplates, whatsappTemplateCategories, 
+  kontak, heroSection, sejarahTimeline, sejarahTimelineImages, visiMisi, 
+  programPendidikan, programPendidikanImages, fasilitas, ekstrakurikuler, 
+  ekstrakurikulerImages, dokumentasi, dokumentasiImages, jadwalHarian, 
+  persyaratan, alurPendaftaran, biayaPendidikan, contactPersons, socialMedia, 
+  seragam, statistik, media, bagianJabatan, tenagaPengajar, informasiTambahan,
+  websiteRegistrationFlow,
+  founders,
+  strukturOrganisasi,
+  formConfig
+} from '../../db/schema';
+import { encrypt, decrypt } from '../../utils/encryption';
+import { zValidator } from '@hono/zod-validator';
+import { adminMiddleware } from '../../middleware/auth';
+import { 
+  updateWebsiteSettingsSchema, createFaqSchema, updateFaqSchema, 
+  createProgramSchema, updateProgramSchema, createWhatsAppTemplateSchema, 
+  updateWhatsAppTemplateSchema, createKontakSchema, replyKontakSchema, 
+  createHeroSectionSchema, updateHeroSectionSchema, createSejarahTimelineSchema, 
+  updateSejarahTimelineSchema, updateVisiMisiSchema, createProgramPendidikanSchema, 
+  updateProgramPendidikanSchema, createFasilitasSchema, updateFasilitasSchema, 
+  createEkstrakurikulerSchema, updateEkstrakurikulerSchema, createDokumentasiSchema, 
+  updateDokumentasiSchema, createJadwalHarianSchema, updateJadwalHarianSchema, 
+  updatePersyaratanSchema, updateAlurPendaftaranSchema, createBiayaPendidikanSchema, 
+  updateBiayaPendidikanSchema, createContactPersonSchema, updateContactPersonSchema, 
+  createSocialMediaSchema, updateSocialMediaSchema, createSeragamSchema, 
+  updateSeragamSchema, createStatistikSchema, updateStatistikSchema, 
+  createMediaSchema, updateMediaSchema, createBagianJabatanSchema, 
+  updateBagianJabatanSchema, createTenagaPengajarSchema, updateTenagaPengajarSchema, 
+  createInformasiTambahanSchema, updateInformasiTambahanSchema,
+  createWebsiteRegistrationFlowSchema, updateWebsiteRegistrationFlowSchema,
+  createFounderSchema, updateFounderSchema
+} from './core.schema';
+const core = new Hono();
+core.get('/health/db', async (c) => {
+  try {
+    const res = await db.execute(sql`SELECT 1 as ok`);
+    // Check if the result is in the expected format for Postgres
+    const isOk = res.rows ? res.rows[0]?.ok === 1 : (res as any)[0]?.ok === 1; 
+    return c.json({ ok: isOk });
+  } catch (e: any) {
+    console.error('Health Check Error:', e);
+    return c.json({ ok: false, error: e?.message }, 500);
+  }
+});
+core.get('/last-updates', async (c) => {
+  try {
+    const settings = await db.select({ updatedAt: websiteSettings.updatedAt }).from(websiteSettings).limit(1);
+    const lastUpdate = settings.length > 0 ? settings[0].updatedAt : new Date().toISOString();
+    return c.json({
+      timestamp: lastUpdate,
+      serverTime: new Date().toISOString()
+    });
+  } catch (e) {
+    return c.json({ timestamp: new Date().toISOString() });
+  }
+});
+core.get('/settings', async (c) => {
+  try {
+    const settings = await db.select().from(websiteSettings).limit(1);
+    if (settings.length === 0) {
+      try {
+        const [newSettings] = await db.insert(websiteSettings).values({
+          namaPondok: 'Pondok Pesantren',
+          arabicName: 'Ø§Ù„Ù…Ø¹Ù‡Ø¯ Ø§Ù„Ø¥Ø³Ù„Ø§Ù…ÙŠ',
+          alamat: 'Jl. Contoh No. 123',
+          noTelepon: '08123456789',
+          email: 'admin@pesantren.com',
+          website: 'https://pesantren.com',
+          facebook: 'https://facebook.com',
+          instagram: 'https://instagram.com',
+          twitter: 'https://twitter.com',
+          tiktok: 'https://tiktok.com',
+          heroTitle: 'Selamat Datang',
+          heroSubtitle: 'Membangun Generasi Rabbani',
+          heroTagline: 'Berilmu, Beramal, Bertaqwa',
+          heroCtaPrimaryText: 'Daftar Sekarang',
+          heroCtaPrimaryLink: '/register',
+          heroCtaSecondaryText: 'Tentang Kami',
+          heroCtaSecondaryLink: '/about',
+          announcementText: 'Pendaftaran Tahun Ajaran 2025/2026 Dibuka',
+          announcementLink: '/pendaftaran',
+          announcementActive: true,
+          lokasiPendaftaran: 'Kantor Sekretariat',
+          googleMapsLink: 'https://maps.google.com',
+          googleMapsEmbedCode: '',
+          deskripsi: 'Deskripsi singkat pondok pesantren.',
+          metaTitle: 'Pondok Pesantren',
+          metaDescription: 'Website Resmi Pondok Pesantren',
+          metaKeywords: 'pesantren, pondok, islam',
+          updatedAt: new Date().toISOString(),
+          headerMobileHeight: 60,
+          maintenanceMessage: 'Website sedang dalam perbaikan.',
+          maintenanceMode: false
+        } as any).returning();
+        return c.json(newSettings);
+      } catch (err) {
+        console.error('Failed to init settings:', err);
+        throw err;
+      }
+    }
+    return c.json(settings[0]);
+  } catch (e) {
+    console.error('Core /settings error:', e);
+    return c.json({
+      namaPondok: '',
+      heroTitle: '',
+      heroSubtitle: '',
+      heroTagline: '',
+      announcementText: '',
+      announcementActive: false,
+    });
+  }
+});
+core.put('/settings', adminMiddleware, zValidator('json', updateWebsiteSettingsSchema), async (c) => {
+  const data = c.req.valid('json');
+  const settings = await db.select().from(websiteSettings).limit(1);
+  if (settings.length === 0) {
+    const [newSettings] = await db.insert(websiteSettings).values(data as any).returning();
+    return c.json(newSettings);
+  } else {
+    await db.update(websiteSettings)
+      .set({ ...data, updatedAt: new Date().toISOString() })
+      .where(eq(websiteSettings.id, settings[0].id));
+    const [updated] = await db.select().from(websiteSettings).where(eq(websiteSettings.id, settings[0].id));
+    return c.json(updated);
+  }
+});
+core.get('/faq', async (c) => {
+  const data = await db.select().from(faq).orderBy(asc(faq.order));
+  return c.json(data);
+});
+core.post('/faq', adminMiddleware, zValidator('json', createFaqSchema), async (c) => {
+  const data = c.req.valid('json');
+  const [item] = await db.insert(faq).values({
+    ...data,
+    createdAt: new Date().toISOString()
+  } as any).returning();
+  return c.json(item);
+});
+core.put('/faq/:id', adminMiddleware, zValidator('json', updateFaqSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  await db.update(faq).set(data).where(eq(faq.id, id));
+  const [item] = await db.select().from(faq).where(eq(faq.id, id));
+  return c.json(item);
+});
+core.delete('/faq/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(faq).where(eq(faq.id, id));
+  return c.json({ message: 'Deleted' });
+});
+core.get('/programs', async (c) => {
+  try {
+    const data = await db.select().from(programs).orderBy(asc(programs.order));
+    return c.json(data);
+  } catch (e) {
+    console.error('Core /programs error:', e);
+    return c.json([]);
+  }
+});
+core.get('/programs/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id') as string);
+    const [item] = await db.select().from(programs).where(eq(programs.id, id));
+    if (!item) {
+      return c.json({ error: 'Program not found' }, 404);
+    }
+    return c.json(item);
+  } catch (e) {
+    console.error('Core GET /programs/:id error:', e);
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+core.post('/programs', adminMiddleware, zValidator('json', createProgramSchema), async (c) => {
+  const data = c.req.valid('json');
+  
+  // Generate slug from nama if not provided
+  let slug = data.slug;
+  if (!slug || slug.trim() === '') {
+    slug = data.nama.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+      
+    if (!slug) {
+        slug = `program-${Date.now()}`;
+    }
+  }
+
+  // Ensure slug is unique
+  const existing = await db.select().from(programs).where(eq(programs.slug, slug));
+  if (existing.length > 0) {
+    slug = `${slug}-${Date.now()}`;
+  }
+
+  // @ts-ignore
+  const [item] = await db.insert(programs).values({
+    ...data,
+    slug,
+    status: data.status || 'published',
+    isFeatured: data.isFeatured ?? false,
+    metaTitle: data.metaTitle || data.nama,
+    metaDescription: data.metaDescription || data.deskripsi.substring(0, 150),
+    order: data.order ?? 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }).returning();
+  return c.json(item);
+});
+core.put('/programs/:id', adminMiddleware, zValidator('json', updateProgramSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+   const formattedData = {
+    ...data,
+    tanggalMulai: data.tanggalMulai ? new Date(data.tanggalMulai) : undefined,
+    tanggalSelesai: data.tanggalSelesai ? new Date(data.tanggalSelesai) : undefined,
+    updatedAt: new Date().toISOString()
+  };
+  await db.update(programs).set(formattedData as any).where(eq(programs.id, id));
+  const [item] = await db.select().from(programs).where(eq(programs.id, id));
+  return c.json(item);
+});
+core.delete('/programs/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(programs).where(eq(programs.id, id));
+  return c.json({ message: 'Deleted' });
+});
+core.post('/contact', zValidator('json', createKontakSchema), async (c) => {
+  const data = c.req.valid('json');
+  // @ts-ignore
+  const [insertedContact] = await db.insert(kontak).values({
+    ...data,
+    status: 'pending',
+    balasan: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }).returning();
+  return c.json(insertedContact);
+});
+core.get('/contact', adminMiddleware, async (c) => {
+  const data = await db.select().from(kontak).orderBy(desc(kontak.createdAt));
+  return c.json(data);
+});
+core.put('/contact/:id/reply', adminMiddleware, zValidator('json', replyKontakSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  await db.update(kontak).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(kontak.id, id));
+  const [item] = await db.select().from(kontak).where(eq(kontak.id, id));
+  return c.json(item);
+});
+core.get('/hero', async (c) => {
+  try {
+    const data = await db.select().from(heroSection).orderBy(asc(heroSection.order));
+    if (data.length === 0) {
+      const [insertedHero] = await db.insert(heroSection).values({
+        title: 'Selamat Datang',
+        subtitle: 'Membangun Generasi Rabbani',
+        image: '',
+        order: 1,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      }).returning();
+      return c.json([insertedHero]);
+    }
+    return c.json(data);
+  } catch (e) {
+    console.error('Core /hero error:', e);
+    return c.json([]);
+  }
+});
+core.post('/hero', adminMiddleware, zValidator('json', createHeroSectionSchema), async (c) => {
+  const data = c.req.valid('json');
+  // @ts-ignore
+  const [item] = await db.insert(heroSection).values({
+    ...data,
+    createdAt: new Date().toISOString()
+  }).returning();
+  return c.json(item);
+});
+core.put('/hero/:id', adminMiddleware, zValidator('json', updateHeroSectionSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  await db.update(heroSection).set(data).where(eq(heroSection.id, id));
+  const [item] = await db.select().from(heroSection).where(eq(heroSection.id, id));
+  return c.json(item);
+});
+core.get('/hero/:id', async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const item = await db.select().from(heroSection).where(eq(heroSection.id, id));
+  if (item.length === 0) {
+    return c.json({ error: 'Not found' }, 404);
+  }
+  return c.json(item[0]);
+});
+core.delete('/hero/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(heroSection).where(eq(heroSection.id, id));
+  return c.json({ message: 'Deleted' });
+});
+core.get('/whatsapp-templates', async (c) => {
+  const data = await db.select().from(whatsappTemplates).orderBy(asc(whatsappTemplates.order));
+  return c.json(data);
+});
+core.post('/whatsapp-templates', adminMiddleware, zValidator('json', createWhatsAppTemplateSchema), async (c) => {
+  const data = c.req.valid('json');
+  // @ts-ignore
+  const [insertedTemplate] = await db.insert(whatsappTemplates).values({
+    ...data,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }).returning();
+  return c.json(insertedTemplate);
+});
+core.put('/whatsapp-templates/:id', adminMiddleware, zValidator('json', updateWhatsAppTemplateSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  await db.update(whatsappTemplates).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(whatsappTemplates.id, id));
+  const [item] = await db.select().from(whatsappTemplates).where(eq(whatsappTemplates.id, id));
+  return c.json(item);
+});
+core.delete('/whatsapp-templates/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(whatsappTemplates).where(eq(whatsappTemplates.id, id));
+  return c.json({ message: 'Deleted' });
+});
+core.get('/visi-misi', async (c) => {
+  try {
+    const result = await db.execute(sql`SELECT id, visi, misi, updated_at as "updatedAt" FROM core_visimisi LIMIT 1`);
+    const rows = result.rows;
+    if (rows.length === 0) {
+      await db.execute(sql`INSERT INTO core_visimisi (visi, misi, updated_at) VALUES ('', '', NOW())`);
+      const newResult = await db.execute(sql`SELECT id, visi, misi, updated_at as "updatedAt" FROM core_visimisi LIMIT 1`);
+      return c.json(newResult.rows[0]);
+    }
+    return c.json(rows[0]);
+  } catch (e: any) {
+    console.error('VisiMisi Fetch Error:', e);
+    return c.json({ visi: '', misi: '', updatedAt: new Date() });
+  }
+});
+core.put('/visi-misi', adminMiddleware, zValidator('json', updateVisiMisiSchema), async (c) => {
+  const data = c.req.valid('json');
+  try {
+    const result = await db.execute(sql`SELECT id FROM core_visimisi LIMIT 1`);
+    const rows = result.rows;
+    if (rows.length === 0) {
+      await db.execute(sql`INSERT INTO core_visimisi (visi, misi, updated_at) VALUES (${data.visi}, ${data.misi}, NOW())`);
+    } else {
+      await db.execute(sql`UPDATE core_visimisi SET visi = ${data.visi}, misi = ${data.misi}, updated_at = NOW() WHERE id = ${rows[0].id}`);
+    }
+    const updatedResult = await db.execute(sql`SELECT id, visi, misi, updated_at as "updatedAt" FROM core_visimisi LIMIT 1`);
+    return c.json(updatedResult.rows[0]);
+  } catch (e: any) {
+    console.error('VisiMisi Update Error:', e);
+    return c.json({ error: 'Failed to update Visi Misi: ' + e.message }, 500);
+  }
+});
+core.get('/tenaga-pengajar', async (c) => {
+  const search = c.req.query('search');
+  const page = parseInt(c.req.query('page') || '1');
+  const limit = parseInt(c.req.query('limit') || '12');
+  const isPublished = c.req.query('isPublished') === 'true';
+  const offset = (page - 1) * limit;
+
+  let whereClause = undefined;
+  if (search) {
+    whereClause = ilike(tenagaPengajar.namaLengkap, `%${search}%`);
+  }
+  
+  if (isPublished) {
+    whereClause = whereClause ? and(whereClause, eq(tenagaPengajar.isPublished, true)) : eq(tenagaPengajar.isPublished, true);
+  }
+
+  const query = db.select().from(tenagaPengajar);
+  if (whereClause) query.where(whereClause);
+  
+  const totalResult = await db.select({ count: sql<number>`count(*)` }).from(tenagaPengajar).where(whereClause || sql`true`);
+  const total = Number(totalResult[0].count);
+
+  const data = await query
+    .orderBy(asc(tenagaPengajar.order))
+    .limit(limit)
+    .offset(offset);
+
+  return c.json({
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
+});
+core.post('/tenaga-pengajar', adminMiddleware, zValidator('json', createTenagaPengajarSchema), async (c) => {
+  const data = c.req.valid('json');
+  const [insertedTeacher] = await db.insert(tenagaPengajar).values(data as any).returning();
+  return c.json(insertedTeacher);
+});
+core.put('/tenaga-pengajar/:id', adminMiddleware, zValidator('json', updateTenagaPengajarSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  // @ts-ignore
+  await db.update(tenagaPengajar).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(tenagaPengajar.id, id));
+  const [item] = await db.select().from(tenagaPengajar).where(eq(tenagaPengajar.id, id));
+  return c.json(item);
+});
+core.delete('/tenaga-pengajar/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(tenagaPengajar).where(eq(tenagaPengajar.id, id));
+  return c.json({ message: 'Deleted' });
+});
+const createSimpleCrud = (path: string, table: any, createSchema: any, updateSchema: any, orderByField: any = null) => {
+  core.get(`/${path}`, async (c) => {
+    try {
+      let query = db.select().from(table);
+      if (orderByField) {
+        query = (query as any).orderBy(asc(orderByField));
+      }
+      const data = await (query as any);
+      return c.json(data);
+    } catch (e) {
+      console.error(`Core /${path} error:`, e);
+      return c.json([]);
+    }
+  });
+  core.get(`/${path}/:id`, async (c) => {
+    const id = parseInt(c.req.param('id') as string);
+    try {
+      const data = await db.select().from(table).where(eq(table.id, id));
+      if (data.length === 0) {
+        return c.json({ error: 'Not found' }, 404);
+      }
+      return c.json(data[0]);
+    } catch (e) {
+      console.error(`Core /${path}/:id error:`, e);
+      return c.json({ error: 'Internal Server Error' }, 500);
+    }
+  });
+  core.post(`/${path}`, adminMiddleware, zValidator('json', createSchema), async (c) => {
+    const data = c.req.valid('json');
+    const insertData = { ...data };
+    
+    // Ensure numeric fields are numbers (specifically for order)
+    if (insertData.order && typeof insertData.order === 'string') {
+        insertData.order = parseInt(insertData.order, 10);
+    }
+    
+    if ('createdAt' in table) insertData.createdAt = new Date().toISOString();
+    
+    // Generic order fallback for all simple cruds if table has order column
+    if ((insertData.order === undefined || insertData.order === null) && 'order' in table) {
+        insertData.order = 0;
+    }
+
+    // Auto-active for simple CRUDs if applicable
+    if ('isActive' in table && insertData.isActive === undefined) {
+        insertData.isActive = true;
+    }
+    if ('isPublished' in table && insertData.isPublished === undefined) {
+        insertData.isPublished = true;
+    }
+
+    if (path === 'jadwal-harian') {
+        if (!insertData.target) {
+            insertData.target = 'semua';
+        }
+        if (!insertData.kategori) {
+            insertData.kategori = 'kegiatan';
+        }
+    }
+
+    // Handle specific logic for program-pendidikan
+    if (path === 'program-pendidikan') {
+        // Ensure order is set if not provided
+        if (insertData.order === undefined || insertData.order === null) {
+            insertData.order = 0;
+        }
+        // Ensure akreditasi has default if missing (though schema might optional it)
+        if (!insertData.akreditasi) {
+            insertData.akreditasi = 'Belum Terakreditasi';
+        }
+    }
+
+    const [inserted] = (await db.insert(table).values(insertData as any).returning()) as any[];
+    return c.json(inserted);
+  });
+  core.put(`/${path}/:id`, adminMiddleware, zValidator('json', updateSchema), async (c) => {
+    const id = parseInt(c.req.param('id') as string);
+    const data = c.req.valid('json');
+    const updateData = { ...data };
+    if ('updatedAt' in table) {
+      updateData.updatedAt = new Date().toISOString();
+    }
+    const updatedRes = await db.update(table).set(updateData as any).where(eq(table.id, id)).returning();
+    const updated = Array.isArray(updatedRes) ? updatedRes[0] : (updatedRes as any).rows[0];
+    return c.json(updated);
+  });
+  core.delete(`/${path}/:id`, adminMiddleware, async (c) => {
+    const id = parseInt(c.req.param('id') as string);
+    await db.delete(table).where(eq(table.id, id));
+    return c.json({ message: 'Deleted' });
+  });
+};
+// program-pendidikan: custom GET with images, keep CRUD from createSimpleCrud except GET
+core.get('/program-pendidikan', async (c) => {
+  try {
+    const items = await db.select().from(programPendidikan).orderBy(asc(programPendidikan.order));
+    const images = await db.select().from(programPendidikanImages).orderBy(asc(programPendidikanImages.order));
+    const result = items.map(item => ({
+      ...item,
+      images: images.filter(img => img.programId === item.id).slice(0, 3),
+    }));
+    return c.json(result);
+  } catch (e) {
+    console.error('Core /program-pendidikan error:', e);
+    return c.json([]);
+  }
+});
+core.get('/program-pendidikan/:id', async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  try {
+    const [item] = await db.select().from(programPendidikan).where(eq(programPendidikan.id, id));
+    if (!item) return c.json({ error: 'Not found' }, 404);
+    const images = await db.select().from(programPendidikanImages)
+      .where(eq(programPendidikanImages.programId, id))
+      .orderBy(asc(programPendidikanImages.order));
+    return c.json({ ...item, images: images.slice(0, 3) });
+  } catch (e) {
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+core.post('/program-pendidikan', adminMiddleware, zValidator('json', createProgramPendidikanSchema), async (c) => {
+  const data = c.req.valid('json');
+  const insertData: any = { ...data, createdAt: new Date().toISOString() };
+  if (!insertData.akreditasi) insertData.akreditasi = 'Belum Terakreditasi';
+  if (insertData.order === undefined) insertData.order = 0;
+  const [inserted] = await db.insert(programPendidikan).values(insertData).returning();
+  return c.json(inserted);
+});
+core.put('/program-pendidikan/:id', adminMiddleware, zValidator('json', updateProgramPendidikanSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  const [updated] = await db.update(programPendidikan).set(data as any).where(eq(programPendidikan.id, id)).returning();
+  return c.json(updated);
+});
+core.delete('/program-pendidikan/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(programPendidikanImages).where(eq(programPendidikanImages.programId, id));
+  await db.delete(programPendidikan).where(eq(programPendidikan.id, id));
+  return c.json({ message: 'Deleted' });
+});
+// programs (jenjang) GET also includes gambar field
+createSimpleCrud('fasilitas', fasilitas, createFasilitasSchema, updateFasilitasSchema, fasilitas.order);
+core.get('/sejarah-timeline', async (c) => {
+  try {
+    const timelineEvents = await db.select().from(sejarahTimeline).orderBy(asc(sejarahTimeline.order));
+    const images = await db.select().from(sejarahTimelineImages).orderBy(asc(sejarahTimelineImages.order));
+    const eventsWithImages = timelineEvents.map(event => {
+      const eventImages = images.filter(img => img.timelineId === event.id);
+      return {
+        ...event,
+        images: eventImages
+      };
+    });
+    return c.json(eventsWithImages);
+  } catch (e) {
+    console.error('Core /sejarah-timeline error:', e);
+  }
+});
+core.get('/sejarah-timeline/:id', async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  try {
+    const [event] = await db.select().from(sejarahTimeline).where(eq(sejarahTimeline.id, id));
+    if (!event) return c.json({ error: 'Not found' }, 404);
+    
+    const eventImages = await db.select().from(sejarahTimelineImages)
+      .where(eq(sejarahTimelineImages.timelineId, id))
+      .orderBy(asc(sejarahTimelineImages.order));
+      
+    return c.json({
+      ...event,
+      images: eventImages.map(img => img.gambar)
+    });
+  } catch (e) {
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+core.post('/sejarah-timeline', adminMiddleware, zValidator('json', createSejarahTimelineSchema), async (c) => {
+  const data = c.req.valid('json');
+  const { images, ...timelineData } = data;
+  // @ts-ignore
+  const [insertedTimeline] = await db.insert(sejarahTimeline).values({
+    ...timelineData,
+    icon: timelineData.icon || 'circle',
+    createdAt: new Date().toISOString()
+  } as any).returning();
+  const timelineId = insertedTimeline.id;
+  if (images && images.length > 0) {
+    // @ts-ignore
+    await db.insert(sejarahTimelineImages).values(
+      images.map((img, index) => ({
+        timelineId: timelineId,
+        gambar: img,
+        order: index,
+        createdAt: new Date().toISOString()
+      }))
+    );
+  }
+  const item = await db.query.sejarahTimeline.findFirst({
+    where: eq(sejarahTimeline.id, timelineId),
+    with: { images: true }
+  });
+  return c.json(item);
+});
+core.put('/sejarah-timeline/:id', adminMiddleware, zValidator('json', updateSejarahTimelineSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  const { images, ...timelineData } = data;
+  await db.update(sejarahTimeline).set(timelineData).where(eq(sejarahTimeline.id, id));
+  if (images !== undefined) {
+    await db.delete(sejarahTimelineImages).where(eq(sejarahTimelineImages.timelineId, id));
+    if (images.length > 0) {
+      // @ts-ignore
+      await db.insert(sejarahTimelineImages).values(
+        images.map((img, index) => ({
+          timelineId: id,
+          gambar: img,
+          order: index,
+          createdAt: new Date().toISOString()
+        }))
+      );
+    }
+  }
+  const item = await db.query.sejarahTimeline.findFirst({
+    where: eq(sejarahTimeline.id, id),
+    with: { images: true }
+  });
+  return c.json(item);
+});
+core.delete('/sejarah-timeline/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(sejarahTimelineImages).where(eq(sejarahTimelineImages.timelineId, id));
+  await db.delete(sejarahTimeline).where(eq(sejarahTimeline.id, id));
+  return c.json({ message: 'Deleted' });
+});
+// ===== EKSTRAKURIKULER: Custom CRUD with pagination and images =====
+core.get('/ekstrakurikuler', async (c) => {
+  const page = parseInt(c.req.query('page') || '1');
+  const limit = parseInt(c.req.query('limit') || '20');
+  const offset = (page - 1) * limit;
+
+  try {
+    const totalResult = await db.select({ count: sql<number>`count(*)` }).from(ekstrakurikuler);
+    const total = Number(totalResult[0].count);
+
+    const items = await db.select().from(ekstrakurikuler)
+      .orderBy(asc(ekstrakurikuler.order))
+      .limit(limit)
+      .offset(offset);
+
+    const images = await db.select().from(ekstrakurikulerImages)
+      .orderBy(asc(ekstrakurikulerImages.order));
+
+    const result = items.map(item => ({
+      ...item,
+      images: images.filter(img => img.ekstrakurikulerId === item.id)
+    }));
+
+    return c.json({
+      data: result,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (e) {
+    console.error('Core /ekstrakurikuler error:', e);
+    return c.json({ data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } });
+  }
+});
+
+core.get('/ekstrakurikuler/:id', async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  try {
+    const [item] = await db.select().from(ekstrakurikuler).where(eq(ekstrakurikuler.id, id));
+    if (!item) return c.json({ error: 'Not found' }, 404);
+    
+    const images = await db.select().from(ekstrakurikulerImages)
+      .where(eq(ekstrakurikulerImages.ekstrakurikulerId, id))
+      .orderBy(asc(ekstrakurikulerImages.order));
+      
+    return c.json({ ...item, images });
+  } catch (e) {
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+
+core.post('/ekstrakurikuler', adminMiddleware, zValidator('json', createEkstrakurikulerSchema), async (c) => {
+  const data = c.req.valid('json');
+  const { images, ...extraData } = data;
+  
+  // @ts-ignore
+  const [inserted] = await db.insert(ekstrakurikuler).values({
+    ...extraData,
+    createdAt: new Date().toISOString()
+  } as any).returning();
+  
+  const extraId = inserted.id;
+  if (images && images.length > 0) {
+    await db.insert(ekstrakurikulerImages).values(
+      images.map((img, index) => ({
+        ekstrakurikulerId: extraId,
+        gambar: img,
+        altText: extraData.nama,
+        order: index,
+        createdAt: new Date().toISOString()
+      }))
+    );
+  }
+  
+  const item = await db.query.ekstrakurikuler.findFirst({
+    where: eq(ekstrakurikuler.id, extraId),
+    with: { images: true }
+  });
+  return c.json(item);
+});
+
+core.put('/ekstrakurikuler/:id', adminMiddleware, zValidator('json', updateEkstrakurikulerSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  const { images, ...extraData } = data;
+  
+  await db.update(ekstrakurikuler).set(extraData as any).where(eq(ekstrakurikuler.id, id));
+  
+  if (images !== undefined) {
+    await db.delete(ekstrakurikulerImages).where(eq(ekstrakurikulerImages.ekstrakurikulerId, id));
+    if (images.length > 0) {
+      await db.insert(ekstrakurikulerImages).values(
+        images.map((img, index) => ({
+          ekstrakurikulerId: id,
+          gambar: img,
+          altText: extraData.nama || '',
+          order: index,
+          createdAt: new Date().toISOString()
+        }))
+      );
+    }
+  }
+  
+  const item = await db.query.ekstrakurikuler.findFirst({
+    where: eq(ekstrakurikuler.id, id),
+    with: { images: true }
+  });
+  return c.json(item);
+});
+
+core.delete('/ekstrakurikuler/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(ekstrakurikulerImages).where(eq(ekstrakurikulerImages.ekstrakurikulerId, id));
+  await db.delete(ekstrakurikuler).where(eq(ekstrakurikuler.id, id));
+  return c.json({ message: 'Deleted' });
+});
+core.get('/dokumentasi', async (c) => {
+  try {
+    const items = await db.query.dokumentasi.findMany({
+      where: eq(dokumentasi.isPublished, true),
+      with: { images: true },
+      orderBy: [desc(dokumentasi.createdAt)]
+    });
+    return c.json(items);
+  } catch (e) {
+    console.error('Core /dokumentasi error:', e);
+    return c.json([]);
+  }
+});
+
+core.get('/dokumentasi/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id') as string);
+    const item = await db.query.dokumentasi.findFirst({
+      where: and(
+        eq(dokumentasi.id, id),
+        eq(dokumentasi.isPublished, true)
+      ),
+      with: { images: true }
+    });
+    
+    if (!item) return c.json({ error: 'Not found or unpublished' }, 404);
+    return c.json(item);
+  } catch (e) {
+    console.error('Core /dokumentasi/:id error:', e);
+    return c.json({ error: 'Server error' }, 500);
+  }
+});
+core.post('/dokumentasi', adminMiddleware, zValidator('json', createDokumentasiSchema), async (c) => {
+  const data = c.req.valid('json');
+  const { images, ...docData } = data;
+  // @ts-ignore
+  const [inserted] = await db.insert(dokumentasi).values({
+    ...docData,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  } as any).returning();
+  const docId = inserted.id;
+  if (images && images.length > 0) {
+    await db.insert(dokumentasiImages).values(
+      images.map((img, index) => ({
+        dokumentasiId: docId as number,
+        gambar: img,
+        altText: (docData as any).judul || '', 
+        order: index,
+        createdAt: new Date().toISOString()
+      })) as any[]
+    );
+  }
+  const item = await db.query.dokumentasi.findFirst({
+    where: eq(dokumentasi.id, docId),
+    with: { images: true }
+  });
+  return c.json(item);
+});
+core.put('/dokumentasi/:id', adminMiddleware, zValidator('json', updateDokumentasiSchema), async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  const data = c.req.valid('json');
+  const { images, ...docData } = data;
+  // @ts-ignore
+  await db.update(dokumentasi).set({ ...docData, updatedAt: new Date().toISOString() } as any).where(eq(dokumentasi.id, id));
+  if (images !== undefined) {
+    await db.delete(dokumentasiImages).where(eq(dokumentasiImages.dokumentasiId, id));
+    if (images.length > 0) {
+      // @ts-ignore
+      await db.insert(dokumentasiImages).values(
+        images.map((img, index) => ({
+          dokumentasiId: id,
+          gambar: img,
+          altText: (docData as any).judul || '',
+          order: index,
+          createdAt: new Date().toISOString()
+        }))
+      );
+    }
+  }
+  const item = await db.query.dokumentasi.findFirst({
+    where: eq(dokumentasi.id, id),
+    with: { images: true }
+  });
+  return c.json(item);
+});
+core.delete('/dokumentasi/:id', adminMiddleware, async (c) => {
+  const id = parseInt(c.req.param('id') as string);
+  await db.delete(dokumentasiImages).where(eq(dokumentasiImages.dokumentasiId, id));
+  await db.delete(dokumentasi).where(eq(dokumentasi.id, id));
+  return c.json({ message: 'Deleted' });
+});
+createSimpleCrud('jadwal-harian', jadwalHarian, createJadwalHarianSchema, updateJadwalHarianSchema, jadwalHarian.order);
+createSimpleCrud('biaya-pendidikan', biayaPendidikan, createBiayaPendidikanSchema, updateBiayaPendidikanSchema, biayaPendidikan.order);
+createSimpleCrud('contact-persons', contactPersons, createContactPersonSchema, updateContactPersonSchema, contactPersons.order);
+createSimpleCrud('social-media', socialMedia, createSocialMediaSchema, updateSocialMediaSchema, socialMedia.order);
+createSimpleCrud('seragam', seragam, createSeragamSchema, updateSeragamSchema, seragam.order);
+core.get('/statistik', async (c) => {
+  try {
+    const data = await db.select().from(statistik).orderBy(asc(statistik.order));
+    return c.json(data);
+  } catch (e) {
+    console.error('Core /statistik error:', e);
+    return c.json([]);
+  }
+});
+createSimpleCrud('media', media, createMediaSchema, updateMediaSchema, media.order);
+createSimpleCrud('bagian-jabatan', bagianJabatan, createBagianJabatanSchema, updateBagianJabatanSchema, bagianJabatan.order);
+createSimpleCrud('informasi-tambahan', informasiTambahan, createInformasiTambahanSchema, updateInformasiTambahanSchema, informasiTambahan.order);
+createSimpleCrud('registration-flow', websiteRegistrationFlow, createWebsiteRegistrationFlowSchema, updateWebsiteRegistrationFlowSchema, websiteRegistrationFlow.order);
+const createSingletonCrud = (path: string, table: any, updateSchema: any, defaultValues: any = {}) => {
+  core.get(`/${path}`, async (c) => {
+    try {
+      const data = await db.select().from(table).limit(1);
+      if (data.length === 0) {
+        try {
+          const insertData = { ...defaultValues, updatedAt: new Date().toISOString() };
+          const newItemRes = await db.insert(table).values(insertData as any).returning();
+          const [newItem] = Array.isArray(newItemRes) ? newItemRes : (newItemRes as any).rows;
+          return c.json(newItem);
+        } catch (e) {
+          console.error(`Error initializing ${path}:`, e);
+          return c.json({ ...defaultValues, updatedAt: new Date().toISOString() });
+        }
+      }
+      return c.json(data[0]);
+    } catch (e) {
+      console.error(`Core /${path} error:`, e);
+      return c.json({ ...defaultValues, updatedAt: new Date().toISOString() });
+    }
+  });
+
+  core.put(`/${path}`, adminMiddleware, zValidator('json', updateSchema), async (c) => {
+    const data = c.req.valid('json');
+    const existing = await db.select().from(table).limit(1);
+    
+    if (existing.length === 0) {
+      const newItemRes = await db.insert(table).values({ ...defaultValues, ...data, updatedAt: new Date().toISOString() } as any).returning();
+      const [newItem] = Array.isArray(newItemRes) ? newItemRes : (newItemRes as any).rows;
+      return c.json(newItem);
+    } else {
+      await db.update(table)
+        .set({ ...data, updatedAt: new Date().toISOString() } as any)
+        .where(eq(table.id, existing[0].id));
+      const [updated] = await db.select().from(table).where(eq(table.id, existing[0].id));
+      return c.json(updated);
+    }
+  });
+};
+
+createSingletonCrud('persyaratan', persyaratan, updatePersyaratanSchema, {
+  persyaratanSantri: 'Belum diatur',
+  persyaratanSantriwati: 'Belum diatur'
+});
+
+createSingletonCrud('alur-pendaftaran', alurPendaftaran, updateAlurPendaftaranSchema, {
+  alurPendaftaran: 'Belum diatur',
+  tahapanTes: 'Belum diatur'
+});
+
+
+// ===== FOUNDERS =====
+core.get('/founders', async (c) => {
+  const data = await db.select().from(founders).where(eq(founders.isDeleted, false)).orderBy(asc(founders.id));
+  const publicData = data.map(f => ({
+    ...f,
+    nik: undefined,
+    email: f.email ? decrypt(f.email) : '',
+  }));
+  return c.json(publicData);
+});
+
+core.get('/founders/:id', async (c) => {
+    const id = parseInt(c.req.param('id') as string);
+    const [item] = await db.select().from(founders).where(eq(founders.id, id));
+    if (!item || item.isDeleted) return c.json({ error: 'Not found' }, 404);
+    return c.json({
+        ...item,
+        nik: undefined,
+        email: item.email ? decrypt(item.email) : '',
+    });
+});
+
+core.get('/admin/founders', adminMiddleware, async (c) => {
+    const data = await db.select().from(founders).where(eq(founders.isDeleted, false));
+    const fullData = data.map(f => ({
+        ...f,
+        nik: f.nik ? decrypt(f.nik) : '',
+        email: f.email ? decrypt(f.email) : '',
+    }));
+    return c.json(fullData);
+});
+
+core.get('/admin/founders/:id', adminMiddleware, async (c) => {
+    const id = parseInt(c.req.param('id') as string);
+    const [item] = await db.select().from(founders).where(eq(founders.id, id));
+    if (!item) return c.json({ error: 'Not found' }, 404);
+    return c.json({
+        ...item,
+        nik: item.nik ? decrypt(item.nik) : '',
+        email: item.email ? decrypt(item.email) : '',
+    });
+});
+
+core.post('/admin/founders', adminMiddleware, zValidator('json', createFounderSchema), async (c) => {
+    const user = c.get('user') as any;
+    const data = c.req.valid('json');
+    
+    // Limits
+    const existing = await db.select({ count: count() }).from(founders).where(eq(founders.isDeleted, false));
+    if (Number(existing[0]?.count) >= 5) {
+        return c.json({ error: 'Maksimal 5 entri pendiri' }, 400);
+    }
+
+    const allFounders = await db.select().from(founders).where(eq(founders.isDeleted, false));
+    for (const f of allFounders) {
+        if (decrypt(f.nik) === data.nik) return c.json({ error: 'NIK sudah terdaftar' }, 400);
+        if (decrypt(f.email) === data.email) return c.json({ error: 'Email sudah terdaftar' }, 400);
+    }
+
+    const [newItem] = await db.insert(founders).values({
+        ...data,
+        nik: encrypt(data.nik),
+        email: encrypt(data.email),
+        createdBy: user?.id,
+        updatedBy: user?.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isDeleted: false
+    } as any).returning();
+
+    return c.json({
+        ...newItem,
+        nik: decrypt(newItem.nik),
+        email: decrypt(newItem.email)
+    });
+});
+
+core.put('/admin/founders/:id', adminMiddleware, zValidator('json', updateFounderSchema), async (c) => {
+    const id = parseInt(c.req.param('id') as string);
+    const user = c.get('user') as any;
+    const data = c.req.valid('json');
+    
+    const [existing] = await db.select().from(founders).where(eq(founders.id, id));
+    if (!existing) return c.json({ error: 'Not found' }, 404);
+
+    if (data.nik || data.email) {
+        const allFounders = await db.select().from(founders).where(eq(founders.isDeleted, false));
+        for (const f of allFounders) {
+            if (f.id === id) continue;
+            if (data.nik && decrypt(f.nik) === data.nik) return c.json({ error: 'NIK sudah terdaftar' }, 400);
+            if (data.email && decrypt(f.email) === data.email) return c.json({ error: 'Email sudah terdaftar' }, 400);
+        }
+    }
+
+    const updateData: any = { ...data, updatedAt: new Date().toISOString(), updatedBy: user?.id };
+    if (data.nik) updateData.nik = encrypt(data.nik);
+    if (data.email) updateData.email = encrypt(data.email);
+
+    await db.update(founders).set(updateData).where(eq(founders.id, id));
+    
+    const [updated] = await db.select().from(founders).where(eq(founders.id, id));
+    return c.json({
+        ...updated,
+        nik: decrypt(updated.nik),
+        email: decrypt(updated.email)
+    });
+});
+
+core.delete('/admin/founders/:id', adminMiddleware, async (c) => {
+    const id = parseInt(c.req.param('id') as string);
+    const user = c.get('user') as any;
+    await db.update(founders).set({
+        isDeleted: true,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.id
+    }).where(eq(founders.id, id));
+    return c.json({ message: 'Deleted' });
+});
+
+// ===== STRUKTUR ORGANISASI =====
+core.get('/struktur-organisasi', async (c) => {
+  try {
+    const data = await db.select().from(strukturOrganisasi)
+      .where(eq(strukturOrganisasi.isActive, true))
+      .orderBy(asc(strukturOrganisasi.level), asc(strukturOrganisasi.order));
+    return c.json(data);
+  } catch (e) {
+    console.error('Core /struktur-organisasi error:', e);
+    return c.json([]);
+  }
+});
+
+// Admin routes for Struktur Organisasi moved to admin module
+
+// ===== FORM CONFIG (Public) =====
+core.get('/form-config', async (c) => {
+  try {
+    const formName = c.req.query('form') || 'pendaftaran';
+    const data = await db.select().from(formConfig).where(eq(formConfig.formName, formName));
+    // Convert to key-value object for easy frontend use
+    const config: Record<string, string> = {};
+    data.forEach(item => { config[item.fieldKey] = item.fieldValue; });
+    return c.json(config);
+  } catch (e) {
+    return c.json({});
+  }
+});
+
+export default core;
