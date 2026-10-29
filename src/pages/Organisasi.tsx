@@ -1,25 +1,24 @@
 import { useState } from 'react';
-import { usePublicData } from '@/hooks/use-public-data';
 import { motion, AnimatePresence } from 'framer-motion';
-import SectionWrapper from '@/components/shared/SectionWrapper';
-import { Users, Crown, Briefcase, User, X, ChevronRight } from 'lucide-react';
+import { Crown, Briefcase, Users, User, X } from 'lucide-react';
+import { usePublicData } from '@/hooks/use-public-data';
 import SEOHead from '@/components/SEOHead';
+import { SectionWrapper } from '@/components/shared/SectionWrapper';
 
 interface OrgMember {
   id: number;
   nama: string;
   jabatan: string;
   foto?: string;
-  parentId?: number;
   level: number;
   order: number;
 }
 
-const levelColors = [
-  'from-yellow-500 to-amber-600',   // Level 0 (Pimpinan)
-  'from-emerald-600 to-teal-700', // Level 1 (Kepala)
-  'from-blue-600 to-indigo-700',  // Level 2 (Managerial)
-  'from-purple-600 to-violet-700',// Level 3 (Koordinator)
+const levelAccents = [
+  'border-l-amber-500',
+  'border-l-emerald-500',
+  'border-l-emerald-500',
+  'border-l-zinc-500',
 ];
 
 const levelIcons = [Crown, Briefcase, Users, User];
@@ -37,36 +36,35 @@ const Organisasi = () => {
   const level2 = members.filter(m => m.level === 2).sort((a, b) => a.order - b.order);
   const level3 = members.filter(m => m.level === 3).sort((a, b) => a.order - b.order);
 
-  // Card component
   const MemberCard = ({ member, index }: { member: OrgMember; index: number }) => {
     const Icon = levelIcons[Math.min(member.level, 3)];
-    const gradient = levelColors[Math.min(member.level, 3)];
+    const accentBorder = levelAccents[Math.min(member.level, 3)];
 
     return (
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ delay: index * 0.05, duration: 0.4 }}
+        transition={{ delay: index * 0.05, duration: 0.3 }}
         onClick={() => setSelectedMember(member)}
-        className="glass-card hover-lift cursor-pointer flex flex-col md:flex-row items-center md:items-start gap-4 p-4 md:p-5 w-full md:w-[280px] lg:w-[320px] rounded-2xl text-center md:text-left border border-border/50 group"
+        className={`card card--accent hover-lift cursor-pointer flex flex-col md:flex-row items-center md:items-start gap-4 p-4 md:p-5 w-full md:w-[280px] lg:w-[320px] rounded-[4px] border border-border border-l-[3px] ${accentBorder} bg-card text-center md:text-left group`}
       >
-        <div className={`w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded-2xl bg-gradient-to-br ${gradient} p-0.5 shadow-md group-hover:scale-105 transition-transform duration-300`}>
-          <div className="w-full h-full rounded-[14px] overflow-hidden bg-background flex items-center justify-center">
-            {member.foto ? (
-              <img src={member.foto} alt={member.nama} className="w-full h-full object-cover" />
-            ) : (
+        <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-[4px] border border-border bg-muted overflow-hidden">
+          {member.foto ? (
+            <img src={member.foto} alt={member.nama} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
               <Icon className="w-8 h-8 text-muted-foreground/50" />
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center h-full">
           {member.level === 0 && (
-            <span className="inline-flex max-w-fit items-center gap-1 text-[10px] uppercase font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-full mb-1">
+            <span className="inline-flex max-w-fit items-center gap-1 text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-[4px] mb-1">
               Top Management
             </span>
           )}
-          <h3 className="font-bold text-sm md:text-base leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-2">
+          <h3 className="font-bold text-sm md:text-base leading-tight mb-1 text-foreground group-hover:text-emerald-500 transition-colors line-clamp-2">
             {member.nama}
           </h3>
           <p className="text-xs text-muted-foreground leading-snug break-words">
@@ -99,15 +97,13 @@ const Organisasi = () => {
     <>
       <SEOHead title="Struktur Organisasi" description="Struktur kepengurusan dan manajemen di Pondok Pesantren Raudhatussalam Mahato." path="/profil/organisasi" />
 
-      {/* Hero */}
-      <section className="relative py-20 md:py-32 overflow-hidden bg-gradient-to-b from-primary/10 to-background">
-        <div className="absolute inset-0 opacity-5 islamic-pattern pointer-events-none" />
+      <section className="relative py-16 md:py-24 overflow-hidden border-b border-border bg-card">
         <div className="container mx-auto max-w-4xl px-4 text-center relative z-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span className="inline-block mb-4 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase rounded-full bg-primary/10 text-primary border border-primary/20">
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+            <span className="inline-block mb-3 px-3 py-1 text-xs font-semibold tracking-wider uppercase rounded-[4px] bg-primary/10 text-primary border border-primary/20">
               Profil Pesantren
             </span>
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4">Struktur Organisasi</h1>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold mb-3 text-foreground">Struktur Organisasi</h1>
             <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
               Sistem manajemen berbasis kepemimpinan kolektif yang profesional demi keberlangsungan pendidikan santri.
             </p>
@@ -121,7 +117,7 @@ const Organisasi = () => {
             <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           </div>
         ) : members.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground bg-secondary/30 rounded-2xl border border-dashed border-border/50">
+          <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-[4px] border border-border">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
             <p>Data struktur organisasi belum tersedia.</p>
           </div>
@@ -135,7 +131,6 @@ const Organisasi = () => {
         )}
       </SectionWrapper>
 
-      {/* Detail Modal */}
       <AnimatePresence>
         {selectedMember && (
           <motion.div
@@ -143,14 +138,14 @@ const Organisasi = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedMember(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
           >
-             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-background rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
+              className="bg-card rounded-[4px] border border-border shadow-xl w-full max-w-lg overflow-hidden flex flex-col card card--accent"
             >
               <div className="relative aspect-video bg-muted overflow-hidden">
                 {selectedMember.foto ? (
@@ -160,37 +155,37 @@ const Organisasi = () => {
                     className="w-full h-full object-cover" 
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary">
-                    <User className="w-16 h-16 opacity-20" />
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted">
+                    <User className="w-16 h-16 opacity-30" />
                   </div>
                 )}
                 
-                {/* Overlay Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                 <button
                   onClick={() => setSelectedMember(null)}
-                  className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors z-20"
+                  className="absolute top-4 right-4 p-2 min-h-[44px] min-w-[44px] bg-black/50 hover:bg-black/70 text-white rounded-[4px] flex items-center justify-center transition-colors z-20"
+                  aria-label="Tutup"
                 >
                   <X className="w-4 h-4" />
                 </button>
 
                 <div className="absolute bottom-5 left-6 right-6 z-10">
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary/90 text-white border border-white/20 rounded-md font-bold text-[10px] uppercase mb-2 backdrop-blur-sm">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary text-primary-foreground rounded-[4px] font-bold text-[10px] uppercase mb-2">
                     {selectedMember.jabatan}
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight drop-shadow-md">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight">
                     {selectedMember.nama}
                   </h2>
                 </div>
               </div>
 
-              <div className="px-6 py-8 text-left">
-                <div className="text-sm text-foreground/80 leading-relaxed space-y-4">
-                   <p>Beliau menjabat sebagai <strong>{selectedMember.jabatan}</strong> di ranah struktural Pondok Pesantren Modern Raudhatussalam Mahato.</p>
-                   <div className="p-4 bg-secondary/40 rounded-xl border border-border/50">
+              <div className="px-6 py-6 text-left">
+                <div className="text-sm text-foreground space-y-4">
+                  <p>Beliau menjabat sebagai <strong>{selectedMember.jabatan}</strong> di ranah struktural Pondok Pesantren Modern Raudhatussalam Mahato.</p>
+                  <div className="p-4 bg-muted/40 rounded-[4px] border border-border">
                     <p className="text-xs italic text-muted-foreground">"Dedikasi penuh menjaga visi dan misi pesantren tetap berjalan lancar dan berkesinambungan bagi seluruh santri dan jajaran tenaga pengajar."</p>
-                   </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -29,7 +29,7 @@ pesantren-hub/
 └── src/             # Frontend React 18 SPA
     ├── components/  # Komponen UI atomik & reusable (Radix UI / Tailwind)
     ├── layouts/     # MainLayout, AdminLayout, AuthLayout, AppLayout
-    ├── lib/         # api.ts (Axios client + interceptors), utils
+    ├── lib/         # api.ts (Axios), vercel-connect.ts (@vercel/connect), utils
     ├── pages/       # Halaman views (website, admin, kmi, author, admissions, blog)
     ├── stores/      # Zustand stores (auth-store, theme-store)
     └── App.tsx      # Routing utama (React Router v6)

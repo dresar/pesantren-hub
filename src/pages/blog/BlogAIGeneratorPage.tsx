@@ -179,7 +179,7 @@ export default function BlogAIGeneratorPage() {
                 </div>
 
                 <Button 
-                    className="w-full h-12 text-lg font-medium shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 mt-auto" 
+                    className="w-full h-12 text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 mt-auto min-h-[44px] rounded-[4px]" 
                     onClick={handleGenerate} 
                     disabled={loading}
                 >

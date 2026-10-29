@@ -95,35 +95,35 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   <Link
                     to="/author/dashboard"
                     title="Dashboard"
-                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center justify-center w-12 h-12 rounded-[4px] min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <LayoutDashboard className="h-6 w-6" />
                   </Link>
                   <Link
                     to="/author/articles"
                     title="Artikel"
-                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center justify-center w-12 h-12 rounded-[4px] min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <FileEdit className="h-6 w-6" />
                   </Link>
                   <Link
                     to="/author/collaborations"
                     title="Kolaborasi"
-                    className="flex items-center justify-center px-5 h-12 rounded-full bg-primary text-primary-foreground shadow-glow"
+                    className="flex items-center justify-center px-4 h-12 rounded-[4px] min-h-[44px] bg-primary text-primary-foreground font-medium"
                   >
                     <Users className="h-6 w-6" />
                   </Link>
                   <Link
                     to="/author/discussions"
                     title="Diskusi"
-                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center justify-center w-12 h-12 rounded-[4px] min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <MessageSquare className="h-6 w-6" />
                   </Link>
                   <Link
                     to="/author/profile"
                     title="Profil"
-                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center justify-center w-12 h-12 rounded-[4px] min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <Settings className="h-6 w-6" />
                   </Link>
@@ -133,35 +133,35 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   <Link
                     to={`/santri/dashboard/${userIdentifier}`}
                     title="Dashboard"
-                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center justify-center w-12 h-12 rounded-[4px] min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <Home className="h-6 w-6" />
                   </Link>
                   <Link
                     to={`/app/form-pendaftaran/${userIdentifier}`}
                     title="Form"
-                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center justify-center w-12 h-12 rounded-[4px] min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <ClipboardList className="h-6 w-6" />
                   </Link>
                   <Link
                     to={`/app/status/${userIdentifier}`}
                     title="Status"
-                    className="flex items-center justify-center px-5 h-12 rounded-full bg-primary text-primary-foreground shadow-glow"
+                    className="flex items-center justify-center px-4 h-12 rounded-[4px] min-h-[44px] bg-primary text-primary-foreground font-medium"
                   >
                     <Clock className="h-6 w-6" />
                   </Link>
                   <Link
                     to={`/app/pembayaran/${userIdentifier}`}
                     title="Pembayaran"
-                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center justify-center w-12 h-12 rounded-[4px] min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <CreditCard className="h-6 w-6" />
                   </Link>
                   <Link
                     to={`/app/notifikasi/${userIdentifier}`}
                     title="Notifikasi"
-                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center justify-center w-12 h-12 rounded-[4px] min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <Bell className="h-6 w-6" />
                   </Link>

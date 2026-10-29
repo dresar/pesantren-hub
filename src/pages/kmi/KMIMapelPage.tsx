@@ -262,28 +262,26 @@ export default function KMIMapelPage() {
         </div>
       </div>
 
-      {/* Rumpun Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { kode: 'ISL', nama: 'Ulum Islamiyah', namaArab: 'العلوم الإسلامية', icon: '☪️', gradient: 'from-emerald-500 to-teal-600' },
-          { kode: 'ARB', nama: 'Ulum Arabiyah', namaArab: 'العلوم العربية', icon: '📜', gradient: 'from-blue-500 to-indigo-600' },
-          { kode: 'AMM', nama: 'Ulum Ammah', namaArab: 'العلوم العامة', icon: '📐', gradient: 'from-amber-500 to-orange-600' },
+          { kode: 'ISL', nama: 'Ulum Islamiyah', namaArab: 'العلوم الإسلامية', icon: '☪️', accent: 'border-l-emerald-500' },
+          { kode: 'ARB', nama: 'Ulum Arabiyah', namaArab: 'العلوم العربية', icon: '📜', accent: 'border-l-emerald-600' },
+          { kode: 'AMM', nama: 'Ulum Ammah', namaArab: 'العلوم العامة', icon: '📐', accent: 'border-l-amber-500' },
         ].map(r => (
           <motion.button
             key={r.kode}
             onClick={() => setAktifRumpun(aktifRumpun === r.kode ? 'ALL' : r.kode)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`text-left p-5 rounded-2xl bg-gradient-to-br ${r.gradient} text-white shadow-lg relative overflow-hidden transition-all ${
-              aktifRumpun === r.kode ? 'ring-4 ring-white/40 shadow-xl' : 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100'
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className={`card card--accent text-left p-5 rounded-[4px] border border-border border-l-[3px] ${r.accent} bg-card text-foreground transition-all min-h-[44px] ${
+              aktifRumpun === r.kode ? 'ring-2 ring-emerald-500' : 'hover:bg-muted/40'
             }`}
           >
             <div className="text-2xl mb-2">{r.icon}</div>
-            <p className="font-bold">{r.nama}</p>
-            <p className="text-white/70 text-sm font-arabic">{r.namaArab}</p>
-            <p className="text-2xl font-bold mt-2">{statsByRumpun[r.kode as keyof typeof statsByRumpun] ?? 0}</p>
-            <p className="text-white/70 text-xs">mata pelajaran</p>
-            <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-white/10" />
+            <p className="font-bold text-foreground">{r.nama}</p>
+            <p className="text-muted-foreground text-sm font-arabic">{r.namaArab}</p>
+            <p className="text-2xl font-bold mt-2 text-foreground">{statsByRumpun[r.kode as keyof typeof statsByRumpun] ?? 0}</p>
+            <p className="text-muted-foreground text-xs">mata pelajaran</p>
           </motion.button>
         ))}
       </div>

@@ -4,9 +4,9 @@
  */
 
 export const MOCK_RUMPUN = [
-  { id: 1, kode: 'ISL', nama: 'Ulum Islamiyah', namaArab: 'العلوم الإسلامية', gradient: 'from-emerald-500 to-teal-600', icon: '☪️' },
-  { id: 2, kode: 'ARB', nama: 'Ulum Arabiyah', namaArab: 'العلوم العربية', gradient: 'from-blue-500 to-indigo-600', icon: '📜' },
-  { id: 3, kode: 'AMM', nama: 'Ulum Ammah', namaArab: 'العلوم العامة', gradient: 'from-amber-500 to-orange-600', icon: '📐' },
+  { id: 1, kode: 'ISL', nama: 'Ulum Islamiyah', namaArab: 'العلوم الإسلامية', gradient: 'emerald', icon: '☪️' },
+  { id: 2, kode: 'ARB', nama: 'Ulum Arabiyah', namaArab: 'العلوم العربية', gradient: 'emerald', icon: '📜' },
+  { id: 3, kode: 'AMM', nama: 'Ulum Ammah', namaArab: 'العلوم العامة', gradient: 'amber', icon: '📐' },
 ];
 
 export const MOCK_MAPEL = [

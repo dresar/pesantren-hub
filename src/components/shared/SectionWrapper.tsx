@@ -16,6 +16,7 @@ const SectionWrapper = ({ children, className = '', id, pattern = false }: Secti
   );
 };
 export default SectionWrapper;
+export { SectionWrapper };
 interface SectionHeaderProps {
   title: string;
   subtitle?: string;

@@ -132,7 +132,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542816417-0983c9c9ad53?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent"></div>
         <div className="relative z-10 p-12 text-white max-w-lg">
-          <Logo variant="icon" iconClassName="w-16 h-16 mb-8 rounded-2xl shadow-glow" />
+          <Logo variant="icon" iconClassName="w-16 h-16 mb-8 rounded-[4px] border border-border" />
           <h2 className="text-4xl font-bold mb-6 leading-tight">Membangun Generasi <br/><span className="text-primary">Berakhlak Mulia</span></h2>
           <p className="text-lg text-slate-300 leading-relaxed">
             Platform manajemen pesantren modern yang terintegrasi. Memudahkan administrasi, pemantauan akademik, dan komunikasi dengan wali santri.

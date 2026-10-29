@@ -27,8 +27,8 @@ interface AnggotaItem {
 }
 interface SantriOption { id: number; namaLengkap: string; nisn: string; jenisKelamin: string; }
 
-const GENDER_COLOR = { putra: 'from-blue-500 to-blue-600', putri: 'from-pink-500 to-rose-600' };
-const GENDER_BADGE = { putra: 'bg-blue-100 text-blue-700', putri: 'bg-pink-100 text-pink-700' };
+const GENDER_COLOR = { putra: 'bg-emerald-600', putri: 'bg-rose-600' };
+const GENDER_BADGE = { putra: 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20', putri: 'bg-rose-500/10 text-rose-500 border border-rose-500/20' };
 
 function KelasFormModal({ open, onClose, data, jenjangList, tahunAjaranId, guruList }:
   { open: boolean; onClose: () => void; data?: KelasItem | null; jenjangList: Jenjang[]; tahunAjaranId: number; guruList: any[] }) {
@@ -390,10 +390,9 @@ export default function KMIKelasPage() {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                    className="card rounded-[4px] border border-border bg-card overflow-hidden transition-all"
                   >
-                    {/* Card Header */}
-                    <div className={`h-2 bg-gradient-to-r ${GENDER_COLOR[k.jenisKelamin as keyof typeof GENDER_COLOR] ?? 'from-gray-400 to-gray-500'}`} />
+                    <div className={`h-1 ${GENDER_COLOR[k.jenisKelamin as keyof typeof GENDER_COLOR] ?? 'bg-muted'}`} />
                     <div className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div>

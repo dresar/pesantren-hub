@@ -114,7 +114,7 @@ export default function TeacherListPage() {
             const foto = teacher.foto;
 
             return (
-              <Card key={id} className="overflow-hidden border-emerald-500/30 bg-transparent group rounded-3xl max-w-[360px] w-full mx-auto">
+              <Card key={id} className="overflow-hidden border border-border bg-card group rounded-[4px] max-w-[360px] w-full mx-auto card">
                 <div className="relative h-[360px] bg-muted">
                   {foto ? (
                     <img
@@ -131,11 +131,11 @@ export default function TeacherListPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10" />
 
                   <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
-                    <div className="bg-black/45 backdrop-blur-sm rounded-2xl px-3 py-2 max-w-[82%]">
+                    <div className="bg-black/60 rounded-[4px] px-3 py-2 max-w-[82%]">
                       <p className="text-[9px] uppercase tracking-[0.18em] text-primary-foreground/80 line-clamp-1">{bidang}</p>
                       <p className="text-white text-[9px] font-semibold leading-tight break-words line-clamp-3">{nama}</p>
                     </div>
-                    <Badge variant={isPublished ? 'default' : 'secondary'} className="shadow-md rounded-full px-2 py-0.5 text-[9px]">
+                    <Badge variant={isPublished ? 'default' : 'secondary'} className="shadow-md rounded-[4px] px-2 py-0.5 text-[9px]">
                       {isPublished ? 'Aktif' : 'Non-Aktif'}
                     </Badge>
                   </div>
@@ -143,12 +143,12 @@ export default function TeacherListPage() {
                   <div className="absolute bottom-4 left-4 right-4">
                     <p className="text-white/90 text-[9px] line-clamp-1 mb-2">{mataPelajaran}</p>
                     <div className="flex items-center gap-2">
-                      <Button className="h-8 px-4 rounded-lg text-[9px]" onClick={() => setSelectedTeacher(teacher)}>
+                      <Button className="h-9 px-4 rounded-[4px] text-xs min-h-[36px]" onClick={() => setSelectedTeacher(teacher)}>
                         Detail Pengajar
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="outline" className="h-8 w-8 rounded-lg bg-black/40 border-white/30 text-white hover:bg-black/60 hover:text-white">
+                          <Button size="icon" variant="outline" className="h-9 w-9 rounded-[4px] min-h-[36px] min-w-[36px] bg-black/40 border-white/30 text-white hover:bg-black/60 hover:text-white">
                             <MoreVertical className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>

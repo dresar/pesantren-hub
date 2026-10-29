@@ -69,9 +69,9 @@ const AppSidebar = ({ collapsed, onClose }: AppSidebarProps) => {
               to={item.href}
               onClick={onClose}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-[4px] min-h-[44px] text-sm font-medium transition-colors',
                 active
-                  ? 'gradient-primary text-primary-foreground shadow-glow'
+                  ? 'bg-primary text-primary-foreground font-semibold'
                   : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent'
               )}
             >
@@ -85,7 +85,7 @@ const AppSidebar = ({ collapsed, onClose }: AppSidebarProps) => {
       <div className="p-2 border-t border-sidebar-border">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[4px] min-h-[44px] text-sm font-medium text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
           <LogOut className="w-5 h-5 shrink-0" />
           {!collapsed && <span>Keluar</span>}

@@ -255,14 +255,14 @@ const Home = () => {
                 <>
                   <Link
                     to={settings?.heroCtaPrimaryLink || '/pendaftaran'}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl gradient-primary text-white hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-[4px] min-h-[44px] bg-primary text-primary-foreground hover:bg-primary/90 transition-opacity w-full sm:w-auto"
                   >
                     {settings?.heroCtaPrimaryText || 'Daftar Sekarang'}
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <Link
                     to={settings?.heroCtaSecondaryLink || '/alur-pendaftaran'}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors w-full sm:w-auto"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-[4px] min-h-[44px] border border-white/30 bg-white/10 text-white hover:bg-white/20 transition-colors w-full sm:w-auto"
                   >
                     {settings?.heroCtaSecondaryText || 'Alur Pendaftaran'}
                   </Link>
@@ -355,16 +355,13 @@ const Home = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="relative"
           >
-            <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl relative z-10 border-4 border-white/20">
+            <div className="aspect-video rounded-[4px] overflow-hidden shadow-md relative z-10 border border-border">
               <img 
                 src={settings?.gambarProfil || heroImage} 
                 alt="Profil Pesantren" 
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
               />
             </div>
-            {}
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl -z-10" />
-            <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-secondary/20 rounded-full blur-2xl -z-10" />
           </motion.div>
         </div>
       </SectionWrapper>
@@ -387,7 +384,7 @@ const Home = () => {
                 viewport={{ once: true }}
                 variants={fadeUp}
                 onClick={() => openProgramModal(edu)}
-                className="glass-card overflow-hidden hover-lift text-left group focus:outline-none focus:ring-2 focus:ring-primary rounded-xl w-full"
+                className="card overflow-hidden hover-lift text-left group focus:outline-none focus:ring-2 focus:ring-primary rounded-[4px] w-full border border-border bg-card"
               >
                 <div className="aspect-[4/3] relative overflow-hidden bg-muted/30">
                   {thumb ? (
@@ -433,7 +430,7 @@ const Home = () => {
                 viewport={{ once: true }}
                 variants={fadeUp}
                 onClick={() => openProgramModal(program)}
-                className="glass-card overflow-hidden hover-lift text-left group focus:outline-none focus:ring-2 focus:ring-primary rounded-xl w-full"
+                className="card overflow-hidden hover-lift text-left group focus:outline-none focus:ring-2 focus:ring-primary rounded-[4px] w-full border border-border bg-card"
               >
                 <div className="aspect-[4/3] relative overflow-hidden bg-muted/30">
                   {thumb ? (
@@ -704,9 +701,9 @@ const Home = () => {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="relative rounded-2xl overflow-hidden border border-border bg-gradient-to-br from-primary/10 via-card to-secondary/80 p-8 md:p-12 text-center shadow-glow backdrop-blur-sm"
+            className="relative rounded-[4px] overflow-hidden border border-border bg-card p-8 md:p-12 text-center card card--accent"
           >
-            <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
               {settings?.ctaTitle || 'Siap Bergabung?'}
             </h2>
             <p className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto mb-8">
@@ -715,14 +712,14 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 to={settings?.ctaPrimaryLink || '/pendaftaran'}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-[4px] min-h-[44px] bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 {settings?.ctaPrimaryText || 'Daftar Sekarang'}
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to={settings?.ctaSecondaryLink || '/kontak'}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-secondary/80 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-[4px] min-h-[44px] border border-border text-foreground hover:bg-secondary/80 transition-colors"
               >
                 {settings?.ctaSecondaryText || 'Hubungi Kami'}
               </Link>
