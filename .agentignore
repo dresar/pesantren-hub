@@ -1,0 +1,15 @@
+
+# AgentPack suggested noisy/generated paths
+build/
+coverage/
+dist/
+node_modules/
+server/app.cjs
+server/drizzle/meta/0000_snapshot.json
+server/drizzle/meta/0001_snapshot.json
+server/node_modules/
+.codegraph/
+.git/
+package-lock.json
+server/package-lock.json
+asset/*.webm
